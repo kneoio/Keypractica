@@ -1,0 +1,16 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: postgres:13
+    container_name: pg_database_lit_print
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_DB: lit_print_db
+      POSTGRES_PASSWORD: 437601
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - 5434:5432
+    volumes:
+      - ./init:/docker-entrypoint-initdb.d
