@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
 
   push:
-     branches:
-     - master
+    branches:
+      - master
 
 jobs:
   compile:
@@ -30,11 +30,19 @@ jobs:
       - name: Copying files to server
         uses: appleboy/scp-action@master
         with:
-         host: ${{ secrets.REMOTE_HOST }}
-         port: ${{ secrets.REMOTE_PORT }}
-         username: ${{ secrets.REMOTE_USER }}
-         key: ${{ secrets.SSH_KEY }}
-         passphrase: ${{ secrets.SSH_KEY_PASSPHRASE }}
-         rm: false
-         source: "target/ProjectW-runner.jar"
-         target: "${{ secrets.REMOTE_DIR }}"
+          host: ${{ secrets.REMOTE_HOST }}
+          port: ${{ secrets.REMOTE_PORT }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSPHRASE }}
+          rm: false
+          source: "target/quarkus-app/"
+          target: "${{ secrets.REMOTE_DIR }}"
+      - name: ls -a via ssh
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: ls -a
+          host: ${{ secrets.REMOTE_HOST }}
+          username: garygrossgarten
+          passphrase: ${{ secrets.SSH_KEY_PASSPHRASE }}
+          privateKey: ${{ secrets.SSH_KEY}}

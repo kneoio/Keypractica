@@ -14,7 +14,24 @@ services:
       - 5434:5432
     volumes:
       - ./init:/docker-entrypoint-initdb.d
+    networks:
+      - fff
+
   litprint:
+    container_name: lit_print
     depends_on:
       - db
-    build: .
+    build:
+      context: ../
+      dockerfile: ./src/main/docker/Dockerfile.jvm
+    ports:
+      - 38707:38707
+    environment:
+      - LITPRINT_DB_HOST=db
+      - LITPRINT_DB_HOST_PORT=5432
+    networks:
+      - fff
+
+networks:
+   fff:
+     driver: bridge
