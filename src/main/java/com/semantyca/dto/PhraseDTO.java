@@ -1,11 +1,15 @@
 package com.semantyca.dto;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class PhraseDTO implements IDTO {
     private String type;
     private String base;
     private String translation;
+
+    private List<String> labels = new ArrayList<>();
 
     public String getBase() {
         return base;
@@ -31,6 +35,14 @@ public class PhraseDTO implements IDTO {
     @Override
     public Map getLinks() {
         return null;
+    }
+
+    public List<String> getLabels() {
+        return labels;
+    }
+
+    public void setLabels(List<String> labels) {
+        this.labels = labels;
     }
 
     public static String convertCyrilic(String message){

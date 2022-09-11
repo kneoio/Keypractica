@@ -17,6 +17,15 @@ public class Label extends DataEntity<UUID> {
     private String category;
     private String color;
 
+    public Label(String label) {
+        super();
+        name = label;
+    }
+
+    public Label() {
+
+    }
+
     public String getName() {
         return name;
     }

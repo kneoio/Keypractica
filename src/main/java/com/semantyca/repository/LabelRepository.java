@@ -31,9 +31,9 @@ public class LabelRepository extends AbstractRepository {
                         .map(new LabelMapper()).findFirst());
     }
 
-    public Optional<Label> findByValue(String word, boolean includeAssociated) {
+    public Optional<Label> findByValue(String labelName) {
         return jdbi.withHandle(handle ->
-                handle.createQuery("SELECT * FROM labels a WHERE a.value = '" + word + "'")
+                handle.createQuery("SELECT * FROM labels a WHERE a.name = '" + labelName + "'")
                         .map(new LabelMapper()).findFirst());
     }
 

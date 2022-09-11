@@ -14,3 +14,7 @@ services:
       - 5434:5432
     volumes:
       - ./init:/docker-entrypoint-initdb.d
+  litprint:
+    depends_on:
+      - db
+    build: .

@@ -8,7 +8,7 @@ import com.semantyca.dto.constant.MessageLevel;
 import com.semantyca.model.phrase.Phrase;
 import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.repository.PhraseRepository;
-import com.semantyca.repository.exception.DocumentExists;
+import com.semantyca.repository.exception.DocumentExistsException;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
 import org.jdbi.v3.core.Jdbi;
 import org.slf4j.Logger;
@@ -38,17 +38,19 @@ public class PhraseService {
     public Optional<Phrase> getById(String id) {
         return repository.findById(UUID.fromString(id));
     }
-    public Phrase add(PhraseDTO dto) throws DocumentExists {
+    public Phrase add(PhraseDTO dto) throws DocumentExistsException {
         Optional<Phrase> sOptional = repository.findByValue(dto.getBase());
         if (sOptional.isEmpty()) {
 
-            Phrase sentence = new Phrase.Builder()
+            Phrase phrase = new Phrase.Builder()
                     .setBase(dto.getBase())
                     .setTranslation(dto.getTranslation())
+                    .setLabels(dto.getLabels())
                     .build();
-            return repository.insert(sentence);
+
+            return repository.insert(phrase);
         } else {
-            throw new DocumentExists(dto.getBase());
+            throw new DocumentExistsException(dto.getBase());
         }
     }
 

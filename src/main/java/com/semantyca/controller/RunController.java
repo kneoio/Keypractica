@@ -30,7 +30,6 @@ public class RunController {
     private static final Logger LOGGER = LoggerFactory.getLogger("RunController");
 
     @GET
-   // @PermitAll
     @Path("/{id}/info")
     public Response get(@Context SecurityContext ctx)  {
         LOGGER.info("context=" + ctx.getUserPrincipal());

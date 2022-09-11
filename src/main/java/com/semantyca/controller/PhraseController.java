@@ -3,12 +3,11 @@ package com.semantyca.controller;
 import com.semantyca.dto.PhraseDTO;
 import com.semantyca.dto.document.DocumentOutcome;
 import com.semantyca.dto.view.ViewPage;
-import com.semantyca.repository.exception.DocumentExists;
+import com.semantyca.repository.exception.DocumentExistsException;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
 import com.semantyca.service.PhraseService;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -28,7 +27,6 @@ public class PhraseController {
     PhraseService phraseService;
 
     @GET
-    @RolesAllowed({ "User", "Admin" })
     @Path("/")
     public Response get()  {
         return Response.ok(new ViewPage(phraseService.getAll())).build();
@@ -42,8 +40,14 @@ public class PhraseController {
 
     @POST
     @Path("/")
-    public Response create(PhraseDTO phraseDTO) throws DocumentExists, URISyntaxException {
-        return Response.created(new URI("phrases/" + phraseService.add(phraseDTO).getId().toString())).build();
+    public Response create(PhraseDTO phraseDTO) throws  URISyntaxException {
+        try {
+            return Response.created(new URI("phrases/" + phraseService.add(phraseDTO).getId().toString())).build();
+        } catch (DocumentExistsException e) {
+            return Response.status(422, e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.serverError().build();
+        }
     }
 
     @PUT

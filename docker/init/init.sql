@@ -28,7 +28,7 @@ CREATE TABLE phrase_rls
 CREATE TABLE phrase_labels
 (
      entity_id uuid NOT NULL,
-     label_id INT NOT NULL,
+     label_id uuid NOT NULL,
      PRIMARY KEY (entity_id, label_id)
 );
 
@@ -64,3 +64,6 @@ CREATE TABLE labels
 	  color CHAR(7)
 );
 
+
+INSERT INTO public.labels (id, reg_date, title, author, last_mod_date, last_mod_user, "rank", is_active, "name", localized_names, category, color)
+VALUES(uuid_generate_v4(), now(), 'important', 0, now(), 0, 999, true, 'important', '{}', 'basic', 'red');

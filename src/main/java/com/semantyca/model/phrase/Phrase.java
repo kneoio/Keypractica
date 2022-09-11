@@ -80,6 +80,7 @@ public class Phrase extends SecureDataEntity<UUID> {
         private String basePronunciation;
         private String translationPronunciation;
 
+        private List<Label> labels = new ArrayList<>();
         public Builder setId(String id) {
             this.id = id;
             return this;
@@ -105,6 +106,11 @@ public class Phrase extends SecureDataEntity<UUID> {
             return this;
         }
 
+        public Builder setLabels(List<String> l) {
+            l.stream().forEach(v -> labels.add(new Label(v)));
+            return this;
+        }
+
         public Phrase build() {
             Phrase entity = new Phrase();
             if (id != null) {
@@ -123,6 +129,7 @@ public class Phrase extends SecureDataEntity<UUID> {
             entity.setTranslation(translation);
             entity.setBasePronunciation(basePronunciation);
             entity.setTranslationPronunciation(translationPronunciation);
+            entity.setLabels(labels);
             return entity;
         }
     }
