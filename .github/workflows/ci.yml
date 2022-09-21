@@ -38,11 +38,3 @@ jobs:
           rm: false
           source: "target/quarkus-app/"
           target: "${{ secrets.REMOTE_DIR }}"
-      - name: ls -a via ssh
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: ls -a
-          host: ${{ secrets.REMOTE_HOST }}
-          username: garygrossgarten
-          passphrase: ${{ secrets.SSH_KEY_PASSPHRASE }}
-          privateKey: ${{ secrets.SSH_KEY}}
