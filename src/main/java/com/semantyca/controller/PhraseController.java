@@ -14,7 +14,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 
 @Singleton
@@ -40,7 +39,7 @@ public class PhraseController {
 
     @POST
     @Path("/")
-    public Response create(PhraseDTO phraseDTO) throws  URISyntaxException {
+    public Response create(PhraseDTO phraseDTO) {
         try {
             return Response.created(new URI("phrases/" + phraseService.add(phraseDTO).getId().toString())).build();
         } catch (DocumentExistsException e) {
