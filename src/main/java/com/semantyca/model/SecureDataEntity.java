@@ -9,9 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public abstract class SecureDataEntity<T> extends DataEntity<T> {
-
-    private Map<Integer, RLSEntry> readers = new HashMap<>();
-
+    private Map<Long, RLSEntry> readers = new HashMap<>();
     public Collection<RLSEntry> getReaders() {
         return readers.values();
     }
@@ -20,9 +18,6 @@ public abstract class SecureDataEntity<T> extends DataEntity<T> {
         readers.put(reader.getReader(), reader);
         return this;
     }
-
-
-
     public RLSEntry getRLS(int reader) throws RLSIsNotNormalized {
         if (readers != null) {
             RLSEntry entry = readers.get(reader);

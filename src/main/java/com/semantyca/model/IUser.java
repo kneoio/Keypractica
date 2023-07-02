@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface IUser {
 
-    Integer getId();
+    long getId();
 
     String getLogin();
 

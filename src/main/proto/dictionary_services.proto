@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.semantyca.jirascope.grpc.dictionary";
+option java_outer_classname = "DictionaryGrpcServices";
+
+package jirascope.dictionary;
+
+service LanguageGrpcService {
+  rpc GetAll (Empty) returns (LanguageProtoList) {}
+}
+
+message Empty{}
+
+message MapWrapper {
+  map<string, string> namesAndValues = 1;
+}
+
+message LanguageProtoList {
+  repeated MapWrapper fieldsMap = 1;
+}
+
+

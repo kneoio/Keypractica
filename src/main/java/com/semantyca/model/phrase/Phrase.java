@@ -6,7 +6,7 @@ import com.semantyca.model.embedded.RLSEntry;
 import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.repository.glossary.Label;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -68,12 +68,22 @@ public class Phrase extends SecureDataEntity<UUID> {
         this.labels = labels;
     }
 
+    @Override
+    public UUID getIdentifier() {
+        return null;
+    }
+
+    @Override
+    public void setAuthor(long author) {
+
+    }
+
     public static class Builder {
         private String id;
-        private int author = AnonymousUser.ID;
-        private ZonedDateTime regDate = ZonedDateTime.now();
-        private ZonedDateTime lastModifiedDate = ZonedDateTime.now();
-        private int lastModifier = AnonymousUser.ID;
+        private Long author = AnonymousUser.ID;
+        private LocalDateTime regDate = LocalDateTime.now();
+        private LocalDateTime lastModifiedDate = LocalDateTime.now();
+        private Long lastModifier = AnonymousUser.ID;
         private String title = "";
         private String base;
         private String translation;
@@ -114,7 +124,7 @@ public class Phrase extends SecureDataEntity<UUID> {
         public Phrase build() {
             Phrase entity = new Phrase();
             if (id != null) {
-                entity.setId(UUID.fromString(id));
+             //   entity.setId(UUID.fromString(id));
             }
             entity.setRegDate(regDate);
             entity.setAuthor(author);

@@ -13,7 +13,6 @@ public abstract class SystemUser implements IUser {
 
     @Override
     public void setAuthorized(boolean isAuthorized) {
-
     }
 
     @Override
@@ -23,7 +22,6 @@ public abstract class SystemUser implements IUser {
     public void setLogin(String string) {
 
     }
-
     @Override
     public List<String> getRoles() {
         return new ArrayList<>();

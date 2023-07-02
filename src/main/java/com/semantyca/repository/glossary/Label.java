@@ -2,7 +2,7 @@ package com.semantyca.repository.glossary;
 
 import com.semantyca.localization.LanguageCode;
 import com.semantyca.model.DataEntity;
-import org.jdbi.v3.json.Json;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,7 +39,7 @@ public class Label extends DataEntity<UUID> {
         return localizedNames;
     }
 
-    @Json
+
     public Map<String, String> getLocNames() {
         Map<String , String> localizedNames = new HashMap<>();
         localizedNames.put("ENG","bla");
@@ -84,6 +84,11 @@ public class Label extends DataEntity<UUID> {
 
     public void setColor(String color) {
         this.color = color;
+    }
+
+    @Override
+    public UUID getIdentifier() {
+        return null;
     }
 
     public static class Builder {
@@ -133,7 +138,7 @@ public class Label extends DataEntity<UUID> {
         public Label build() {
             Label entity = new Label();
             if (id != null) {
-                entity.setId(UUID.fromString(id));
+                //entity.setId(UUID.fromString(id));
             }
             entity.setName(name);
             entity.setRank(rank);

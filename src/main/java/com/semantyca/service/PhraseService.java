@@ -1,28 +1,11 @@
 package com.semantyca.service;
 
-import com.semantyca.dto.FeedbackEntry;
-import com.semantyca.dto.IDTO;
-import com.semantyca.dto.PhraseDTO;
-import com.semantyca.dto.ProcessFeedback;
-import com.semantyca.dto.constant.MessageLevel;
-import com.semantyca.model.phrase.Phrase;
-import com.semantyca.model.user.AnonymousUser;
-import com.semantyca.repository.PhraseRepository;
-import com.semantyca.repository.exception.DocumentExistsException;
-import com.semantyca.repository.exception.DocumentModificationAccessException;
-import org.jdbi.v3.core.Jdbi;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PhraseService {
-    private static final Logger LOGGER = LoggerFactory.getLogger("PhraseService");
+   /* private static final Logger LOGGER = LoggerFactory.getLogger("PhraseService");
 
     private PhraseRepository repository;
 
@@ -98,5 +81,5 @@ public class PhraseService {
             LOGGER.debug("Document ${u} didnt delete", id);
         }
         return feedbackEntry;
-    }
+    }*/
 }

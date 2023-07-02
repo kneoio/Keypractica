@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @JsonPropertyOrder({"identifier", "type", "title", "pageName", "payloads"})
-public class ProcessFeedback extends PageOutcome {
+public class ProcessFeedback extends Page {
     List<FeedbackEntry> entries = new ArrayList<>();
 
     public void addEntry(FeedbackEntry entry){
@@ -35,8 +35,8 @@ public class ProcessFeedback extends PageOutcome {
         return OutcomeType.INFO;
     }
 
-    public Map<String, List> getPayloads() {
-        payloads.put("entries", entries);
-        return payloads;
+    public Map<String, List> getPayload() {
+        payload.put("entries", entries);
+        return payload;
     }
 }

@@ -1,24 +1,7 @@
 package com.semantyca.repository;
 
-import com.semantyca.model.embedded.RLSEntry;
-import com.semantyca.model.phrase.Phrase;
-import com.semantyca.repository.exception.DocumentModificationAccessException;
-import com.semantyca.repository.glossary.Label;
-import org.jdbi.v3.core.Handle;
-import org.jdbi.v3.core.Jdbi;
-
-import javax.inject.Inject;
-import javax.transaction.Transactional;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static com.semantyca.repository.AbstractRepository.EDIT_AND_DELETE_ARE_ALLOWED;
-import static com.semantyca.repository.AbstractRepository.EDIT_IS_ALLOWED;
-
 public class PhraseRepository {
-    private Jdbi jdbi;
+ /*   private Jdbi jdbi;
     private LabelRepository labelRepository;
 
     @Inject
@@ -137,6 +120,6 @@ public class PhraseRepository {
             }
         }
         return true;
-    }
+    }*/
 
 }

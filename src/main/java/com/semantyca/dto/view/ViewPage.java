@@ -36,7 +36,7 @@ public class ViewPage {
     }
 
     public ViewPage(List result) {
-        this.result = result;
+         this.result = result;
         this.count = result.size();
         this.maxPage = 1;
         this.pageNum = 1;

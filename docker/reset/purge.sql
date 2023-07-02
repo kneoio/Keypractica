@@ -1,5 +1,0 @@
-DROP TABLE IF EXISTS phrases;
-DROP TABLE IF EXISTS phrase_rls;
-DROP TABLE IF EXISTS phrase_labels;
-DROP TABLE IF EXISTS languages;
-DROP TABLE IF EXISTS labels;

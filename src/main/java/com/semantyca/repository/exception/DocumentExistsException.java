@@ -10,10 +10,10 @@ public class DocumentExistsException extends Exception {
     }
 
     public String getMessage() {
-        return "The document is exists";
+        return "{\"error\":\"" + String.format("The document '%s' is exists.", docId) + "\"}";
     }
 
-    public String getDeveloperMessage() {
-        return docId.toString() + " is exists";
+    public String getDetailedMessage() {
+        return String.format("DocumentExistsException: %s is exists", docId.toString());
     }
 }

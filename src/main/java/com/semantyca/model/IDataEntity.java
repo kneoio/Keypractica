@@ -4,39 +4,24 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"entityType", "id", "author", "regDate", "lastModifier", "lastModifiedDate", "title", "new"})
+@JsonPropertyOrder({"id", "author", "regDate", "lastModifier", "lastModifiedDate", "title"})
 public interface IDataEntity<K> {
-
-    void setId(K id);
-
-    K getId();
-
-    int getAuthor();
-
+    K getIdentifier();
+    void setAuthor(long author);
+    long getAuthor();
+    void setRegDate(LocalDateTime reg_date);
     @JsonFormat(pattern="dd.MM.yyyy HH:mm Z")
-    ZonedDateTime getRegDate();
-
+    LocalDateTime getRegDate();
     boolean isEditable();
-
     default String getTitle(){
         return toString();
     }
-
-    void setTitle(String title);
-
-    void setLastModifiedDate(ZonedDateTime lastModifiedDate);
-
+    void setLastModifiedDate(LocalDateTime lastModifiedDate);
     @JsonFormat(pattern="dd.MM.yyyy HH:mm Z")
-    ZonedDateTime getLastModifiedDate();
-
-    void setLastModifier(int last_mod_user);
-
-    void setRegDate(ZonedDateTime reg_date);
-
-    void setAuthor(int author);
-
-
+    LocalDateTime getLastModifiedDate();
+    void setLastModifier(long last_mod_user);
+    long getLastModifier();
 }

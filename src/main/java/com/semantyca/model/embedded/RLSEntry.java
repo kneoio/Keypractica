@@ -17,16 +17,16 @@ public class RLSEntry {
     public static int EDIT_AND_DELETE_ARE_ALLOWED = 3;
 
     private ZonedDateTime readingTime;
-    private int reader;
+    private long reader;
     private String readerName;
     private int accessLevel = NO_ACCESS;
 
     @JsonIgnore
-    public int getReader() {
+    public long getReader() {
         return reader;
     }
 
-    public RLSEntry setReader(int reader) {
+    public RLSEntry setReader(long reader) {
         this.reader = reader;
         return this;
     }

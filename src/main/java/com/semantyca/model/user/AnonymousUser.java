@@ -3,9 +3,9 @@ package com.semantyca.model.user;
 
 public class AnonymousUser extends SystemUser {
     public final static String USER_NAME = "anonymous";
-    public final static int ID = 0;
+    public final static long ID = 0L;
 
-    public Integer getId() {
+    public long getId() {
         return ID;
     }
 
