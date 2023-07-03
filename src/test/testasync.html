@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SSE Example</title>
+    <script>
+        var eventSource;
+
+        function startSSE() {
+            eventSource = new EventSource("http://localhost:38707/users/stream");
+            eventSource.onmessage = function(event) {
+                var data = event.data;
+                console.log("Received data: ", data);
+                document.getElementById("dataContainer").innerHTML += data;
+            };
+
+            eventSource.onerror = function(event) {
+                console.error("Error occurred: ", event);
+            };
+        }
+
+        function stopSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        }
+    </script>
+</head>
+<body>
+<h1>SSE Example</h1>
+<button onclick="startSSE()">Start SSE</button>
+<button onclick="stopSSE()">Stop SSE</button>
+<div id="dataContainer"></div>
+</body>
+</html>

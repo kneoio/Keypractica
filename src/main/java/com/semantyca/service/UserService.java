@@ -4,12 +4,12 @@ import com.semantyca.dto.document.UserDTO;
 import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.model.user.User;
 import com.semantyca.repository.UserRepository;
+import io.smallrye.mutiny.Multi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -18,8 +18,8 @@ public class UserService {
     @Inject
     private UserRepository repository;
 
-    public List<User> getAll() {
-        return repository.getAllUsers(100, 0);
+    public Multi<User> getAll() {
+        return repository.getAllUsers();
     }
 
     public User get(String id) {

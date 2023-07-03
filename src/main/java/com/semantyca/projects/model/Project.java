@@ -6,15 +6,11 @@ import com.semantyca.projects.model.constants.ProjectStatusType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
 
 @Setter
 @Getter
 @NoArgsConstructor
-@NodeEntity
 public class Project extends DataEntity<String> {
-    @Id
     private String identifier;
     protected String name;
     private ProjectStatusType status;

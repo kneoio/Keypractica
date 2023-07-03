@@ -1,10 +1,10 @@
 package com.semantyca.controller;
 
 import com.semantyca.dto.document.UserDTO;
-import com.semantyca.dto.view.ViewPage;
 import com.semantyca.model.user.User;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
 import com.semantyca.service.UserService;
+import io.smallrye.mutiny.Multi;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -22,8 +22,15 @@ public class UserController {
 
     @GET
     @Path("/")
-    public Response get()  {
-        return Response.ok(new ViewPage(userService.getAll())).build();
+    public Multi<User> get()  {
+        return userService.getAll();
+    }
+
+    @GET
+    @Path("/stream")
+    @Produces(MediaType.SERVER_SENT_EVENTS)
+    public Multi<User> streamData() {
+        return userService.getAll();
     }
 
     @GET

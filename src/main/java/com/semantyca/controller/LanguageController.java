@@ -8,15 +8,18 @@ import com.semantyca.projects.controller.ProjectController;
 import com.semantyca.repository.exception.DocumentExistsException;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
 import com.semantyca.service.LanguageService;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
+import java.util.Set;
 
 @Path("/languages")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,9 +31,15 @@ public class LanguageController {
     @Inject
     LanguageService service;
 
+    @Inject
+    JsonWebToken jwt;
+
     @GET
     @Path("/")
+    @PermitAll
     public Response get()  {
+        String userName = jwt.getName();
+        Set<String> userGroups = jwt.getGroups();
         return Response.ok(new ViewPage(service.getAll())).build();
     }
 

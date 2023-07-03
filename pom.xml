@@ -11,6 +11,11 @@
     <maven.compiler.target>20</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <quarkus.version>3.2.0.Final</quarkus.version>
+    <quarkus-grpc-protoc-plugin-version>3.2.0.Final</quarkus-grpc-protoc-plugin-version>
+    <protobuf-maven-plugin-version>0.6.1</protobuf-maven-plugin-version>
+    <grpc.version>1.55.1</grpc.version>
+    <protoc.version>3.22.0</protoc.version>
+    <os-maven-plugin-version>1.7.1</os-maven-plugin-version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -32,27 +37,27 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-health</artifactId>
     </dependency>
-<!--    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-jsr310</artifactId>
-      <version>2.15.2</version>  &lt;!&ndash; Use the version that matches your Jackson version &ndash;&gt;
-    </dependency>-->
-    <dependency>
-      <groupId>org.neo4j</groupId>
-      <artifactId>neo4j-ogm-quarkus</artifactId>
-      <version>3.0.0</version>
-    </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-resteasy-reactive-jackson</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-grpc</artifactId>
+      <groupId>io.quarkiverse.mybatis</groupId>
+      <artifactId>quarkus-mybatis</artifactId>
+      <version>2.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <version>42.2.5</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-orm-panache</artifactId>
+      <artifactId>quarkus-reactive-pg-client</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-grpc</artifactId>
     </dependency>
     <dependency>
       <groupId>jakarta.validation</groupId>
@@ -64,11 +69,6 @@
       <artifactId>lombok</artifactId>
       <version>1.18.22</version>
     </dependency>
-<!--    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-census</artifactId>
-      <version>1.41.0</version>
-    </dependency>-->
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-jwt-build</artifactId>
@@ -100,8 +100,22 @@
       <version>3.21.0</version>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>3.12.4</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>${os-maven-plugin-version}</version>
+      </extension>
+    </extensions>
     <finalName>quarkus-jirascope</finalName>
     <plugins>
       <plugin>
@@ -113,8 +127,41 @@
           <execution>
             <goals>
               <goal>build</goal>
-              <goal>generate-code</goal>
-              <goal>generate-code-tests</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>${protobuf-maven-plugin-version}</version>
+        <configuration>
+          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
+          <pluginId>grpc-java</pluginId>
+          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+          <protocPlugins>
+            <protocPlugin>
+              <id>quarkus-grpc-protoc-plugin</id>
+              <groupId>io.quarkus</groupId>
+              <artifactId>quarkus-grpc-protoc-plugin</artifactId>
+              <version>${quarkus-grpc-protoc-plugin-version}</version>
+              <mainClass>io.quarkus.grpc.protoc.plugin.MutinyGrpcGenerator</mainClass>
+            </protocPlugin>
+          </protocPlugins>
+        </configuration>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <goals>
+              <goal>compile</goal>
+              <goal>compile-custom</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-compile</id>
+            <goals>
+              <goal>test-compile</goal>
+              <goal>test-compile-custom</goal>
             </goals>
           </execution>
         </executions>

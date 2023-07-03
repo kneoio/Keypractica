@@ -1,9 +1,10 @@
 package com.semantyca.grpc;
 
-import com.semantyca.jirascope.grpc.dictionary.Empty;
-import com.semantyca.jirascope.grpc.dictionary.LanguageGrpcService;
-import com.semantyca.jirascope.grpc.dictionary.LanguageProtoList;
-import com.semantyca.jirascope.grpc.dictionary.MapWrapper;
+
+import com.semantyca.jirascope.grpc.dictionary.lang.Empty;
+import com.semantyca.jirascope.grpc.dictionary.lang.LanguageGrpcService;
+import com.semantyca.jirascope.grpc.dictionary.lang.LanguageProtoList;
+import com.semantyca.jirascope.grpc.dictionary.lang.MapWrapper;
 import com.semantyca.model.Language;
 import com.semantyca.service.LanguageService;
 import io.quarkus.grpc.GrpcService;

@@ -11,6 +11,7 @@ public class Workspace extends Page {
 
     public Workspace(LanguageService service) throws JsonProcessingException {
         addPayload("appname", "Jirascope");
+        addPayload("redirect", "projects");
         addPayload(new ViewPage(service.getAll()));
         System.out.println(new ObjectMapper().writeValueAsString(payload));
     }

@@ -24,7 +24,7 @@ public class LanguageService {
         return repository.findById(UUID.fromString(id));
     }
 
-    public String  add(LanguageDTO dto) throws DocumentExistsException {
+    public String add(LanguageDTO dto) throws DocumentExistsException {
         Language node = new Language.Builder()
                 .setCode(dto.code())
                 .setLocalizedNames(dto.localizedNames())
@@ -37,5 +37,9 @@ public class LanguageService {
                 .setCode(dto.code())
                 .build();
         return repository.update(user);
+    }
+
+    public int delete (String id) {
+        return repository.delete(UUID.fromString(id), AnonymousUser.ID);
     }
 }

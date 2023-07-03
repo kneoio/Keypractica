@@ -9,16 +9,13 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.neo4j.ogm.annotation.*;
 
 import java.util.*;
 
 @Setter
 @Getter
 @NoArgsConstructor
-@NodeEntity
 public class User extends DataEntity<Long> {
-    @Id
     private Long identifier;
     @NotBlank
     private String login;
@@ -28,13 +25,9 @@ public class User extends DataEntity<Long> {
     private String email;
     private List<Application> applications = new ArrayList<>();
     @JsonIgnore
-    @Transient
     boolean authorized;
     private List<String> roles = new ArrayList<>();
-
-    @Relationship(type = "DEFAULT_LANG")
     private Language defaultLang;
-    @Property
     private TimeZone timeZone;
 
     public static class Builder {

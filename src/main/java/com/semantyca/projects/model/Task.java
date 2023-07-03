@@ -1,23 +1,28 @@
 package com.semantyca.projects.model;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.semantyca.model.DataEntity;
 import com.semantyca.model.Language;
 import com.semantyca.projects.model.constants.ProjectStatusType;
+import com.semantyca.util.CustomLocalDateTimeDeserializer;
+import com.semantyca.util.CustomLocalDateTimeSerializer;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
+
+import java.time.LocalDateTime;
 
 @Setter
 @Getter
 @NoArgsConstructor
-@NodeEntity
 public class Task extends DataEntity<String> {
-    @Id
     private String identifier;
     private String body;
     protected Long assignee;
+    @JsonDeserialize(using = CustomLocalDateTimeDeserializer.class)
+    @JsonSerialize(using = CustomLocalDateTimeSerializer.class)
+    protected LocalDateTime targetDate;
     private ProjectStatusType status;
     private Language primaryLang;
     private int priority;

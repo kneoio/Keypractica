@@ -2,13 +2,9 @@ package com.semantyca.model;
 
 import com.semantyca.localization.LanguageCode;
 import com.semantyca.model.constants.ApplicationType;
-import com.semantyca.util.MapToStringConverter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.typeconversion.Convert;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,13 +12,10 @@ import java.util.Map;
 @Setter
 @Getter
 @NoArgsConstructor
-@NodeEntity
 public class Application extends DataEntity<String> {
-    @Id
     private String identifier;
     protected String name;
     protected ApplicationType type;
-    @Convert(MapToStringConverter.class)
     private Map<LanguageCode, String> localizedNames = new HashMap<>();
     private boolean isOn;
     private int position;
