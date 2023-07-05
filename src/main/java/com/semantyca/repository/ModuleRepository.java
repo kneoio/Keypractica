@@ -38,9 +38,9 @@ public class ModuleRepository {
         return null;
     }
 
-    public String insert(Language node, Long user) throws DocumentExistsException {
+    public UUID insert(Language node, Long user) throws DocumentExistsException {
 
-        return node.getIdentifier();
+        return node.getId();
     }
 
 

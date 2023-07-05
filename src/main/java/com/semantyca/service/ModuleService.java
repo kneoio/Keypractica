@@ -31,7 +31,7 @@ public class ModuleService {
                 .setCode(dto.code())
                 .setLocalizedNames(dto.localizedNames())
                 .build();
-        return repository.insert(node, AnonymousUser.ID);
+        return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {

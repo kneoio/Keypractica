@@ -57,7 +57,7 @@ public class OrganizationRepository {
         return null;
     }
 
-    public String insert(Project node, Long user) {
+    public UUID insert(Project node, Long user) {
 
         return node.getId();
     }

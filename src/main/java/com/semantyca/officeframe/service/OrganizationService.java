@@ -35,7 +35,7 @@ public class OrganizationService {
                 .setName(dto.name())
                 .setCoder(dto.coder())
                 .build();
-        return repository.insert(node, AnonymousUser.ID);
+        return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {

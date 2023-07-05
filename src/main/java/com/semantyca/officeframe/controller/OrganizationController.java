@@ -60,7 +60,7 @@ public class OrganizationController {
     @PUT
     @Path("/")
     public Response update(LanguageDTO dto) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(dto).getIdentifier())).build();
+        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 
     @DELETE
