@@ -1,4 +1,4 @@
-package com.semantyca.model.constants;
+package com.semantyca.model.cnst;
 
 public enum ApplicationType {
     UNKNOWN(0, "unknown", "???"), DICTIONARY(100, "dictionary", "dict");

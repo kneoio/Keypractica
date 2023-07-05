@@ -1,4 +1,4 @@
-package com.semantyca.dto.constant;
+package com.semantyca.dto.cnst;
 
 public enum OutcomeType {
     //default

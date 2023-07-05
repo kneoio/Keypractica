@@ -1,4 +1,4 @@
-package com.semantyca.dto.constant;
+package com.semantyca.dto.cnst;
 
 public enum MessageLevel {
     SUCCESS("success"), MISFORTUNE("misfortune"), FAILURE("failure");

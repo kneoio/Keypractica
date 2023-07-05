@@ -10,7 +10,17 @@ import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public abstract class AbstractPage<T extends AbstractPage> {
-    protected  Map<String, Object> payload = new LinkedHashMap();
+        private String title;
+    protected  Map<String, Object> payload = new LinkedHashMap<>();
+
+    public String getTitle() {
+        return title;
+    }
+
+    public AbstractPage<T> setTitle(String title) {
+        this.title = title;
+        return this;
+    }
 
     @JsonIgnore
     public T addPayload(Object payload){

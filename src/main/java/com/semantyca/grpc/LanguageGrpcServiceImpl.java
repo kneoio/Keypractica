@@ -4,14 +4,10 @@ package com.semantyca.grpc;
 import com.semantyca.jirascope.grpc.dictionary.lang.Empty;
 import com.semantyca.jirascope.grpc.dictionary.lang.LanguageGrpcService;
 import com.semantyca.jirascope.grpc.dictionary.lang.LanguageProtoList;
-import com.semantyca.jirascope.grpc.dictionary.lang.MapWrapper;
-import com.semantyca.model.Language;
 import com.semantyca.service.LanguageService;
 import io.quarkus.grpc.GrpcService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
-
-import java.util.List;
 @GrpcService
 public class LanguageGrpcServiceImpl implements LanguageGrpcService {
 
@@ -20,16 +16,14 @@ public class LanguageGrpcServiceImpl implements LanguageGrpcService {
 
     @Override
     public Uni<LanguageProtoList> getAll(Empty request) {
-        List<Language> languages = service.getAll();
-        List<MapWrapper> iterable = languages.stream()
-                .map(v -> {
-                    MapWrapper mapWrapper = MapWrapper.newBuilder()
-                            .putAllNamesAndValues(v.getValuesAsMap())
-                            .build();
-                    return mapWrapper;
-                }).toList();
-        return Uni.createFrom().item(() ->
-                LanguageProtoList.newBuilder().addAllFieldsMap(iterable).build()
-        );
+        /*Multi<Language> languages = service.getAll();
+        Multi<LanguageProto> multiUserProtos = languages
+                .map(user -> UserProto.newBuilder()
+                        .setId("33L")
+                        .setLogin(user.getLogin())
+//                        .setEmail(user.getEmail())
+                        .build());
+        return multiUserProtos;*/
+       return null;
     }
 }

@@ -1,7 +1,7 @@
 package com.semantyca.model;
 
 import com.semantyca.localization.LanguageCode;
-import com.semantyca.model.constants.ApplicationType;
+import com.semantyca.model.cnst.ApplicationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,8 +12,7 @@ import java.util.Map;
 @Setter
 @Getter
 @NoArgsConstructor
-public class Application extends DataEntity<String> {
-    private String identifier;
+public class Module extends DataEntity<String> {
     protected String name;
     protected ApplicationType type;
     private Map<LanguageCode, String> localizedNames = new HashMap<>();
@@ -23,7 +22,7 @@ public class Application extends DataEntity<String> {
     public static class Builder {
         private String name;
         private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ApplicationType.DICTIONARY.getName());
-        protected ApplicationType type = ApplicationType.DICTIONARY;
+        protected ApplicationType type = ApplicationType.UNKNOWN;
 
         public Builder setName(String name) {
             this.name = name;
@@ -44,16 +43,12 @@ public class Application extends DataEntity<String> {
             this.localizedNames = languageCodeStringMap;
             return this;
         }
-        public Application build() {
-            Application newNode = new Application();
+        public Module build() {
+            Module newNode = new Module();
             newNode.setName(name);
             newNode.setType(type);
             newNode.setLocalizedNames(localizedNames);
             return newNode;
         }
-
-
-
     }
-
 }

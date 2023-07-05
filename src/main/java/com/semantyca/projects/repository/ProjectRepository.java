@@ -2,9 +2,13 @@ package com.semantyca.projects.repository;
 
 import com.semantyca.model.Language;
 import com.semantyca.projects.model.Project;
+import com.semantyca.projects.model.constants.ProjectStatusType;
+import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.pgclient.PgPool;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -12,15 +16,30 @@ import java.util.UUID;
 @ApplicationScoped
 public class ProjectRepository {
 
+    @Inject
+    PgPool client;
 
-    public List<Project> getAll(int i, int i1) {
-        return null;
-    }
+    public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
 
-    private static <Project> List<Project> resultList(Iterable<Project> result) {
-        ArrayList<Project> list = new ArrayList<>();
-        result.forEach(list::add);
-        return list;
+
+        String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.readers = " + userID;
+        if (limit > 0 ) {
+            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+        }
+
+        return client.query(sql)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(row -> new Project.Builder()
+                        .setName(row.getString("name"))
+                        .setFinishDate(row.getLocalDate("finishdate"))
+                        .setStatus(ProjectStatusType.valueOf(row.getString("status")))
+                        .setPosition(999)
+                        //.setCoder(row.getString("programmer"))
+                        //.setTester(row.getString("tester"))
+                        .setComment(row.getString("comment"))
+                        .build())
+                        .collect().asList();
     }
 
     public Project findById(UUID uuid) {
@@ -31,9 +50,9 @@ public class ProjectRepository {
         return null;
     }
 
-    public String insert(Project node, Long user) {
+    public UUID insert(Project node, Long user) {
 
-        return node.getIdentifier();
+        return node.getId();
     }
 
 

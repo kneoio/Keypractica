@@ -1,9 +1,12 @@
 
 package com.semantyca.controller;
 
+import com.semantyca.dto.actions.ActionBar;
 import com.semantyca.dto.document.LanguageDTO;
+import com.semantyca.dto.form.FormPage;
+import com.semantyca.dto.view.View;
+import com.semantyca.dto.view.ViewOptionsFactory;
 import com.semantyca.dto.view.ViewPage;
-import com.semantyca.model.Language;
 import com.semantyca.projects.controller.ProjectController;
 import com.semantyca.repository.exception.DocumentExistsException;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
@@ -19,7 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.Set;
 
 @Path("/languages")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,16 +40,29 @@ public class LanguageController {
     @Path("/")
     @PermitAll
     public Response get()  {
-        String userName = jwt.getName();
-        Set<String> userGroups = jwt.getGroups();
-        return Response.ok(new ViewPage(service.getAll())).build();
+        ViewPage viewPage = new ViewPage();
+        viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
+        View<LanguageDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
+        viewPage.addPayload("view_data", view);
+        return Response.ok(viewPage).build();
+    }
+
+    @GET
+    @Path("/code/{code}")
+    public Response getByCode(@PathParam("code") String code)  {
+        FormPage page = new FormPage();
+        page.addPayload("form_actions", new ActionBar());
+        page.addPayload("form_data", service.findByCode(code.toUpperCase()).await().indefinitely());
+        return Response.ok(page).build();
     }
 
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") String id)  {
-        Language user = service.get(id);
-        return Response.ok(user).build();
+        FormPage page = new FormPage();
+        page.addPayload("form_actions", new ActionBar());
+        page.addPayload("form_data", service.get(id).await().indefinitely());
+        return Response.ok(page).build();
     }
 
     @POST
@@ -67,7 +82,7 @@ public class LanguageController {
     @PUT
     @Path("/")
     public Response update(LanguageDTO dto) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(dto).getIdentifier())).build();
+        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 
     @DELETE

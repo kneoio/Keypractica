@@ -2,15 +2,15 @@ package com.semantyca.dto;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.semantyca.dto.constant.MessageLevel;
-import com.semantyca.dto.constant.OutcomeType;
+import com.semantyca.dto.cnst.MessageLevel;
+import com.semantyca.dto.cnst.OutcomeType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @JsonPropertyOrder({"identifier", "type", "title", "pageName", "payloads"})
-public class ProcessFeedback extends Page {
+public class ProcessFeedback extends AbstractPage {
     List<FeedbackEntry> entries = new ArrayList<>();
 
     public void addEntry(FeedbackEntry entry){

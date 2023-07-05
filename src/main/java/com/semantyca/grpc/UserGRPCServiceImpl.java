@@ -18,7 +18,7 @@ public class UserGRPCServiceImpl implements UserGRPCService {
 
     @Override
     public Multi<UserProto> getAllUsers(Empty request) {
-        Multi<User> multiUsers = service.getAll();
+        Multi<User> multiUsers = (Multi<User>) service.getAll();
         Multi<UserProto> multiUserProtos = multiUsers
                 .map(user -> UserProto.newBuilder()
                         .setId("33L")

@@ -7,21 +7,22 @@ import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Setter
 @Getter
 @NoArgsConstructor
-public class Language extends DataEntity<String> {
-    private String identifier;
+public class Language extends DataEntity<UUID> {
     protected String name;
     private Map<LanguageCode, String> localizedNames = new HashMap<>();
     private LanguageCode code = LanguageCode.UNKNOWN;
     private boolean isOn;
     private int position;
-    private boolean isCyrillic;
 
     public static class Builder {
         private String code = LanguageCode.ENG.toString();
+        private boolean isOn;
+        private int position;
         private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang());
 
         public Builder setCode(String code) {
@@ -38,9 +39,23 @@ public class Language extends DataEntity<String> {
             this.localizedNames = languageCodeStringMap;
             return this;
         }
+
+        public Builder setOn(boolean on) {
+            isOn = on;
+            return this;
+        }
+
+        public Builder setPosition(int position) {
+            this.position = position;
+            return this;
+        }
+
+
         public Language build() {
             Language newNode = new Language();
             newNode.setCode(LanguageCode.valueOf(code));
+            newNode.setOn(isOn);
+            newNode.setPosition(position);
             newNode.setLocalizedNames(localizedNames);
             return newNode;
         }

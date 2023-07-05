@@ -2,7 +2,7 @@ package com.semantyca.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.semantyca.localization.LanguageCode;
-import com.semantyca.model.Application;
+import com.semantyca.model.Module;
 import com.semantyca.model.DataEntity;
 import com.semantyca.model.Language;
 import jakarta.validation.constraints.NotBlank;
@@ -23,7 +23,7 @@ public class User extends DataEntity<Long> {
     @NotBlank
     private String pwd;
     private String email;
-    private List<Application> applications = new ArrayList<>();
+    private List<Module> modules = new ArrayList<>();
     @JsonIgnore
     boolean authorized;
     private List<String> roles = new ArrayList<>();
@@ -38,7 +38,7 @@ public class User extends DataEntity<Long> {
         private List<String> roles;
         private Language defaultLang = new Language.Builder().build();
 
-        private List<Application> applications = Arrays.asList(new Application.Builder().build());
+        private List<Module> modules = Arrays.asList(new Module.Builder().build());
 
         public Builder setLogin(String login) {
             this.login = login;
@@ -81,7 +81,7 @@ public class User extends DataEntity<Long> {
             newUser.setEmail(email);
             newUser.setRoles(roles);
             newUser.setTimeZone(timeZone);
-            newUser.setApplications(applications);
+            newUser.setModules(modules);
             newUser.setDefaultLang(defaultLang);
             return newUser;
         }

@@ -1,7 +1,7 @@
 package com.semantyca.dto;
 
 
-import com.semantyca.dto.constant.MessageLevel;
+import com.semantyca.dto.cnst.MessageLevel;
 
 public class FeedbackEntry {
     private String id;

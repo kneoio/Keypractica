@@ -3,8 +3,11 @@ package com.semantyca.projects.service;
 import com.semantyca.dto.document.LanguageDTO;
 import com.semantyca.model.Language;
 import com.semantyca.model.user.AnonymousUser;
-import com.semantyca.repository.LanguageRepository;
+import com.semantyca.projects.dto.ProjectDTO;
+import com.semantyca.projects.model.Project;
+import com.semantyca.projects.repository.ProjectRepository;
 import com.semantyca.repository.exception.DocumentExistsException;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -15,24 +18,24 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class ProjectService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProjectService.class.getSimpleName());
+    private static final Logger LOGGER = LoggerFactory.getLogger("ProjectService");
     @Inject
-    private LanguageRepository repository;
+    private ProjectRepository repository;
 
-    public List<Language> getAll() {
-        return repository.getAll(100, 0);
+    public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
+        return repository.getAll(limit, offset, userID);
     }
 
-    public Language get(String id) {
+    public Project get(String id) {
         return repository.findById(UUID.fromString(id));
     }
 
-    public String  add(LanguageDTO dto) throws DocumentExistsException {
-        Language node = new Language.Builder()
-                .setCode(dto.code())
-                .setLocalizedNames(dto.localizedNames())
+    public String  add(ProjectDTO dto) throws DocumentExistsException {
+        Project node = new Project.Builder()
+                .setName(dto.name())
+                .setCoder(dto.coder())
                 .build();
-        return repository.insert(node, AnonymousUser.ID);
+        return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {

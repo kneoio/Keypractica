@@ -1,10 +1,12 @@
 package com.semantyca.service;
 
 import com.semantyca.dto.document.LanguageDTO;
+import com.semantyca.localization.LanguageCode;
 import com.semantyca.model.Language;
 import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.repository.LanguageRepository;
 import com.semantyca.repository.exception.DocumentExistsException;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -16,11 +18,15 @@ public class LanguageService {
     @Inject
     private LanguageRepository repository;
 
-    public List<Language> getAll() {
-        return repository.getAll(100, 0);
+    public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
+        return repository.getAll(limit, offset);
     }
 
-    public Language get(String id) {
+    public Uni<Language> findByCode(String code) {
+        return repository.findByCode(LanguageCode.valueOf(code));
+    }
+
+    public Uni<Language> get(String id) {
         return repository.findById(UUID.fromString(id));
     }
 
@@ -29,7 +35,7 @@ public class LanguageService {
                 .setCode(dto.code())
                 .setLocalizedNames(dto.localizedNames())
                 .build();
-        return repository.insert(node, AnonymousUser.ID);
+        return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {

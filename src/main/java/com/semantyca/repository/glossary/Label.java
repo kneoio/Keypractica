@@ -86,7 +86,6 @@ public class Label extends DataEntity<UUID> {
         this.color = color;
     }
 
-    @Override
     public UUID getIdentifier() {
         return null;
     }

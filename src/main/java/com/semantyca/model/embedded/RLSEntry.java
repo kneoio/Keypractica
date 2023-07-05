@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.semantyca.model.IUser;
+import com.semantyca.model.user.User;
 
 import java.time.ZonedDateTime;
 
@@ -75,7 +75,7 @@ public class RLSEntry {
         return readerName;
     }
 
-    public void setReaderName(IUser user) {
-        this.readerName = user.getName();
+    public void setReaderName(User user) {
+        this.readerName = user.getTitle();
     }
 }

@@ -5,11 +5,13 @@ import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.model.user.User;
 import com.semantyca.repository.UserRepository;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -18,8 +20,12 @@ public class UserService {
     @Inject
     private UserRepository repository;
 
-    public Multi<User> getAll() {
-        return repository.getAllUsers();
+    public Uni<List<User>> getAll() {
+        return repository.getAll();
+    }
+
+    public Multi<User> getAllStream() {
+        return repository.getAllStream();
     }
 
     public User get(String id) {
