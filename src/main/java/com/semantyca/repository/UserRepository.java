@@ -1,23 +1,29 @@
 package com.semantyca.repository;
 
+import com.semantyca.model.user.UndefinedUser;
 import com.semantyca.model.user.User;
 import com.semantyca.server.EnvConst;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowSet;
+import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.Duration;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @ApplicationScoped
-public class UserRepository {
+public class UserRepository extends Repository {
 
     @Inject
     PgPool client;
 
-    private static Map<String, Long> userCache = new HashMap();
+    private static Map<Long, String> userCache = new HashMap();
 
     public Uni<List<User>> getAll() {
         return client.query(String.format("SELECT * FROM _users LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
@@ -32,40 +38,51 @@ public class UserRepository {
                 .execute()
                 .onItem().transformToMulti(set -> Multi.createFrom().iterable(set))
                 .onItem().call(row -> Uni.createFrom().item(row).onItem().delayIt().by(Duration.ofMillis(100)))
-                .onItem().transform(row -> new User.Builder().setLogin (row.getString("login")).build());
+                .onItem().transform(row -> new User.Builder().setLogin(row.getString("login")).build());
     }
-    public Long getId(String login) {
-        Long id =  userCache.get(login);
-        if (id == null) {
-          /*  return Uni.createFrom().completionStage(client.preparedQuery("SELECT id FROM _users WHERE login = \$1", Tuple.of(username))
-                            .thenApply(pgRowSet -> {
-                                RowIterator<Row> iterator = pgRowSet.iterator();
-                                if (iterator.hasNext()) {
-                                    return iterator.next().getLong("id");
-                                } else {
-                                    return null;
-                                }
-                            })
-            );*/
-            userCache.put(login, id);
+
+    public Uni<User> getId(String login) {
+        return client.preparedQuery("SELECT * FROM _users WHERE login = '$1'")
+                .execute(Tuple.of(login))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+    }
+
+    public Uni<Optional<User>> findById(Long id) {
+        return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
+                .execute(Tuple.of(id))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+    }
+
+    public String getName(Long id) {
+        final String[] name = {userCache.get(id)};
+        if (name[0] == null) {
+            findById(id).onItem().ifNotNull().transform(user -> user.get().getLogin()).onFailure().recoverWithItem(UndefinedUser.USER_NAME).invoke(n -> {
+                userCache.put(id, n);
+                name[0] = n;
+            }).subscribe().with(item -> {});
         }
-        return id;
+        return name[0];
+
     }
 
-
-    public User findById(UUID uuid) {
-        return null;
-    }
-
-    public Optional<User> findByValue(String base) {
-        return null;
+    private User from(Row row) {
+        User user = new User.Builder()
+                .setLogin(row.getString("login"))
+                .setEmail(row.getString("email"))
+                .setDefaultLang(row.getInteger("default_lang"))
+                .setRoles(List.of())
+                .setTimeZone(TimeZone.getDefault())
+                .build();
+        user.setId(row.getLong("id"));
+        user.setRegDate(ZonedDateTime.from(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault())));
+        return user;
     }
 
     public Long insert(User node, Long user) {
-
-        return node.getIdentifier();
+        return node.getId();
     }
-
 
     public User update(User user) {
 

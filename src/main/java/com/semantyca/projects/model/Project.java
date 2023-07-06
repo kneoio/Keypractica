@@ -15,9 +15,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Project extends SecureDataEntity<UUID> {
     protected String name;
-    private String manager;
-    private String coder;
-    private String tester;
+    private long manager;
+    private long coder;
+    private long tester;
     private ProjectStatusType status;
     private Language primaryLang;
     private int position;
@@ -25,31 +25,37 @@ public class Project extends SecureDataEntity<UUID> {
     private String comment;
 
     public static class Builder {
+        private UUID id;
         private String name;
-        private String manager;
-        private String coder;
-        private String tester;
+        private int manager;
+        private int coder;
+        private int tester;
         private Language primaryLang = new Language.Builder().build();
         private LocalDate finishDate;
         private ProjectStatusType status = ProjectStatusType.DRAFT;
         private int position = 999;
         private String comment;
+
+        public Builder setId(UUID id) {
+            this.id = id;
+            return this;
+        }
         public Builder setName(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder setManager(String manager) {
+        public Builder setManager(int manager) {
             this.manager = manager;
             return this;
         }
 
-        public Builder setCoder(String coder) {
+        public Builder setCoder(int coder) {
             this.coder = coder;
             return this;
         }
 
-        public Builder setTester(String tester) {
+        public Builder setTester(int tester) {
             this.tester = tester;
             return this;
         }
@@ -81,6 +87,7 @@ public class Project extends SecureDataEntity<UUID> {
 
         public Project build() {
             Project newNode = new Project();
+            newNode.setId(id);
             newNode.setName(name);
             newNode.setManager(manager);
             newNode.setCoder(coder);

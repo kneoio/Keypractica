@@ -12,7 +12,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -22,7 +21,7 @@ public class ModuleRepository {
     PgPool client;
 
     public Uni<List<Module>> getAll() {
-        return client.query(String.format("SELECT * FROM _apps LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
+        return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(row -> new Module.Builder().setName(row.getString("name")).build())
@@ -31,10 +30,6 @@ public class ModuleRepository {
 
     public Language findById(UUID uuid) {
 
-        return null;
-    }
-
-    public Optional<Language> findByValue(String base) {
         return null;
     }
 

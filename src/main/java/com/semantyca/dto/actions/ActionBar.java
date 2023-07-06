@@ -1,9 +1,16 @@
 package com.semantyca.dto.actions;
 
 
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.util.ArrayList;
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Setter
+@Getter
+@NoArgsConstructor
 public class ActionBar {
     public String caption;
     public String hint;
@@ -12,16 +19,5 @@ public class ActionBar {
     public ActionBar addAction(Action action) {
         actions.add(action);
         return this;
-    }
-
-    public ActionBar addAction(List<Action> actions) {
-        for (Action action : actions) {
-            addAction(action);
-        }
-        return this;
-    }
-
-    public ArrayList<Action> getActions() {
-        return actions;
     }
 }

@@ -1,6 +1,8 @@
 package com.semantyca.controller;
 
+import com.semantyca.dto.actions.ActionBar;
 import com.semantyca.dto.document.UserDTO;
+import com.semantyca.dto.form.FormPage;
 import com.semantyca.dto.view.View;
 import com.semantyca.dto.view.ViewOptionsFactory;
 import com.semantyca.dto.view.ViewPage;
@@ -8,6 +10,7 @@ import com.semantyca.model.user.User;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
 import com.semantyca.service.UserService;
 import io.smallrye.mutiny.Multi;
+import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -25,7 +28,7 @@ public class UserController {
 
     @GET
     @Path("/")
-    public Response get()  {
+    public Response get() {
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
         View<User> view = new View<>(service.getAll().await().indefinitely());
@@ -43,9 +46,14 @@ public class UserController {
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id)  {
-        User user = service.get(id);
-        return Response.ok(user).build();
+    public Uni<Response> getById(@PathParam("id") String id) {
+        FormPage page = new FormPage();
+        page.addPayload("form_actions", new ActionBar());
+        return service.get(id).onItem().transform(userOptional -> {
+            userOptional.ifPresentOrElse(user ->  page.addPayload("form_data", user),
+                    () ->  page.addPayload("form_data", "no_data"));
+            return Response.ok(page).build();
+        });
     }
 
     @POST
@@ -57,7 +65,7 @@ public class UserController {
     @PUT
     @Path("/")
     public Response update(UserDTO userDTO) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(userDTO).getIdentifier())).build();
+        return Response.ok(URI.create("/" + service.update(userDTO).getId())).build();
     }
 
     @DELETE

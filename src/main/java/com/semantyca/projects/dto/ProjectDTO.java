@@ -1,8 +1,10 @@
 package com.semantyca.projects.dto;
 
-import com.semantyca.model.Language;
 import com.semantyca.projects.model.constants.ProjectStatusType;
 
-public record ProjectDTO(String name, ProjectStatusType status, Language primaryLang, String coder, int position) {
+import java.time.LocalDate;
+import java.util.UUID;
+
+public record ProjectDTO(UUID id, String name, ProjectStatusType status, LocalDate finishDate, String manager) {
 
 }

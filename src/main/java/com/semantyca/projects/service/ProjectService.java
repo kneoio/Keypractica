@@ -6,6 +6,7 @@ import com.semantyca.model.user.AnonymousUser;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.repository.ProjectRepository;
+import com.semantyca.repository.UserRepository;
 import com.semantyca.repository.exception.DocumentExistsException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,18 +23,22 @@ public class ProjectService {
     @Inject
     private ProjectRepository repository;
 
-    public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
+    @Inject
+    private UserRepository userRepository;
+
+    public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         return repository.getAll(limit, offset, userID);
     }
 
-    public Project get(String id) {
-        return repository.findById(UUID.fromString(id));
+    public Uni<ProjectDTO> get(String id) {
+        return repository.findById(UUID.fromString(id), 2L).onItem()
+                .transform(p -> new ProjectDTO(p.getId(),p.getName(), p.getStatus(), p.getFinishDate(), userRepository.getName(p.getManager())));
+
     }
 
     public String  add(ProjectDTO dto) throws DocumentExistsException {
         Project node = new Project.Builder()
                 .setName(dto.name())
-                .setCoder(dto.coder())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }

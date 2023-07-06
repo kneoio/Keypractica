@@ -1,26 +1,18 @@
 package com.semantyca.dto;
 
-
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.semantyca.dto.cnst.PayloadType;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@Setter
+@Getter
 public abstract class AbstractPage<T extends AbstractPage> {
-        private String title;
+    private String title;
     protected  Map<String, Object> payload = new LinkedHashMap<>();
-
-    public String getTitle() {
-        return title;
-    }
-
-    public AbstractPage<T> setTitle(String title) {
-        this.title = title;
-        return this;
-    }
 
     @JsonIgnore
     public T addPayload(Object payload){
@@ -33,9 +25,10 @@ public abstract class AbstractPage<T extends AbstractPage> {
         this.payload.put(name.toLowerCase(), payload);
         return (T) this;
     }
-    @JsonGetter("payload")
-    public Map<String, Object> getPayload() {
-        return payload;
+
+    public T addPayload(PayloadType name, Object payload){
+        this.payload.put(name.getAlias(), payload);
+        return (T) this;
     }
 
 }

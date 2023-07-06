@@ -33,7 +33,6 @@ public class OrganizationService {
     public String  add(ProjectDTO dto) throws DocumentExistsException {
         Project node = new Project.Builder()
                 .setName(dto.name())
-                .setCoder(dto.coder())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }

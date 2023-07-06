@@ -12,7 +12,7 @@ public interface IDataEntity<K> {
     K getId();
     void setAuthor(long author);
     long getAuthor();
-    void setRegDate(ZonedDateTime reg_date);
+    void setRegDate(ZonedDateTime regDate);
     @JsonFormat(pattern="dd.MM.yyyy HH:mm Z")
     ZonedDateTime getRegDate();
     boolean isEditable();

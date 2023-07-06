@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
 
 @ApplicationScoped
 public class UserService {
@@ -28,8 +28,8 @@ public class UserService {
         return repository.getAllStream();
     }
 
-    public User get(String id) {
-        return repository.findById(UUID.fromString(id));
+    public Uni<Optional<User>> get(String id) {
+        return repository.findById(Long.parseLong(id));
     }
 
     public Long add(UserDTO userDTO) {

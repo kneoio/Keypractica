@@ -12,12 +12,11 @@ import java.util.Map;
 @Getter
 public abstract class DataEntity<K> implements IDataEntity<K> {
     private K id;
-    protected long author;
+    private long author;
     private ZonedDateTime regDate;
     private ZonedDateTime lastModifiedDate;
     private long lastModifier;
     private boolean editable;
-    private String title = "";
 
     @JsonIgnore
     public Map<String, String> getValuesAsMap() {
@@ -26,7 +25,6 @@ public abstract class DataEntity<K> implements IDataEntity<K> {
         values.put("regDate", String.valueOf(regDate));
         values.put("lastModifiedDate", String.valueOf(lastModifiedDate));
         values.put("lastModifier", String.valueOf(lastModifier));
-        values.put("title", title);
         return values;
     }
 }

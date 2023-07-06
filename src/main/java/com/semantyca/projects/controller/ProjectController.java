@@ -1,22 +1,24 @@
 package com.semantyca.projects.controller;
 
+import com.semantyca.dto.actions.ActionBar;
+import com.semantyca.dto.cnst.PayloadType;
 import com.semantyca.dto.document.LanguageDTO;
+import com.semantyca.dto.form.FormPage;
 import com.semantyca.dto.view.View;
 import com.semantyca.dto.view.ViewOptionsFactory;
 import com.semantyca.dto.view.ViewPage;
+import com.semantyca.projects.actions.ProjectActionsFactory;
 import com.semantyca.projects.dto.ProjectDTO;
-import com.semantyca.projects.model.Project;
 import com.semantyca.projects.service.ProjectService;
 import com.semantyca.repository.exception.DocumentExistsException;
 import com.semantyca.repository.exception.DocumentModificationAccessException;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Set;
@@ -25,7 +27,6 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProjectController {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ProjectController.class.getSimpleName());
     @Inject
     ProjectService service;
 
@@ -38,18 +39,27 @@ public class ProjectController {
         String userName = jwt.getName();
         Set<String> userGroups = jwt.getGroups();
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
-        View<Project> view = new View<>(service.getAll(100, 0, 1).await().indefinitely());
-        viewPage.addPayload("view_data", view);
+        viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
+        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
+        View<ProjectDTO> view = new View<>(service.getAll(100, 0, 1).await().indefinitely());
+        viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
     }
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id)  {
-        Project user = service.get(id);
-        return Response.ok(user).build();
+    public Uni<Response> getById(@PathParam("id") String id)  {
+        FormPage page = new FormPage();
+        page.addPayload("form_actions", new ActionBar());
+
+        return service.get(id)
+                .onItem().transform(p -> {
+                    page.addPayload("form_data", p);
+                    return Response.ok(page).build();
+                })
+                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
     }
+
 
     @POST
     @Path("/")

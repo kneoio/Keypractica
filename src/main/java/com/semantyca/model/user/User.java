@@ -2,21 +2,22 @@ package com.semantyca.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.semantyca.localization.LanguageCode;
-import com.semantyca.model.Module;
 import com.semantyca.model.DataEntity;
-import com.semantyca.model.Language;
+import com.semantyca.model.Module;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.TimeZone;
 
 @Setter
 @Getter
 @NoArgsConstructor
 public class User extends DataEntity<Long> {
-    private Long identifier;
     @NotBlank
     private String login;
     @JsonIgnore
@@ -27,7 +28,7 @@ public class User extends DataEntity<Long> {
     @JsonIgnore
     boolean authorized;
     private List<String> roles = new ArrayList<>();
-    private Language defaultLang;
+    private Integer defaultLang;
     private TimeZone timeZone;
 
     public static class Builder {
@@ -36,7 +37,7 @@ public class User extends DataEntity<Long> {
         private String email;
         private TimeZone timeZone = TimeZone.getDefault();
         private List<String> roles;
-        private Language defaultLang = new Language.Builder().build();
+        private Integer defaultLang = LanguageCode.ENG.getCode();
 
         private List<Module> modules = Arrays.asList(new Module.Builder().build());
 
@@ -55,12 +56,8 @@ public class User extends DataEntity<Long> {
             return this;
         }
 
-        public Builder setDefaultLang(String defaultLang) {
-            LanguageCode code = LanguageCode.valueOf(defaultLang);
-            Language language = new Language();
-            language.setName(code.getLang());
-            language.setLocalizedNames(Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang()));
-            this.defaultLang = language;
+        public Builder setDefaultLang(Integer defaultLang) {
+            this.defaultLang = defaultLang;
             return this;
         }
 
