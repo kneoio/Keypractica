@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.semantyca.app</groupId>
+  <groupId>com.semantyca</groupId>
   <artifactId>jirascope</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
   <name>Jirascope</name>
+
+  <modules>
+    <module>core</module>
+    <module>officeframe</module>
+    <module>projects</module>
+  </modules>
+
   <properties>
+    <grpc.version>1.55.1</grpc.version>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <quarkus.version>3.2.0.Final</quarkus.version>
-    <quarkus-grpc-protoc-plugin-version>3.2.0.Final</quarkus-grpc-protoc-plugin-version>
-    <protobuf-maven-plugin-version>0.6.1</protobuf-maven-plugin-version>
-    <grpc.version>1.55.1</grpc.version>
-    <protoc.version>3.22.0</protoc.version>
     <os-maven-plugin-version>1.7.1</os-maven-plugin-version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <protobuf-maven-plugin-version>0.6.1</protobuf-maven-plugin-version>
+    <protoc.version>3.22.0</protoc.version>
+    <quarkus-grpc-protoc-plugin-version>3.2.0.Final</quarkus-grpc-protoc-plugin-version>
+    <quarkus.version>3.2.0.Final</quarkus.version>
   </properties>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -84,6 +94,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <extensions>
       <extension>
@@ -92,17 +103,24 @@
         <version>${os-maven-plugin-version}</version>
       </extension>
     </extensions>
+
     <finalName>quarkus-jirascope</finalName>
+
     <plugins>
       <plugin>
-        <groupId>io.quarkus</groupId>
+        <groupId>io.quarkus.platform</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
-        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.jboss.jandex</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>1.2.1</version>
         <executions>
           <execution>
+            <id>make-index</id>
             <goals>
-              <goal>build</goal>
+              <goal>jandex</goal>
             </goals>
           </execution>
         </executions>
@@ -111,20 +129,6 @@
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>${protobuf-maven-plugin-version}</version>
-        <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
-          <pluginId>grpc-java</pluginId>
-          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-          <protocPlugins>
-            <protocPlugin>
-              <id>quarkus-grpc-protoc-plugin</id>
-              <groupId>io.quarkus</groupId>
-              <artifactId>quarkus-grpc-protoc-plugin</artifactId>
-              <version>${quarkus-grpc-protoc-plugin-version}</version>
-              <mainClass>io.quarkus.grpc.protoc.plugin.MutinyGrpcGenerator</mainClass>
-            </protocPlugin>
-          </protocPlugins>
-        </configuration>
         <executions>
           <execution>
             <id>compile</id>
@@ -141,14 +145,20 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M5</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>3.0.0-M5</version>
+        <configuration>
+          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
+          <pluginId>grpc-java</pluginId>
+          <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+          <protocPlugins>
+            <protocPlugin>
+              <id>quarkus-grpc-protoc-plugin</id>
+              <groupId>io.quarkus</groupId>
+              <artifactId>quarkus-grpc-protoc-plugin</artifactId>
+              <version>${quarkus-grpc-protoc-plugin-version}</version>
+              <mainClass>io.quarkus.grpc.protoc.plugin.MutinyGrpcGenerator</mainClass>
+            </protocPlugin>
+          </protocPlugins>
+        </configuration>
       </plugin>
     </plugins>
   </build>
