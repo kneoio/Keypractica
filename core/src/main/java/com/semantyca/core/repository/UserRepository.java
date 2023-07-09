@@ -1,7 +1,6 @@
 package com.semantyca.core.repository;
 
 
-import com.semantyca.core.model.user.UndefinedUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.server.EnvConst;
 import io.smallrye.mutiny.Multi;
@@ -56,16 +55,11 @@ public class UserRepository extends Repository {
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
-    public String getName(Long id) {
-        final String[] name = {userCache.get(id)};
-        if (name[0] == null) {
-            findById(id).onItem().ifNotNull().transform(user -> user.get().getLogin()).onFailure().recoverWithItem(UndefinedUser.USER_NAME).invoke(n -> {
-                userCache.put(id, n);
-                name[0] = n;
-            }).subscribe().with(item -> {});
-        }
-        return name[0];
-
+    public Uni<Optional<User>> getName(Long id) {
+        return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
+                .execute(Tuple.of(id))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
     private User from(Row row) {

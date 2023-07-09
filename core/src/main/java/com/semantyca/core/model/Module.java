@@ -8,11 +8,12 @@ import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Setter
 @Getter
 @NoArgsConstructor
-public class Module extends DataEntity<String> {
+public class Module extends DataEntity<UUID> {
     protected String name;
     protected ApplicationType type;
     private Map<LanguageCode, String> localizedNames = new HashMap<>();

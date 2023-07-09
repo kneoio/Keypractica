@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
-public class LanguageService {
+public class LanguageService implements IBasicService<LanguageDTO> {
     @Inject
     private LanguageRepository repository;
 

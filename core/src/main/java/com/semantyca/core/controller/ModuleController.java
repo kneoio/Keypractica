@@ -1,6 +1,7 @@
 
 package com.semantyca.core.controller;
 
+import com.semantyca.core.dto.cnst.PayloadType;
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
@@ -43,9 +44,9 @@ public class ModuleController {
         String userName = jwt.getName();
         Set<String> userGroups = jwt.getGroups();
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
+        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
         View<Module> view = new View<>(service.getAll().await().indefinitely());
-        viewPage.addPayload("view_data", view);
+        viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
     }
 
@@ -79,7 +80,7 @@ public class ModuleController {
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteWord(@PathParam("id") String id) {
+    public Response delete(@PathParam("id") String id) {
         return Response.ok().build();
     }
 

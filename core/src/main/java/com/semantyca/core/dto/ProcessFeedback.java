@@ -7,7 +7,6 @@ import com.semantyca.core.dto.cnst.OutcomeType;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @JsonPropertyOrder({"identifier", "type", "title", "pageName", "payloads"})
 public class ProcessFeedback extends AbstractPage {
@@ -35,8 +34,5 @@ public class ProcessFeedback extends AbstractPage {
         return OutcomeType.INFO;
     }
 
-    public Map<String, List> getPayload() {
-        payload.put("entries", entries);
-        return payload;
-    }
+
 }
