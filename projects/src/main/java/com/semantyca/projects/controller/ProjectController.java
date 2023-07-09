@@ -1,7 +1,9 @@
 package com.semantyca.projects.controller;
 
+import com.semantyca.core.dto.actions.ActionBar;
 import com.semantyca.core.dto.cnst.PayloadType;
 import com.semantyca.core.dto.document.LanguageDTO;
+import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
@@ -10,6 +12,7 @@ import com.semantyca.core.repository.exception.DocumentModificationAccessExcepti
 import com.semantyca.projects.actions.ProjectActionsFactory;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.service.ProjectService;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -43,19 +46,19 @@ public class ProjectController {
         return Response.ok(viewPage).build();
     }
 
-/*    @GET
+    @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload("form_actions", new ActionBar());
+        page.addPayload(PayloadType.ACTIONS, new ActionBar());
 
         return service.get(id)
                 .onItem().transform(p -> {
-                    page.addPayload("form_data", p);
+                    page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();
                 })
                 .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-    }*/
+    }
 
 
     @POST

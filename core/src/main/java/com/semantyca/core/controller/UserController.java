@@ -1,9 +1,9 @@
 package com.semantyca.core.controller;
 
 import com.semantyca.core.dto.actions.ActionBar;
+import com.semantyca.core.dto.cnst.PayloadType;
 import com.semantyca.core.dto.document.UserDTO;
 import com.semantyca.core.dto.form.FormPage;
-import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
 import com.semantyca.core.model.user.User;
@@ -28,12 +28,13 @@ public class UserController {
 
     @GET
     @Path("/")
-    public Response get() {
+    public Uni<Response> get() {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
-        View<User> view = new View<>(service.getAll().await().indefinitely());
-        viewPage.addPayload("view_data", view);
-        return Response.ok(viewPage).build();
+        viewPage.addPayload(PayloadType.ACTIONS, ViewOptionsFactory.getProjectOptions());
+        return service.getAll().onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+                return Response.ok(viewPage).build();
+        });
     }
 
     @GET
@@ -48,10 +49,10 @@ public class UserController {
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id) {
         FormPage page = new FormPage();
-        page.addPayload("form_actions", new ActionBar());
+        page.addPayload(PayloadType.ACTIONS, new ActionBar());
         return service.get(id).onItem().transform(userOptional -> {
-            userOptional.ifPresentOrElse(user ->  page.addPayload("form_data", user),
-                    () ->  page.addPayload("form_data", "no_data"));
+            userOptional.ifPresentOrElse(user ->  page.addPayload(PayloadType.FORM_DATA, user),
+                    () ->  page.addPayload(PayloadType.FORM_DATA, "no_data"));
             return Response.ok(page).build();
         });
     }

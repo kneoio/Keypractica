@@ -44,12 +44,12 @@ public class ProjectRepository extends Repository {
                         .collect().asList();
     }
 
-    public Uni<Project> findById(UUID uuid, Long userID) {
+    public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
         return client.preparedQuery(  "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.readers = $2")
                 .execute(Tuple.of(uuid, userID))
                 .onItem().transform(RowSet::iterator)
                 //.onItem().delayIt().by(Duration.ofSeconds(5))
-                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
     public Optional<Project> findByValue(String base) {

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -39,7 +39,7 @@ public class User extends DataEntity<Long> {
         private List<String> roles;
         private Integer defaultLang = LanguageCode.ENG.getCode();
 
-        private List<Module> modules = Arrays.asList(new Module.Builder().build());
+        private final List<Module> modules = Collections.singletonList(new Module.Builder().build());
 
         public Builder setLogin(String login) {
             this.login = login;

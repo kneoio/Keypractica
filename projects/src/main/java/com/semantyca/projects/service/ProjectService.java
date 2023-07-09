@@ -3,7 +3,8 @@ package com.semantyca.projects.service;
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.repository.exception.DocumentExistsException;
+import com.semantyca.core.model.user.User;
+import com.semantyca.core.repository.UserRepository;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.repository.ProjectRepository;
@@ -14,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @ApplicationScoped
 public class ProjectService {
@@ -21,20 +24,28 @@ public class ProjectService {
     @Inject
     private ProjectRepository repository;
 
-/*    @Inject
-    private UserRepository userRepository;*/
+    @Inject
+    private UserRepository userRepository;
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         return repository.getAll(limit, offset, userID);
     }
 
-    /*public Uni<ProjectDTO> get(String id) {
-        return repository.findById(UUID.fromString(id), 2L).onItem()
-                .transform(p -> new ProjectDTO(p.getId(),p.getName(), p.getStatus(), p.getFinishDate(), userRepository.getName(p.getManager())));
+    public Uni<ProjectDTO> get(String id) {
+        Uni<Optional<Project>> projectUni = repository.findById(UUID.fromString(id), 2L);
+        Uni<Optional<User>> userUni = projectUni.onItem().transformToUni(item ->
+                userRepository.findById(item.get().getManager())
+        );
 
-    }*/
+        return Uni.combine().all().unis(projectUni, userUni).combinedWith((projectOptional, userOptional) -> {
+                    Project p = projectOptional.get();
+                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getLogin());
+                }
+        );
 
-    public String  add(ProjectDTO dto) throws DocumentExistsException {
+    }
+
+    public String add(ProjectDTO dto)  {
         Project node = new Project.Builder()
                 .setName(dto.name())
                 .build();

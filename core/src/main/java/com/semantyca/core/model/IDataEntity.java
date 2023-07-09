@@ -7,21 +7,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import java.time.ZonedDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"id", "author", "regDate", "lastModifier", "lastModifiedDate", "title"})
+@JsonPropertyOrder({"id", "author", "regDate", "lastModifier", "lastModifiedDate"})
 public interface IDataEntity<K> {
     K getId();
     void setAuthor(long author);
     long getAuthor();
     void setRegDate(ZonedDateTime regDate);
-    @JsonFormat(pattern="dd.MM.yyyy HH:mm Z")
+    @JsonFormat(pattern="dd.MM.yyyy HH:mm")
     ZonedDateTime getRegDate();
     boolean isEditable();
-    default String getTitle(){
-        return toString();
-    }
     void setLastModifiedDate(ZonedDateTime lastModifiedDate);
-    @JsonFormat(pattern="dd.MM.yyyy HH:mm Z")
+    @JsonFormat(pattern="dd.MM.yyyy HH:mm")
     ZonedDateTime getLastModifiedDate();
-    void setLastModifier(long last_mod_user);
+    void setLastModifier(long lastModifier);
     long getLastModifier();
 }

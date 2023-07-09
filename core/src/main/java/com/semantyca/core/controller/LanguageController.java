@@ -2,6 +2,7 @@
 package com.semantyca.core.controller;
 
 import com.semantyca.core.dto.actions.ActionBar;
+import com.semantyca.core.dto.cnst.PayloadType;
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.View;
@@ -40,9 +41,9 @@ public class LanguageController {
     @PermitAll
     public Response get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload("view_options", ViewOptionsFactory.getProjectOptions());
+        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
         View<LanguageDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
-        viewPage.addPayload("view_data", view);
+        viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
     }
 
@@ -50,8 +51,8 @@ public class LanguageController {
     @Path("/code/{code}")
     public Response getByCode(@PathParam("code") String code)  {
         FormPage page = new FormPage();
-        page.addPayload("form_actions", new ActionBar());
-        page.addPayload("form_data", service.findByCode(code.toUpperCase()).await().indefinitely());
+        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.FORM_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
         return Response.ok(page).build();
     }
 
@@ -59,8 +60,8 @@ public class LanguageController {
     @Path("/{id}")
     public Response getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload("form_actions", new ActionBar());
-        page.addPayload("form_data", service.get(id).await().indefinitely());
+        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.FORM_DATA, service.get(id).await().indefinitely());
         return Response.ok(page).build();
     }
 
