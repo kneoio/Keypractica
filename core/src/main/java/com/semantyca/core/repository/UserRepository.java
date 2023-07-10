@@ -23,7 +23,7 @@ public class UserRepository extends Repository {
     @Inject
     PgPool client;
 
-    private static Map<Long, String> userCache = new HashMap();
+    private static Map<Long, User> userCache = new HashMap();
 
     public Uni<List<User>> getAll() {
         return client.query(String.format("SELECT * FROM _users LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
@@ -49,10 +49,16 @@ public class UserRepository extends Repository {
     }
 
     public Uni<Optional<User>> findById(Long id) {
-        return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
-                .execute(Tuple.of(id))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+        User user = userCache.get(id);
+        if (user == null) {
+            return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
+                    .execute(Tuple.of(id))
+                    .onItem().transform(RowSet::iterator)
+                    .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+        } else {
+            return Uni.createFrom().item(user)
+                    .onItem().transform(Optional::ofNullable);
+        }
     }
 
     public Uni<Optional<User>> getName(Long id) {
@@ -72,19 +78,22 @@ public class UserRepository extends Repository {
                 .build();
         user.setId(row.getLong("id"));
         user.setRegDate(ZonedDateTime.from(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault())));
+        userCache.put(row.getLong("id"), user);
         return user;
     }
 
     public Long insert(User node, Long user) {
+        userCache.clear();
         return node.getId();
     }
 
     public User update(User user) {
-
+        userCache.clear();
         return user;
     }
 
     public int delete(Long id) {
+        userCache.clear();
         return 1;
     }
 }

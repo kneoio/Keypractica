@@ -7,19 +7,14 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SimpleReferenceEntity extends DataEntity<UUID> {
-
     protected String identifier;
-
     private Map<LanguageCode, String> locName = new HashMap<LanguageCode, String>();
-
     public String getIdentifier() {
         return identifier;
     }
-
     public Map<LanguageCode, String> getLocName() {
         return locName;
     }
-
     public void setLocName(Map<LanguageCode, String> locName) {
         this.locName = locName;
     }

@@ -2,6 +2,7 @@ package com.semantyca.projects.service;
 
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.model.Language;
+import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.repository.UserRepository;
@@ -31,15 +32,26 @@ public class ProjectService {
         return repository.getAll(limit, offset, userID);
     }
 
-    public Uni<ProjectDTO> get(String id) {
-        Uni<Optional<Project>> projectUni = repository.findById(UUID.fromString(id), 2L);
-        Uni<Optional<User>> userUni = projectUni.onItem().transformToUni(item ->
+    public Uni<ProjectDTO> get(String uuid) {
+        UUID id = UUID.fromString(uuid);
+        Uni<Optional<Project>> projectUni = repository.findById(id, 2L);
+        Uni<Optional<User>> manager = projectUni.onItem().transformToUni(item ->
                 userRepository.findById(item.get().getManager())
         );
+        Uni<Optional<User>> coder = projectUni.onItem().transformToUni(item ->
+                userRepository.findById(item.get().getCoder())
+        );
+        Uni<Optional<User>> tester = projectUni.onItem().transformToUni(item ->
+                userRepository.findById(item.get().getTester())
+        );
 
-        return Uni.combine().all().unis(projectUni, userUni).combinedWith((projectOptional, userOptional) -> {
+        Uni<List<RLS>> rlsEntires = projectUni.onItem().transformToUni(item ->
+                repository.getAllReaders(id)
+        );
+
+        return Uni.combine().all().unis(projectUni, manager, coder, tester, rlsEntires).combinedWith((projectOptional, userOptional, coderOptional, testerOtional, rlsList) -> {
                     Project p = projectOptional.get();
-                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getLogin());
+                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getLogin(), coderOptional.get().getLogin(), testerOtional.get().getLogin(), rlsList);
                 }
         );
 

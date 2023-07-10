@@ -20,10 +20,9 @@ public class ModuleService {
     @Inject
     private ModuleRepository repository;
 
-    public Uni<List<Module>> getAll() {
+    public Uni<List<Module>> getAll(int offset, int size) {
         return repository.getAll();
     }
-
     public Language get(String id) {
         return repository.findById(UUID.fromString(id));
     }
@@ -46,4 +45,6 @@ public class ModuleService {
     public int delete (String id) {
         return repository.delete(UUID.fromString(id), AnonymousUser.ID);
     }
+
+
 }
