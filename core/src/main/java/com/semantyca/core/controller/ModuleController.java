@@ -45,7 +45,7 @@ public class ModuleController {
         Set<String> userGroups = jwt.getGroups();
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        View<Module> view = new View<>(service.getAll().await().indefinitely());
+        View<Module> view = new View<>(service.getAll(0, 100).await().indefinitely());
         viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
     }

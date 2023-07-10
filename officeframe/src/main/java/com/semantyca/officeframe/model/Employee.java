@@ -1,148 +1,110 @@
 package com.semantyca.officeframe.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.semantyca.core.model.SimpleReferenceEntity;
-import com.semantyca.core.model.user.UndefinedUser;
 import com.semantyca.core.model.user.User;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import javax.management.relation.Role;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"kind", "name"})
+@JsonPropertyOrder({"name"})
+@Setter
+@Getter
+@NoArgsConstructor
 public class Employee extends SimpleReferenceEntity {
-
+    private String name;
     private User user;
-
-
     private Date birthDate;
-
-
-    private String iin = "";
-
-
     private String phone;
-
     private Organization organization;
-
-
     private Department department;
-
     private Employee boss;
-
-
     private Position position;
-
-
     private List<Role> roles;
-
     private int rank = 999;
 
+    public static class Builder {
+        private UUID id;
+        private String name;
+        private Date birthDate;
+        private String phone;
+        private Organization organization;
+        private Department department;
+        private Employee boss;
+        private Position position;
+        private List<Role> roles;
+        private int rank = 999;
 
-    // @JsonIgnore
-    public Organization getOrganization() {
-        return organization;
-    }
+        public Builder setId(UUID id) {
+            this.id = id;
+            return this;
+        }
 
-    public void setOrganization(Organization organization) {
-        this.organization = organization;
-    }
+        public Builder setName(String name) {
+            this.name = name;
+            return this;
+        }
 
-    // @JsonIgnore
-    public Department getDepartment() {
-        return department;
-    }
+        public Builder setBirthDate(Date birthDate) {
+            this.birthDate = birthDate;
+            return this;
+        }
 
-    public void setDepartment(Department department) {
-        this.department = department;
-    }
+        public Builder setPhone(String phone) {
+            this.phone = phone;
+            return this;
+        }
 
-    public Employee getBoss() {
-        return boss;
-    }
+        public Builder setOrganization(Organization organization) {
+            this.organization = organization;
+            return this;
+        }
 
-    public void setBoss(Employee boss) {
-        this.boss = boss;
-    }
+        public Builder setDepartment(Department department) {
+            this.department = department;
+            return this;
+        }
 
-    // @JsonIgnore
-    public Position getPosition() {
-        return position;
-    }
+        public Builder setBoss(Employee boss) {
+            this.boss = boss;
+            return this;
+        }
 
-    public void setPosition(Position position) {
-        this.position = position;
-    }
+        public Builder setPosition(Position position) {
+            this.position = position;
+            return this;
+        }
 
-    public Date getBirthDate() {
-        return birthDate;
-    }
+        public Builder setRoles(List<Role> roles) {
+            this.roles = roles;
+            return this;
+        }
 
-    public void setBirthDate(Date birthDate) {
-        this.birthDate = birthDate;
-    }
+        public Builder setRank(int rank) {
+            this.rank = rank;
+            return this;
+        }
 
-    public String getIin() {
-        return iin;
-    }
-
-    public void setIin(String iin) {
-        this.iin = iin;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    @JsonIgnore
-    public User getUser() {
-        return user;
-    }
-
-    @JsonProperty
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getLogin() {
-        if (user != null) {
-            return user.getLogin();
-        } else {
-            return UndefinedUser.USER_NAME;
+        public Employee build() {
+            Employee newNode = new Employee();
+            newNode.setName(name);
+            newNode.setId(id);
+            newNode.setDepartment(department);
+            newNode.setOrganization(organization);
+            newNode.setPosition(position);
+            newNode.setBoss(boss);
+            newNode.setBirthDate(birthDate);
+            newNode.setRoles(roles);
+            newNode.setPhone(phone);
+            newNode.setRank(rank);
+            return newNode;
         }
     }
-
-    public List<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<Role> roles) {
-        this.roles = roles;
-    }
-
-    public void addRole(Role r) {
-        if (roles == null) {
-            roles = new ArrayList<>();
-        }
-        roles.add(r);
-    }
-
-    public int getRank() {
-        return rank;
-    }
-
-    public void setRank(int rank) {
-        this.rank = rank;
-    }
-
-
 }

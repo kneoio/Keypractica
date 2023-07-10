@@ -1,8 +1,8 @@
 package com.semantyca.projects.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.constants.ProjectStatusType;
+import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.repository.Repository;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
@@ -15,6 +15,8 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,12 +27,9 @@ public class ProjectRepository extends Repository {
     @Inject
     PgPool client;
 
-    @Inject
-    ObjectMapper mapper;
-
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
-        String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.readers = " + userID;
-        if (limit > 0 ) {
+        String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
+        if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
@@ -40,20 +39,29 @@ public class ProjectRepository extends Repository {
                         row.getUUID("id"),
                         row.getString("name"),
                         ProjectStatusType.valueOf(row.getString("status")),
-                        row.getLocalDate("finish_date"),""))
-                        .collect().asList();
+                        row.getLocalDate("finish_date"), null, null, null, null))
+                .collect().asList();
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
-        return client.preparedQuery(  "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.readers = $2")
+        return client.preparedQuery("SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.reader = $2")
                 .execute(Tuple.of(uuid, userID))
                 .onItem().transform(RowSet::iterator)
-                //.onItem().delayIt().by(Duration.ofSeconds(5))
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
-    public Optional<Project> findByValue(String base) {
-        return null;
+    public Uni<List<RLS>> getAllReaders(UUID uuid) {
+        return client.preparedQuery("SELECT reader, reading_time, can_edit, can_delete FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND p.id = $1")
+                .execute(Tuple.of(uuid))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(row -> new RLS(
+                        Optional.ofNullable(row.getLocalDateTime("reading_time"))
+                                .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault())))
+                                .orElse(null),
+                        row.getLong("reader"),
+                        row.getLong("can_edit"),
+                        row.getLong("can_delete")))
+                .collect().asList();
     }
 
     private Project from(Row row) {
@@ -69,6 +77,7 @@ public class ProjectRepository extends Repository {
                 .setTester(row.getInteger("tester"))
                 .build();
     }
+
 
     public UUID insert(Project node, Long user) {
 

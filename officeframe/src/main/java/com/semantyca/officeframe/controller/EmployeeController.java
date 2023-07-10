@@ -1,15 +1,16 @@
 package com.semantyca.officeframe.controller;
 
 
+import com.semantyca.core.dto.actions.ActionBar;
 import com.semantyca.core.dto.cnst.PayloadType;
-import com.semantyca.core.dto.view.View;
+import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.officeframe.dto.OrganizationDTO;
-import com.semantyca.officeframe.model.Organization;
-import com.semantyca.officeframe.service.OrganizationService;
+import com.semantyca.officeframe.service.EmployeeService;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -18,28 +19,35 @@ import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 
-@Path("/orgs")
+@Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class OrganizationController {
+public class EmployeeController {
     @Inject
-    OrganizationService service;
+    EmployeeService service;
     @GET
     @Path("/")
     @PermitAll
-    public Response get()  {
+    public Uni<Response> get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        View<OrganizationDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
-        viewPage.addPayload(PayloadType.VIEW_DATA, view);
-        return Response.ok(viewPage).build();
+        viewPage.addPayload(PayloadType.ACTIONS, ViewOptionsFactory.getProjectOptions());
+        return service.getAll(100, 0).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
     }
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id)  {
-        Organization user = service.get(id);
-        return Response.ok(user).build();
+    public Uni<Response> getById(@PathParam("id") String id)  {
+        FormPage page = new FormPage();
+        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        return service.get(id)
+                .onItem().transform(p -> {
+                    page.addPayload(PayloadType.FORM_DATA, p);
+                    return Response.ok(page).build();
+                })
+                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
     }
 
     @POST

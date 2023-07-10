@@ -2,9 +2,11 @@ package com.semantyca.officeframe.service;
 
 
 import com.semantyca.core.model.user.AnonymousUser;
+import com.semantyca.officeframe.dto.EmployeeDTO;
 import com.semantyca.officeframe.dto.OrganizationDTO;
+import com.semantyca.officeframe.model.Employee;
 import com.semantyca.officeframe.model.Organization;
-import com.semantyca.officeframe.repository.OrganizationRepository;
+import com.semantyca.officeframe.repository.EmployeeRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -12,19 +14,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class OrganizationService {
-    private static final Logger LOGGER = LoggerFactory.getLogger("OrganizationService");
+public class EmployeeService {
+    private static final Logger LOGGER = LoggerFactory.getLogger("EmployeeService");
     @Inject
-    private OrganizationRepository repository;
+    private EmployeeRepository repository;
 
-    public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
         return repository.getAll(limit, offset);
     }
 
-    public Organization get(String id) {
+    public Uni<Optional<Employee>> get(String id) {
         return repository.findById(UUID.fromString(id));
     }
 

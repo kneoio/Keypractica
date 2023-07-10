@@ -9,24 +9,13 @@ import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Organization extends SimpleReferenceEntity {
-
+    private String name;
     private OrgCategory orgCategory;
-
-
     private List<Department> departments;
-
-
     private List<Employee> employers;
-
-
     private List<OrganizationLabel> labels;
-
-
     private String bizID = "";
-
     private int rank = 999;
-
-
     private boolean isPrimary;
 
     public OrgCategory getOrgCategory() {
