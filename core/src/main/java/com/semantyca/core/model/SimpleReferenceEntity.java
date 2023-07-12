@@ -15,6 +15,11 @@ public class SimpleReferenceEntity extends DataEntity<UUID> {
     public Map<LanguageCode, String> getLocName() {
         return locName;
     }
+
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
+
     public void setLocName(Map<LanguageCode, String> locName) {
         this.locName = locName;
     }
@@ -36,4 +41,8 @@ public class SimpleReferenceEntity extends DataEntity<UUID> {
         this.locName.put(languageCode, val);
     }
 
+    @Override
+    public boolean isEditable() {
+        return true;
+    }
 }
