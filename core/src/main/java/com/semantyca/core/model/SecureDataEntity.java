@@ -13,11 +13,13 @@ public abstract class SecureDataEntity<T> extends DataEntity<T> {
         return readers.values();
     }
 
-
-
     public SecureDataEntity addReader(RLS reader){
         readers.put(reader.getReader(), reader);
         return this;
+    }
+    @Override
+    public boolean isEditable() {
+        return false;
     }
 
 }

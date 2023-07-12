@@ -16,7 +16,6 @@ public abstract class DataEntity<K> implements IDataEntity<K> {
     private ZonedDateTime regDate;
     private ZonedDateTime lastModifiedDate;
     private long lastModifier;
-    private boolean editable;
 
     @JsonIgnore
     public Map<String, String> getValuesAsMap() {
