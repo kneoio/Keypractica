@@ -1,8 +1,8 @@
 package com.semantyca.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
 
@@ -12,6 +12,6 @@ import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 //public record TaskDTO(UUID id, String regNumber, String body, ZonedDateTime startDate, ZonedDateTime targetDate) {
-public record TaskDTO(UUID id, String regNumber, String body, String assignee, TaskType taskType, Project project, Task parent, ZonedDateTime startDate, ZonedDateTime targetDate, int status , int priority, List<RLS> rls) {
+public record TaskDTO(UUID id, String regNumber, String body, String assignee, java.util.Map<LanguageCode, String> taskType, Project project, Task parent, ZonedDateTime startDate, ZonedDateTime targetDate, int status , int priority, List<RLS> rls) {
 
 }

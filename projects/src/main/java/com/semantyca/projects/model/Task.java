@@ -2,7 +2,6 @@ package com.semantyca.projects.model;
 
 import com.semantyca.core.model.SecureDataEntity;
 import com.semantyca.officeframe.model.Label;
-import com.semantyca.officeframe.model.TaskType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -18,7 +17,7 @@ public class Task extends SecureDataEntity<UUID> {
     private String regNumber;
     private String body;
     private Long assignee;
-    private TaskType taskType;
+    private UUID taskType;
     private UUID project;
     private UUID parent;
     private ZonedDateTime targetDate;
@@ -34,7 +33,7 @@ public class Task extends SecureDataEntity<UUID> {
         private String regNumber;
         private String body;
         protected Long assignee;
-        private TaskType taskType;
+        private UUID taskType;
         private UUID project;
         private UUID parent;
         protected ZonedDateTime targetDate;
@@ -65,7 +64,7 @@ public class Task extends SecureDataEntity<UUID> {
             return this;
         }
 
-        public Builder setTaskType(TaskType taskType) {
+        public Builder setTaskType(UUID taskType) {
             this.taskType = taskType;
             return this;
         }
