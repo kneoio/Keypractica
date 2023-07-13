@@ -26,4 +26,9 @@ public abstract class DataEntity<K> implements IDataEntity<K> {
         values.put("lastModifier", String.valueOf(lastModifier));
         return values;
     }
+
+    @Override
+    public boolean isEditable() {
+        return true;
+    }
 }
