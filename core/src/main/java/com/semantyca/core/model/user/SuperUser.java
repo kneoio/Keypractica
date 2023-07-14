@@ -5,7 +5,7 @@ public class SuperUser extends SystemUser {
     public final static String USER_NAME = "supervisor";
     public final static long ID = -1;
 
-    public long getId() {
+    public Long getId() {
         return ID;
     }
 
