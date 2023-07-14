@@ -61,6 +61,13 @@ public class UserRepository extends Repository {
         }
     }
 
+    public Uni<Optional<User>> findByLogin(String userName) {
+        return client.preparedQuery("SELECT * FROM _users WHERE login = $1")
+                .execute(Tuple.of(userName))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+    }
+
     public Uni<Optional<User>> getName(Long id) {
         return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
                 .execute(Tuple.of(id))
@@ -96,4 +103,6 @@ public class UserRepository extends Repository {
         userCache.clear();
         return 1;
     }
+
+
 }

@@ -1,7 +1,7 @@
 package com.semantyca.core.model;
 
 import com.semantyca.core.localization.LanguageCode;
-import com.semantyca.core.model.cnst.ApplicationType;
+import com.semantyca.core.model.cnst.ModuleType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -15,22 +15,22 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Module extends DataEntity<UUID> {
     protected String name;
-    protected ApplicationType type;
+    protected ModuleType type;
     private Map<LanguageCode, String> localizedNames = new HashMap<>();
     private boolean isOn;
     private int position;
 
     public static class Builder {
         private String name;
-        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ApplicationType.DICTIONARY.getName());
-        protected ApplicationType type = ApplicationType.UNKNOWN;
+        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ModuleType.BIZ.getName());
+        protected ModuleType type = ModuleType.UNKNOWN;
 
         public Builder setName(String name) {
             this.name = name;
             return this;
         }
 
-        public Builder setType(ApplicationType type) {
+        public Builder setType(ModuleType type) {
             this.type = type;
             return this;
         }

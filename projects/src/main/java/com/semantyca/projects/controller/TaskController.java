@@ -6,6 +6,7 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
+import com.semantyca.core.model.user.User;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.projects.actions.ProjectActionsFactory;
@@ -15,12 +16,12 @@ import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.net.URI;
-import java.util.Set;
 
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,19 +29,15 @@ import java.util.Set;
 public class TaskController {
     @Inject
     TaskService service;
-
-    @Inject
-    JsonWebToken jwt;
     @GET
     @Path("/")
     @PermitAll
-    public Uni<Response> get()  {
-        String userName = jwt.getName();
-        Set<String> userGroups = jwt.getGroups();
+    public Uni<Response> get(@Context ContainerRequestContext requestContext)  {
+        User currentUser = (User) requestContext.getProperty("user");
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
         viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        return service.getAll(100, 0, 2).onItem().transform(userList -> {
+        return service.getAll(100, 0, currentUser.getId()).onItem().transform(userList -> {
             viewPage.addPayload(PayloadType.VIEW_DATA, userList);
             return Response.ok(viewPage).build();
         });

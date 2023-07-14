@@ -23,4 +23,11 @@ public class Workspace extends AbstractPage {
         addPayload("available_modules", new View(moduleServiceAll.await().indefinitely()));
     }
 
+    public Workspace(LanguageService service) {
+        addPayload("application_name", String.format("%s %s", EnvConst.APP_ID, EnvConst.VERSION));
+        addPayload("redirect", "projects");
+        Uni<List<LanguageDTO>> languageListUni = service.getAll(100, 0);
+        addPayload("available_languages", new View(languageListUni.await().indefinitely()));
+    }
+
 }
