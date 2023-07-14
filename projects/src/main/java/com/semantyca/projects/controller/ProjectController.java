@@ -7,21 +7,21 @@ import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
+import com.semantyca.core.model.user.User;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.projects.actions.ProjectActionsFactory;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.net.URI;
-import java.util.Set;
 
 @Path("/projects")
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,19 +29,14 @@ import java.util.Set;
 public class ProjectController {
     @Inject
     ProjectService service;
-
-    @Inject
-    JsonWebToken jwt;
     @GET
     @Path("/")
-    @PermitAll
-    public Response get()  {
-        String userName = jwt.getName();
-        Set<String> userGroups = jwt.getGroups();
+    public Response get(@Context ContainerRequestContext requestContext)  {
+        User currentUser = (User) requestContext.getProperty("user");
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
         viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        View<ProjectDTO> view = new View<>(service.getAll(100, 0, 1).await().indefinitely());
+        View<ProjectDTO> view = new View<>(service.getAll(100, 0, currentUser.getId()).await().indefinitely());
         viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
     }

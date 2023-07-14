@@ -17,7 +17,7 @@ import java.util.TimeZone;
 @Setter
 @Getter
 @NoArgsConstructor
-public class User extends DataEntity<Long> {
+public class User extends DataEntity<Long> implements IUser{
     @NotBlank
     private String login;
     @JsonIgnore

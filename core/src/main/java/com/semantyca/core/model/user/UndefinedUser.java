@@ -18,7 +18,7 @@ public class UndefinedUser extends SystemUser {
     }
 
 
-    public long getId() {
+    public Long getId() {
         return ID;
     }
 
