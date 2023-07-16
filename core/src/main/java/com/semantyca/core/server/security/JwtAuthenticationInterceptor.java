@@ -44,13 +44,14 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
                     try {
                         throw new UnknownResourceExcetion("Unknown resource: " + path);
                     } catch (UnknownResourceExcetion e) {
+                        LOGGER.error(e.getMessage());
                         throw new RuntimeException(e);
                     }
                 }
             };
 
             if (allowByGroup) {
-                requestContext.setProperty("user", user);
+                requestContext.setProperty("user", user.get());
                 return;
             }
         } else {
