@@ -21,11 +21,9 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class WorkspaceController {
     @Inject
-    LanguageService languageService;
+    private LanguageService languageService;
     @Inject
-    ModuleService moduleService;
-    private LanguageService user;
-
+    private ModuleService moduleService;
     @GET
     @Path("/")
     public Response get(@Context ContainerRequestContext requestContext) {

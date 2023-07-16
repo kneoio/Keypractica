@@ -17,7 +17,7 @@ public class Workspace extends AbstractPage {
 
     public Workspace(IUser user, LanguageService languageService, ModuleService moduleService) {
         addPayload("application_name", String.format("%s %s", EnvConst.APP_ID, EnvConst.VERSION));
-        addPayload("user", user.getId());
+        addPayload("user", user.getUserName());
         addPayload("redirect", "projects");
         Uni<List<LanguageDTO>> languageListUni = languageService.getAll(100, 0);
         Uni<List<Module>> moduleServiceAll = moduleService.getAll(100, 0);
@@ -27,7 +27,7 @@ public class Workspace extends AbstractPage {
 
     public Workspace(IUser user, LanguageService service) {
         addPayload("application_name", String.format("%s %s", EnvConst.APP_ID, EnvConst.VERSION));
-        addPayload("user", user.getId());
+        addPayload("user", user.getUserName());
         addPayload("redirect", "projects");
         Uni<List<LanguageDTO>> languageListUni = service.getAll(100, 0);
         addPayload("available_languages", new View(languageListUni.await().indefinitely()));
