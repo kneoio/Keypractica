@@ -8,5 +8,6 @@ public interface IUser {
     default Integer getPageSize(){
         return EnvConst.DEFAULT_PAGE_SIZE;
     };
+    String getEmail();
 
 }

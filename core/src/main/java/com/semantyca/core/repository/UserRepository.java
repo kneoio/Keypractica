@@ -36,8 +36,10 @@ public class UserRepository extends Repository {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
                 .collect(Collectors.toMap(IUser::getId, user -> user)))
                 .await().indefinitely();
-        userAltCache = userCache.values().stream()
-                .collect(Collectors.toMap(IUser::getUserName, Function.identity()));
+        userAltCache.putAll(userCache.values().stream()
+                .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
+       /* userAltCache.putAll(userCache.values().stream()
+                .collect(Collectors.toMap(IUser::getEmail, Function.identity())));*/
     }
 
     public Uni<List<IUser>> getAll() {
@@ -77,7 +79,11 @@ public class UserRepository extends Repository {
     }
 
     public Optional<IUser> findByLogin(String userName) {
-        return Optional.of(userAltCache.get(userName));
+        if (userName == null) {
+            return Optional.empty();
+        } else {
+            return Optional.ofNullable(userAltCache.get(userName));
+        }
         /*return client.preparedQuery("SELECT * FROM _users WHERE login = '$1'")
                 .execute(Tuple.of(userName))
                 .onItem().transform(RowSet::iterator)

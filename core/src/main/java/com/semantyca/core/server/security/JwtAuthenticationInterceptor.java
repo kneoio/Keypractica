@@ -14,6 +14,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Optional;
 import java.util.Set;
 
 @Provider
@@ -34,8 +35,8 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
         String path = uriInfo.getPath();
         String userName = jwt.getName();
         Set<String> userGroups = jwt.getGroups();
-        IUser user = userRepository.findByLogin(userName).get();
-        if (user.getId() > 1) {
+        Optional<IUser> user = userRepository.findByLogin(userName);
+        if (user.isPresent() && user.get().getId() > 1) {
             boolean allowByGroup = switch (path) {
                 case "/projects", "/tasks" -> userGroups.contains("developer");
                 case "/workspace" -> true;
@@ -54,10 +55,14 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
             }
         } else {
             boolean allowAnonymously = switch (path) {
-                case "/workspace" -> true;
+                case "/workspace", "/languages", "/employees", "/users", "/modules" -> true;
                 default -> false;
             };
             if (allowAnonymously) {
+                requestContext.setProperty("user", AnonymousUser.Build());
+                return;
+            } else {
+                //TODO temporary allowed
                 requestContext.setProperty("user", AnonymousUser.Build());
                 return;
             }
