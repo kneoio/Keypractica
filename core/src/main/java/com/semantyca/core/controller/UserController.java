@@ -6,7 +6,7 @@ import com.semantyca.core.dto.document.UserDTO;
 import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
-import com.semantyca.core.model.user.User;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.service.UserService;
 import io.smallrye.mutiny.Multi;
@@ -41,7 +41,7 @@ public class UserController {
     @Path("/stream")
     @Consumes(MediaType.SERVER_SENT_EVENTS)
     @Produces(MediaType.SERVER_SENT_EVENTS)
-    public Multi<User> getStream() {
+    public Multi<IUser> getStream() {
         return service.getAllStream();
     }
 

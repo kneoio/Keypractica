@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.Module;
+import com.semantyca.core.server.EnvConst;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,18 +29,30 @@ public class User extends DataEntity<Long> implements IUser{
     @JsonIgnore
     boolean authorized;
     private List<String> roles = new ArrayList<>();
+    private Integer pageSize = EnvConst.DEFAULT_PAGE_SIZE;
     private Integer defaultLang;
     private TimeZone timeZone;
 
+    @Override
+    public String getUserName() {
+        return login;
+    }
+
     public static class Builder {
+        private Long id;
         private String login;
         private String pwd = "123";
         private String email;
         private TimeZone timeZone = TimeZone.getDefault();
         private List<String> roles;
         private Integer defaultLang = LanguageCode.ENG.getCode();
-
         private final List<Module> modules = Collections.singletonList(new Module.Builder().build());
+
+
+        public Builder setId(long id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder setLogin(String login) {
             this.login = login;
@@ -73,6 +86,7 @@ public class User extends DataEntity<Long> implements IUser{
 
         public User build() {
             User newUser = new User();
+            newUser.setId(id);
             newUser.setLogin(login);
             newUser.setPwd(pwd);
             newUser.setEmail(email);
@@ -82,6 +96,8 @@ public class User extends DataEntity<Long> implements IUser{
             newUser.setDefaultLang(defaultLang);
             return newUser;
         }
+
+
     }
 
 }

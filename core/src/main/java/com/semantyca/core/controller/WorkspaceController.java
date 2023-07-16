@@ -24,14 +24,16 @@ public class WorkspaceController {
     LanguageService languageService;
     @Inject
     ModuleService moduleService;
+    private LanguageService user;
+
     @GET
     @Path("/")
     public Response get(@Context ContainerRequestContext requestContext) {
         IUser currentUser = (IUser) requestContext.getProperty("user");
         if (currentUser.getId() == AnonymousUser.ID) {
-            return Response.ok(new Workspace(languageService)).build();
+            return Response.ok(new Workspace(currentUser, languageService)).build();
         } else {
-            return Response.ok(new Workspace(languageService, moduleService)).build();
+            return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();
         }
     }
 }

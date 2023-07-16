@@ -4,7 +4,7 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.model.user.User;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.UserRepository;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
@@ -32,16 +32,20 @@ public class ProjectService {
         return repository.getAll(limit, offset, userID);
     }
 
+    public Uni<Integer> getAllCount(final long userID) {
+        return repository.getAllCount(userID);
+    }
+
     public Uni<ProjectDTO> get(String uuid) {
         UUID id = UUID.fromString(uuid);
         Uni<Optional<Project>> projectUni = repository.findById(id, 2L);
-        Uni<Optional<User>> manager = projectUni.onItem().transformToUni(item ->
+        Uni<Optional<IUser>> manager = projectUni.onItem().transformToUni(item ->
                 userRepository.findById(item.get().getManager())
         );
-        Uni<Optional<User>> coder = projectUni.onItem().transformToUni(item ->
+        Uni<Optional<IUser>> coder = projectUni.onItem().transformToUni(item ->
                 userRepository.findById(item.get().getCoder())
         );
-        Uni<Optional<User>> tester = projectUni.onItem().transformToUni(item ->
+        Uni<Optional<IUser>> tester = projectUni.onItem().transformToUni(item ->
                 userRepository.findById(item.get().getTester())
         );
 
@@ -51,7 +55,7 @@ public class ProjectService {
 
         return Uni.combine().all().unis(projectUni, manager, coder, tester, rlsEntires).combinedWith((projectOptional, userOptional, coderOptional, testerOtional, rlsList) -> {
                     Project p = projectOptional.get();
-                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getLogin(), coderOptional.get().getLogin(), testerOtional.get().getLogin(), rlsList);
+                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getUserName(), coderOptional.get().getUserName(), testerOtional.get().getUserName(), rlsList);
                 }
         );
 
@@ -70,4 +74,6 @@ public class ProjectService {
                 .build();
         return repository.update(user);
     }
+
+
 }

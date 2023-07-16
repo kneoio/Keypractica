@@ -4,7 +4,7 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.model.user.User;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.UserRepository;
 import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
@@ -54,7 +54,7 @@ public class TaskService {
     public Uni<TaskDTO> get(String uuid) {
         UUID id = UUID.fromString(uuid);
         Uni<Optional<Task>> taskUni = repository.findById(2L, id);
-        Uni<Optional<User>> asigneeUni = taskUni.onItem().transformToUni(item ->
+        Uni<Optional<IUser>> asigneeUni = taskUni.onItem().transformToUni(item ->
                 userRepository.findById(item.get().getAssignee())
         );
 
@@ -73,7 +73,7 @@ public class TaskService {
 
         return Uni.combine().all().unis(taskUni, asigneeUni, projectUni, taskTypeUni, rlsEntires).combinedWith((taskOpt, userOptional, projectOpt, taskType, rlsList) -> {
                     Task p = taskOpt.get();
-                    return new TaskDTO(p.getId(),p.getRegNumber(), p.getBody(), userOptional.get().getLogin(), taskType.get().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rlsList);
+                    return new TaskDTO(p.getId(),p.getRegNumber(), p.getBody(), userOptional.get().getUserName(), taskType.get().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rlsList);
                 }
         );
 
