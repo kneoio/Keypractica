@@ -22,7 +22,7 @@ public class UserGRPCServiceImpl implements UserGRPCService {
         Multi<UserProto> multiUserProtos = multiUsers
                 .map(user -> UserProto.newBuilder()
                         .setId("33L")
-                        .setLogin(user.getLogin())
+                        .setLogin(user.getUserName())
 //                        .setEmail(user.getEmail())
                         .build());
         return multiUserProtos;

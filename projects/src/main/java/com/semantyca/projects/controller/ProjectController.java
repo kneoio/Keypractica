@@ -7,9 +7,10 @@ import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
-import com.semantyca.core.model.user.User;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
+import com.semantyca.core.util.RuntimeUtil;
 import com.semantyca.projects.actions.ProjectActionsFactory;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.service.ProjectService;
@@ -22,6 +23,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.util.List;
+
+import static com.semantyca.core.util.RuntimeUtil.countMaxPage;
 
 @Path("/projects")
 @Produces(MediaType.APPLICATION_JSON)
@@ -31,19 +35,28 @@ public class ProjectController {
     ProjectService service;
     @GET
     @Path("/")
-    public Response get(@Context ContainerRequestContext requestContext)  {
-        User currentUser = (User) requestContext.getProperty("user");
-        ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
-        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        View<ProjectDTO> view = new View<>(service.getAll(100, 0, currentUser.getId()).await().indefinitely());
-        viewPage.addPayload(PayloadType.VIEW_DATA, view);
-        return Response.ok(viewPage).build();
+    public Uni<Response> get(@BeanParam Parameters parameters, @Context ContainerRequestContext requestContext) {
+        IUser user = (IUser) requestContext.getProperty("user");
+        Uni<Integer> countUni = service.getAllCount(user.getId());
+        Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
+        Uni<Integer> pageNumUni = Uni.createFrom().item(parameters.page);
+        Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
+        Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
+
+        return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
+            ViewPage viewPage = new ViewPage();
+            viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
+            viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
+            if (pageNum == 0) pageNum = 1;
+            View dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
+            viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+            return Response.ok(viewPage).build();
+        });
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id)  {
+    public Uni<Response> getById(@PathParam("id") String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.ACTIONS, new ActionBar());
 
@@ -73,6 +86,11 @@ public class ProjectController {
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(@PathParam("id") String id) {
         return Response.ok().build();
+    }
+
+    static class Parameters {
+        @QueryParam("page")
+        int page;
     }
 
 }

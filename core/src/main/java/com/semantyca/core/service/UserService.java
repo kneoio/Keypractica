@@ -2,6 +2,7 @@ package com.semantyca.core.service;
 
 import com.semantyca.core.dto.document.UserDTO;
 import com.semantyca.core.model.user.AnonymousUser;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.repository.UserRepository;
 import io.smallrye.mutiny.Multi;
@@ -20,15 +21,15 @@ public class UserService {
     @Inject
     private UserRepository repository;
 
-    public Uni<List<User>> getAll() {
+    public Uni<List<IUser>> getAll() {
         return repository.getAll();
     }
 
-    public Multi<User> getAllStream() {
+    public Multi<IUser> getAllStream() {
         return repository.getAllStream();
     }
 
-    public Uni<Optional<User>> get(String id) {
+    public Uni<Optional<IUser>> get(String id) {
         return repository.findById(Long.parseLong(id));
     }
 

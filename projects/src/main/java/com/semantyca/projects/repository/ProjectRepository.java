@@ -30,7 +30,7 @@ public class ProjectRepository extends Repository {
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
         if (limit > 0) {
-            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+           // sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
@@ -41,6 +41,13 @@ public class ProjectRepository extends Repository {
                         ProjectStatusType.valueOf(row.getString("status")),
                         row.getLocalDate("finish_date"), null, null, null, null))
                 .collect().asList();
+    }
+
+    public Uni<Integer> getAllCount(long userID) {
+        String sql = "SELECT count(id) FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
+        return client.query(sql)
+                .execute()
+                .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
@@ -94,4 +101,5 @@ public class ProjectRepository extends Repository {
 
         return 1;
     }
+
 }

@@ -1,7 +1,7 @@
 package com.semantyca.core.model.user;
 
 
-public class AnonymousUser extends SystemUser {
+public class AnonymousUser extends SystemAbstractUser {
     public final static String USER_NAME = "anonymous";
     public final static long ID = 0L;
 
@@ -10,13 +10,7 @@ public class AnonymousUser extends SystemUser {
     }
 
     @Override
-    public String getLogin() {
-        return USER_NAME;
-    }
-
-
-    @Override
-    public String getName() {
+    public String getUserName() {
         return USER_NAME;
     }
 

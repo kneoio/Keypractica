@@ -10,7 +10,6 @@ import com.semantyca.core.repository.exception.DocumentModificationAccessExcepti
 import com.semantyca.officeframe.dto.OrganizationDTO;
 import com.semantyca.officeframe.model.Organization;
 import com.semantyca.officeframe.service.OrganizationService;
-import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -26,7 +25,6 @@ public class OrganizationController {
     OrganizationService service;
     @GET
     @Path("/")
-    @PermitAll
     public Response get()  {
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
