@@ -3,17 +3,15 @@ package com.semantyca.projects.repository;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.constants.ProjectStatusType;
 import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.core.repository.Repository;
+import com.semantyca.core.repository.AsyncRepo;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -22,15 +20,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ProjectRepository extends Repository {
-
-    @Inject
-    PgPool client;
+public class ProjectRepository extends AsyncRepo {
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
         if (limit > 0) {
-           // sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+           sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
@@ -44,10 +39,7 @@ public class ProjectRepository extends Repository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        String sql = "SELECT count(id) FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
-        return client.query(sql)
-                .execute()
-                .onItem().transform(rows -> rows.iterator().next().getInteger(0));
+        return getAllCount(userID, "prj__projects", "prj__project_readers");
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {

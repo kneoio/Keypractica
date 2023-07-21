@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
-public class LanguageRepository extends Repository {
+public class LanguageRepository extends AsyncRepo {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
     @Inject
