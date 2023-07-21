@@ -1,19 +1,16 @@
 package com.semantyca.projects.repository;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.core.repository.Repository;
+import com.semantyca.core.repository.AsyncRepo;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -22,11 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class TaskRepository extends Repository {
-    @Inject
-    ObjectMapper mapper;
-    @Inject
-    PgPool client;
+public class TaskRepository extends AsyncRepo {
 
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt  JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
@@ -39,8 +32,12 @@ public class TaskRepository extends Repository {
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> from(row))
+                .onItem().transform(this::from)
                                 .collect().asList();
+    }
+
+    public Uni<Integer> getAllCount(long userID) {
+        return getAllCount(userID, "prj__tasks", "prj__task_readers");
     }
 
     public Uni<Optional<Task>> findById(Long userID, UUID uuid) {

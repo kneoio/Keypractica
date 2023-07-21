@@ -6,6 +6,7 @@ import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.UserRepository;
+import com.semantyca.core.service.AbstractService;
 import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
 import com.semantyca.projects.dto.ProjectDTO;
@@ -26,7 +27,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class TaskService {
+public class TaskService extends AbstractService {
     private static final Logger LOGGER = LoggerFactory.getLogger("TaskService");
     @Inject
     private TaskRepository repository;
@@ -51,20 +52,23 @@ public class TaskService {
                         .collect(Collectors.toList()));
     }
 
+    public Uni<Integer> getAllCount(final long userID) {
+        return repository.getAllCount(userID);
+    }
+
     public Uni<TaskDTO> get(String uuid) {
         UUID id = UUID.fromString(uuid);
         Uni<Optional<Task>> taskUni = repository.findById(2L, id);
         Uni<Optional<IUser>> asigneeUni = taskUni.onItem().transformToUni(item ->
-                userRepository.findById(item.get().getAssignee())
+                userRepository.findById(item.orElseThrow().getAssignee())
         );
 
         Uni<Optional<Project>> projectUni = taskUni.onItem().transformToUni(item ->
-                projectRepository.findById(item.get().getProject(), 2L)
+                projectRepository.findById(item.orElseThrow().getProject(), 2L)
         );
 
-
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeRepository.findById(item.get().getTaskType())
+                taskTypeRepository.findById(item.orElseThrow().getTaskType())
         );
 
         Uni<List<RLS>> rlsEntires = taskUni.onItem().transformToUni(item ->
@@ -72,8 +76,8 @@ public class TaskService {
         );
 
         return Uni.combine().all().unis(taskUni, asigneeUni, projectUni, taskTypeUni, rlsEntires).combinedWith((taskOpt, userOptional, projectOpt, taskType, rlsList) -> {
-                    Task p = taskOpt.get();
-                    return new TaskDTO(p.getId(),p.getRegNumber(), p.getBody(), userOptional.get().getUserName(), taskType.get().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rlsList);
+                    Task p = taskOpt.orElseThrow();
+                    return new TaskDTO(p.getId(),p.getRegNumber(), p.getBody(), userOptional.orElseThrow().getUserName(), taskType.orElseThrow().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rlsList);
                 }
         );
 

@@ -4,6 +4,7 @@ import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.UserRepository;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.HttpMethod;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Provider
 //@Priority(Priorities.AUTHENTICATION)
@@ -28,12 +30,14 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
     @Context
     private JsonWebToken jwt;
 
+    String uuidRegex = "/(projects|tasks)/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
         UriInfo uriInfo = requestContext.getUriInfo();
+        String method = requestContext.getMethod();
         String path = uriInfo.getPath();
-        String userName = jwt.getName();
+        String userName = jwt.getSubject();
         Set<String> userGroups = jwt.getGroups();
         Optional<IUser> user = userRepository.findByLogin(userName);
         if (user.isPresent() && user.get().getId() > 1) {
@@ -41,11 +45,21 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
                 case "/projects", "/tasks" -> userGroups.contains("developer");
                 case "/workspace" -> true;
                 default -> {
-                    try {
-                        throw new UnknownResourceExcetion("Unknown resource: " + path);
-                    } catch (UnknownResourceExcetion e) {
-                        LOGGER.error(e.getMessage());
-                        throw new RuntimeException(e);
+                    if (Pattern.matches(uuidRegex, path) && userGroups.contains("developer")) {
+                        if (method.equals(HttpMethod.GET)) {
+                            yield true;
+                        } else {
+                            LOGGER.error(String.format("The method \"%s\" is not allowed", method));
+                            yield false;
+                        }
+                    } else {
+                        try {
+                            throw new UnknownResourceExcetion("Unknown resource: " + path);
+
+                        } catch (UnknownResourceExcetion e) {
+                            LOGGER.error(e.getMessage());
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
             };

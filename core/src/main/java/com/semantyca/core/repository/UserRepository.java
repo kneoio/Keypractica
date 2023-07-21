@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class UserRepository extends Repository {
+public class UserRepository extends AsyncRepo {
 
     @Inject
     PgPool client;
