@@ -2,6 +2,7 @@ package com.semantyca.core.repository;
 
 
 import com.semantyca.core.model.user.IUser;
+import com.semantyca.core.model.user.UndefinedUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.server.EnvConst;
 import io.quarkus.runtime.StartupEvent;
@@ -34,7 +35,7 @@ public class UserRepository extends AsyncRepo {
 
     void onStart(@Observes StartupEvent ev) {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
-                .collect(Collectors.toMap(IUser::getId, user -> user)))
+                        .collect(Collectors.toMap(IUser::getId, user -> user)))
                 .await().indefinitely();
         userAltCache.putAll(userCache.values().stream()
                 .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
@@ -89,6 +90,10 @@ public class UserRepository extends AsyncRepo {
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromShort(iterator.next())) : Optional.of(UndefinedUser.Build()))
                 .await().indefinitely();*/
+    }
+
+    public String getUserName(long id) {
+        return userCache.getOrDefault(id, UndefinedUser.Build()).getUserName();
     }
 
     public Uni<Optional<IUser>> getName(Long id) {

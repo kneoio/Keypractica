@@ -1,11 +1,11 @@
 package com.semantyca.projects.service;
 
 import com.semantyca.core.dto.document.LanguageDTO;
+import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.IUser;
-import com.semantyca.core.repository.UserRepository;
 import com.semantyca.core.service.AbstractService;
 import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
@@ -34,21 +34,14 @@ public class TaskService extends AbstractService {
     @Inject
     private ProjectRepository projectRepository;
     @Inject
-    private UserRepository userRepository;
-    @Inject
     private TaskTypeRepository taskTypeRepository;
 
     public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final long userID) {
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, userID);
-
-     /*   Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeRepository.findById(item.get().getTaskType())
-        );*/
-
         return taskUni
                 .onItem().transform(taskList -> taskList.stream()
                         .map(task ->
-                            new TaskDTO(task.getId(), task.getRegNumber(), task.getBody(), null, null , null, null, task.getStartDate(), task.getTargetDate(), task.getStatus(), task.getPriority(), null))
+                                new TaskDTO(task.getId(), task.getRegNumber(), task.getBody(), null, null, null, null, task.getStartDate(), task.getTargetDate(), task.getStatus(), task.getPriority(), null))
                         .collect(Collectors.toList()));
     }
 
@@ -75,15 +68,19 @@ public class TaskService extends AbstractService {
                 repository.getAllReaders(id)
         );
 
-        return Uni.combine().all().unis(taskUni, asigneeUni, projectUni, taskTypeUni, rlsEntires).combinedWith((taskOpt, userOptional, projectOpt, taskType, rlsList) -> {
+        Uni<List<RLSDTO>> rlsDtoListUni = rlsEntires.onItem().transform(rlsList -> rlsList.stream()
+                .map(this::convertRlSEntries)
+                .collect(Collectors.toList()));
+
+        return Uni.combine().all().unis(taskUni, asigneeUni, projectUni, taskTypeUni, rlsDtoListUni).combinedWith((taskOpt, userOptional, projectOpt, taskType, rls) -> {
                     Task p = taskOpt.orElseThrow();
-                    return new TaskDTO(p.getId(),p.getRegNumber(), p.getBody(), userOptional.orElseThrow().getUserName(), taskType.orElseThrow().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rlsList);
+                    return new TaskDTO(p.getId(), p.getRegNumber(), p.getBody(), userOptional.orElseThrow().getUserName(), taskType.orElseThrow().getLocName(), projectOpt.orElse(new Project()), null, p.getStartDate(), p.getTargetDate(), p.getStatus(), p.getPriority(), rls);
                 }
         );
 
     }
 
-    public String add(ProjectDTO dto)  {
+    public String add(ProjectDTO dto) {
         Project node = new Project.Builder()
                 .setName(dto.name())
                 .build();
