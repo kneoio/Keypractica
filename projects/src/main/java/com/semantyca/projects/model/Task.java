@@ -30,6 +30,10 @@ public class Task extends SecureDataEntity<UUID> {
 
     public static class Builder {
         private UUID id;
+        private long author;
+        private ZonedDateTime regDate;
+        private ZonedDateTime lastModifiedDate;
+        private long lastModifier;
         private String regNumber;
         private String body;
         protected Long assignee;
@@ -46,6 +50,26 @@ public class Task extends SecureDataEntity<UUID> {
 
         public Builder setId(UUID id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder setAuthor(long author) {
+            this.author = author;
+            return this;
+        }
+
+        public Builder setRegDate(ZonedDateTime regDate) {
+            this.regDate = regDate;
+            return this;
+        }
+
+        public Builder setLastModifiedDate(ZonedDateTime lastModifiedDate) {
+            this.lastModifiedDate = lastModifiedDate;
+            return this;
+        }
+
+        public Builder setLastModifier(long lastModifier) {
+            this.lastModifier = lastModifier;
             return this;
         }
 
@@ -116,6 +140,10 @@ public class Task extends SecureDataEntity<UUID> {
         public Task build() {
             Task newNode = new Task();
             newNode.setId(id);
+            newNode.setAuthor(author);
+            newNode.setRegDate(regDate);
+            newNode.setLastModifier(lastModifier);
+            newNode.setLastModifiedDate(lastModifiedDate);
             newNode.setRegNumber(regNumber);
             newNode.setBody(body);
             newNode.setAssignee(assignee);

@@ -56,11 +56,12 @@ public class ProjectController {
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id) {
+    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+        IUser user = (IUser) requestContext.getProperty("user");
         FormPage page = new FormPage();
         page.addPayload(PayloadType.ACTIONS, new ActionBar());
 
-        return service.get(id)
+        return service.get(id, user.getId())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();
