@@ -29,15 +29,15 @@ public class ModuleService {
 
     public String add(LanguageDTO dto) throws DocumentExistsException {
         Language node = new Language.Builder()
-                .setCode(dto.code())
-                .setLocalizedNames(dto.localizedNames())
+                .setCode(dto.getCode().toString())
+                .setLocalizedNames(dto.getLocalizedNames())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.code())
+                .setCode(dto.getCode().toString())
                 .build();
         return repository.update(user);
     }

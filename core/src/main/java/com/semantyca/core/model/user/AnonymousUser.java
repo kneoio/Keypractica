@@ -5,7 +5,7 @@ public class AnonymousUser extends SystemAbstractUser {
     public final static String USER_NAME = "anonymous";
     public final static long ID = 0L;
 
-    public Long getId() {
+    public Long getUserId() {
         return ID;
     }
 

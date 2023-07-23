@@ -12,14 +12,30 @@ import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class LanguageService implements IBasicService<LanguageDTO> {
     @Inject
     private LanguageRepository repository;
 
+    @Inject
+    private UserService userService;
+
     public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
-        return repository.getAll(limit, offset);
+        Uni<List<Language>> langUni = repository.getAll(limit, offset);
+        return langUni.onItem().transform(list -> list.stream()
+                        .map(language ->
+                                LanguageDTO.builder()
+                                        .id(language.getId())
+                                        .author(userService.getUserName(language.getAuthor()))
+                                        .regDate(language.getRegDate())
+                                        .lastModifier(userService.getUserName(language.getLastModifier()))
+                                        .lastModifiedDate(language.getLastModifiedDate())
+                                        .code(LanguageCode.valueOf(language.getCode()))
+                                        .localizedNames(language.getLocalizedNames())
+                                        .build())
+                        .collect(Collectors.toList()));
     }
 
     public Uni<Language> findByCode(String code) {
@@ -32,15 +48,15 @@ public class LanguageService implements IBasicService<LanguageDTO> {
 
     public String add(LanguageDTO dto) throws DocumentExistsException {
         Language node = new Language.Builder()
-                .setCode(dto.code())
-                .setLocalizedNames(dto.localizedNames())
+                .setCode(dto.getCode().toString())
+                .setLocalizedNames(dto.getLocalizedNames())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.code())
+                .setCode(dto.getCode().toString())
                 .build();
         return repository.update(user);
     }

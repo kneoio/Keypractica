@@ -1,7 +1,7 @@
 package com.semantyca.projects.repository;
 
 import com.semantyca.core.model.Language;
-import com.semantyca.core.repository.AsyncRepo;
+import com.semantyca.core.repository.AsyncRepository;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
 import io.smallrye.mutiny.Multi;
@@ -18,7 +18,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class TaskRepository extends AsyncRepo {
+public class TaskRepository extends AsyncRepository {
 
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt  JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";

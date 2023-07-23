@@ -24,18 +24,18 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class UserRepository extends AsyncRepo {
+public class UserRepository extends AsyncRepository {
 
     @Inject
     PgPool client;
 
-    private static Map<Long, IUser> userCache = new HashMap();
-    private static Map<String, IUser> userAltCache = new HashMap();
+    private static Map<Long, IUser> userCache = new HashMap<>();
+    private static final Map<String, IUser> userAltCache = new HashMap<>();
 
 
     void onStart(@Observes StartupEvent ev) {
-        userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
-                        .collect(Collectors.toMap(IUser::getId, user -> user)))
+        userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getUserId() != null)
+                        .collect(Collectors.toMap(IUser::getUserId, user -> user)))
                 .await().indefinitely();
         userAltCache.putAll(userCache.values().stream()
                 .collect(Collectors.toMap(IUser::getUserName, Function.identity())));

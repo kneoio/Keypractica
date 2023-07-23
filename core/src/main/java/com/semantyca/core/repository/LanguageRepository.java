@@ -4,7 +4,6 @@ package com.semantyca.core.repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.repository.exception.DocumentExistsException;
@@ -24,7 +23,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @ApplicationScoped
-public class LanguageRepository extends AsyncRepo {
+public class LanguageRepository extends AsyncRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
     @Inject
@@ -33,7 +32,7 @@ public class LanguageRepository extends AsyncRepo {
     @Inject
     ObjectMapper mapper;
 
-    public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<Language>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM _langs l";
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
@@ -42,17 +41,7 @@ public class LanguageRepository extends AsyncRepo {
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> {
-                    Map<LanguageCode, String> map;
-                    try {
-                        map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {});
-                    } catch (JsonProcessingException e) {
-                        LOGGER.error(e.getMessage());
-                        throw new RuntimeException(e);
-                    }
-                    return new LanguageDTO(row.getString("code"), map);
-
-                })
+                .onItem().transform(this::from)
                 .collect().asList();
     }
 

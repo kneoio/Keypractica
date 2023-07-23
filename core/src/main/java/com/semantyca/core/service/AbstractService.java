@@ -4,7 +4,7 @@ import com.semantyca.core.dto.IDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.core.repository.AsyncRepo;
+import com.semantyca.core.repository.AsyncRepository;
 import com.semantyca.core.repository.UserRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -20,9 +20,9 @@ public abstract class AbstractService<T> {
     protected UserRepository userRepository;
 
 
-    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepo asyncRepo, Uni<Optional<T>> secureDataEntityUni, UUID id) {
+    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->
-                asyncRepo.getAllReaders(id)
+                asyncRepository.getAllReaders(id)
         );
 
         return rlsEntires.onItem().transform(rlsList -> rlsList.stream()

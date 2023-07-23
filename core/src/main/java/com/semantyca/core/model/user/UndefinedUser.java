@@ -8,7 +8,7 @@ public class UndefinedUser extends SystemAbstractUser {
         return USER_NAME;
     }
 
-    public Long getId() {
+    public Long getUserId() {
         return ID;
     }
 

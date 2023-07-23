@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public class AsyncRepo {
+public class AsyncRepository {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
 

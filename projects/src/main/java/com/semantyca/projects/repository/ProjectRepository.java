@@ -3,7 +3,7 @@ package com.semantyca.projects.repository;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.constants.ProjectStatusType;
 import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.core.repository.AsyncRepo;
+import com.semantyca.core.repository.AsyncRepository;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import io.smallrye.mutiny.Multi;
@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ProjectRepository extends AsyncRepo {
+public class ProjectRepository extends AsyncRepository {
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;

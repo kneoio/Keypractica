@@ -104,7 +104,7 @@ public class TaskService extends AbstractService<Task> {
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode())
+                .setCode(dto.getCode().toString())
                 .build();
         return repository.update(user);
     }
