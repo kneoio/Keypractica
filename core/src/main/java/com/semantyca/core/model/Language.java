@@ -15,7 +15,7 @@ import java.util.UUID;
 public class Language extends DataEntity<UUID> {
     protected String name;
     private Map<LanguageCode, String> localizedNames = new HashMap<>();
-    private LanguageCode code = LanguageCode.UNKNOWN;
+    private String code = LanguageCode.UNKNOWN.toString();
     private boolean isOn;
     private int position;
 
@@ -53,7 +53,7 @@ public class Language extends DataEntity<UUID> {
 
         public Language build() {
             Language newNode = new Language();
-            newNode.setCode(LanguageCode.valueOf(code));
+            newNode.setCode(code);
             newNode.setOn(isOn);
             newNode.setPosition(position);
             newNode.setLocalizedNames(localizedNames);

@@ -19,6 +19,7 @@ import java.util.TimeZone;
 @Getter
 @NoArgsConstructor
 public class User extends DataEntity<Long> implements IUser{
+    private Long id;
     @NotBlank
     private String login;
     @JsonIgnore
@@ -33,6 +34,10 @@ public class User extends DataEntity<Long> implements IUser{
     private Integer defaultLang;
     private TimeZone timeZone;
 
+    @Override
+    public Long getUserId() {
+        return id;
+    }
     @Override
     public String getUserName() {
         return login;

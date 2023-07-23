@@ -14,7 +14,7 @@ import java.util.Map;
 @SuperBuilder
 @NoArgsConstructor
 public class LanguageDTO extends AbstractDTO{
-    String code;
+    LanguageCode code;
     Map<LanguageCode, String> localizedNames;
 
 

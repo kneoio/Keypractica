@@ -3,6 +3,7 @@ package com.semantyca.officeframe.model;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.semantyca.core.model.SimpleReferenceEntity;
+import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.model.user.User;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.UUID;
 @Setter
 @Getter
 @NoArgsConstructor
-public class Employee extends SimpleReferenceEntity {
+public class Employee extends SimpleReferenceEntity implements IUser {
     private String name;
     private User user;
     private Date birthDate;
@@ -29,6 +30,21 @@ public class Employee extends SimpleReferenceEntity {
     private Position position;
     private List<Role> roles;
     private int rank = 999;
+
+    @Override
+    public Long getUserId() {
+        return user.getUserId();
+    }
+
+    @Override
+    public String getUserName() {
+        return user.getUserName();
+    }
+
+    @Override
+    public String getEmail() {
+        return user.getEmail();
+    }
 
     public static class Builder {
         private UUID id;

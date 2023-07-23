@@ -4,8 +4,8 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.repository.UserRepository;
 import com.semantyca.core.service.AbstractService;
+import com.semantyca.core.service.UserService;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.repository.ProjectRepository;
@@ -20,12 +20,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ProjectService extends AbstractService {
+public class ProjectService extends AbstractService<Project> {
     private static final Logger LOGGER = LoggerFactory.getLogger("ProjectService");
     @Inject
     private ProjectRepository repository;
     @Inject
-    private UserRepository userRepository;
+    private UserService userService;
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         return repository.getAll(limit, offset, userID);
@@ -39,10 +39,16 @@ public class ProjectService extends AbstractService {
         return get(UUID.fromString(uuid), userID);
     }
 
-    public Uni<ProjectDTO> get(UUID id, final long userID) {
+    public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
         Uni<Optional<Project>> projectUni = repository.findById(id, userID);
 
-        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, projectUni, id);
+        Uni<List<RLSDTO>> rlsDtoListUni;
+
+        if (includeRLS) {
+            rlsDtoListUni = getRLSDTO(repository, projectUni, id);
+        } else {
+            rlsDtoListUni = Uni.createFrom().optional(Optional.empty());
+        }
 
         return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
                     Project project = projectOptional.orElseThrow();
@@ -51,13 +57,16 @@ public class ProjectService extends AbstractService {
                             project.getName(),
                             project.getStatus(),
                             project.getFinishDate(),
-                            userRepository.getUserName(project.getManager()),
-                            userRepository.getUserName(project.getCoder()),
-                            userRepository.getUserName(project.getTester()),
+                            userService.getUserName(project.getManager()),
+                            userService.getUserName(project.getCoder()),
+                            userService.getUserName(project.getTester()),
                             rlsList);
                 }
         );
+    }
 
+    public Uni<ProjectDTO> get(UUID id, final long userID) {
+       return get(id, userID, false);
     }
 
     public String add(ProjectDTO dto) {
@@ -69,7 +78,7 @@ public class ProjectService extends AbstractService {
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode())
+                .setCode(dto.getCode().toString())
                 .build();
         return repository.update(user);
     }

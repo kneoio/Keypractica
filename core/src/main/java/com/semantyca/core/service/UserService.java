@@ -33,6 +33,9 @@ public class UserService {
         return repository.findById(Long.parseLong(id));
     }
 
+    public String getUserName(long id) {
+        return repository.getUserName(id);
+    }
     public Long add(UserDTO userDTO) {
         User user = new User.Builder()
                 .setLogin(userDTO.login())
