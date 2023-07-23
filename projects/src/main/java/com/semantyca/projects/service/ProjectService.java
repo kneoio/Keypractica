@@ -1,11 +1,11 @@
 package com.semantyca.projects.service;
 
 import com.semantyca.core.dto.document.LanguageDTO;
+import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.Language;
-import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.UserRepository;
+import com.semantyca.core.service.AbstractService;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.repository.ProjectRepository;
@@ -20,11 +20,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
-public class ProjectService {
+public class ProjectService extends AbstractService {
     private static final Logger LOGGER = LoggerFactory.getLogger("ProjectService");
     @Inject
     private ProjectRepository repository;
-
     @Inject
     private UserRepository userRepository;
 
@@ -36,32 +35,32 @@ public class ProjectService {
         return repository.getAllCount(userID);
     }
 
-    public Uni<ProjectDTO> get(String uuid) {
-        UUID id = UUID.fromString(uuid);
-        Uni<Optional<Project>> projectUni = repository.findById(id, 2L);
-        Uni<Optional<IUser>> manager = projectUni.onItem().transformToUni(item ->
-                userRepository.findById(item.get().getManager())
-        );
-        Uni<Optional<IUser>> coder = projectUni.onItem().transformToUni(item ->
-                userRepository.findById(item.get().getCoder())
-        );
-        Uni<Optional<IUser>> tester = projectUni.onItem().transformToUni(item ->
-                userRepository.findById(item.get().getTester())
-        );
+    public Uni<ProjectDTO> get(String uuid, final long userID) {
+        return get(UUID.fromString(uuid), userID);
+    }
 
-        Uni<List<RLS>> rlsEntires = projectUni.onItem().transformToUni(item ->
-                repository.getAllReaders(id)
-        );
+    public Uni<ProjectDTO> get(UUID id, final long userID) {
+        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
 
-        return Uni.combine().all().unis(projectUni, manager, coder, tester, rlsEntires).combinedWith((projectOptional, userOptional, coderOptional, testerOtional, rlsList) -> {
-                    Project p = projectOptional.get();
-                    return new ProjectDTO(p.getId(), p.getName(), p.getStatus(), p.getFinishDate(), userOptional.get().getUserName(), coderOptional.get().getUserName(), testerOtional.get().getUserName(), rlsList);
+        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, projectUni, id);
+
+        return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
+                    Project project = projectOptional.orElseThrow();
+                    return new ProjectDTO(
+                            project.getId(),
+                            project.getName(),
+                            project.getStatus(),
+                            project.getFinishDate(),
+                            userRepository.getUserName(project.getManager()),
+                            userRepository.getUserName(project.getCoder()),
+                            userRepository.getUserName(project.getTester()),
+                            rlsList);
                 }
         );
 
     }
 
-    public String add(ProjectDTO dto)  {
+    public String add(ProjectDTO dto) {
         Project node = new Project.Builder()
                 .setName(dto.name())
                 .build();
@@ -70,7 +69,7 @@ public class ProjectService {
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.code())
+                .setCode(dto.getCode())
                 .build();
         return repository.update(user);
     }

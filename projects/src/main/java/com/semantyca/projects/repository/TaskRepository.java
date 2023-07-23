@@ -1,7 +1,6 @@
 package com.semantyca.projects.repository;
 
 import com.semantyca.core.model.Language;
-import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.repository.AsyncRepo;
 import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
@@ -47,26 +46,20 @@ public class TaskRepository extends AsyncRepo {
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
-    public Uni<List<RLS>> getAllReaders(UUID uuid) {
-        return client.preparedQuery("SELECT reader, reading_time, can_edit, can_delete FROM prj__tasks p, prj__task_readers ppr WHERE p.id = ppr.entity_id AND p.id = $1")
-                .execute(Tuple.of(uuid))
-                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new RLS(
-                        Optional.ofNullable(row.getLocalDateTime("reading_time"))
-                                .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault())))
-                                .orElse(null),
-                        row.getLong("reader"),
-                        row.getLong("can_edit"),
-                        row.getLong("can_delete")))
-                .collect().asList();
-    }
+
 
     private Task from(Row row) {
         return new Task.Builder()
                 .setId(row.getUUID("id"))
+                .setAuthor(row.getLong("author"))
+                .setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()))
+                .setLastModifier(row.getLong("last_mod_user"))
+                .setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()))
                 .setRegNumber(row.getString("reg_number"))
                 .setAssignee(row.getLong("assignee"))
                 .setBody(row.getString("body"))
+                .setProject(row.getUUID("project_id"))
+                .setParent(row.getUUID("parent_id"))
                 .setTaskType(row.getUUID("tasktype_id"))
                 .setTargetDate(Optional.ofNullable(row.getLocalDateTime("target_date"))
                         .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
