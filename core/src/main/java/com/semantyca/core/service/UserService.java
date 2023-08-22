@@ -1,7 +1,6 @@
 package com.semantyca.core.service;
 
 import com.semantyca.core.dto.document.UserDTO;
-import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.repository.UserRepository;
@@ -36,13 +35,13 @@ public class UserService {
     public String getUserName(long id) {
         return repository.getUserName(id);
     }
-    public Long add(UserDTO userDTO) {
+    public Uni<Long> add(UserDTO userDTO) {
         User user = new User.Builder()
                 .setLogin(userDTO.login())
                 .setPwd(userDTO.pwd())
                 .setEmail(userDTO.email())
                 .build();
-        return repository.insert(user, AnonymousUser.ID);
+        return repository.insert(user);
     }
 
     public User update(UserDTO userDTO) {

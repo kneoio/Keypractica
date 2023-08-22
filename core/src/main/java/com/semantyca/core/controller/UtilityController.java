@@ -19,13 +19,13 @@ import jakarta.ws.rs.core.Response;
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class WorkspaceController {
+public class UtilityController {
     @Inject
     private LanguageService languageService;
     @Inject
     private ModuleService moduleService;
     @GET
-    @Path("/workspace")
+    @Path("/translations")
     public Response get(@Context ContainerRequestContext requestContext) {
         IUser currentUser = (IUser) requestContext.getProperty("user");
         if (currentUser.getUserId() == AnonymousUser.ID) {

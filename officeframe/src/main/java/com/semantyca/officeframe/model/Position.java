@@ -6,7 +6,6 @@ import com.semantyca.core.model.SimpleReferenceEntity;
 
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-
 public class Position extends SimpleReferenceEntity {
     private int rank = 999;
 

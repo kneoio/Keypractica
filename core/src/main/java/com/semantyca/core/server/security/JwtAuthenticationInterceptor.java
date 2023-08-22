@@ -70,7 +70,7 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
             }
         } else {
             boolean allowAnonymously = switch (path) {
-                case "/workspace", "/languages", "/employees", "/users", "/modules" -> true;
+                case "/workspace", "/languages", "/employees", "/users", "/users/register", "/modules", "/roles" -> true;
                 default -> false;
             };
             if (allowAnonymously) {

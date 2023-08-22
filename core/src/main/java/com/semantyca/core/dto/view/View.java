@@ -7,11 +7,10 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"count", "pageNum", "maxPage", "pageSize", "keyword", "entries"})
 @Setter
 @Getter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"count", "pageNum", "maxPage", "pageSize", "keyword", "entries"})
 public class View<T> {
     private List<T> entries;
     private long count;

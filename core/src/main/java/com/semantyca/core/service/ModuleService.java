@@ -3,6 +3,7 @@ package com.semantyca.core.service;
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.Module;
+import com.semantyca.core.model.cnst.ModuleType;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.repository.ModuleRepository;
 import com.semantyca.core.repository.exception.DocumentExistsException;
@@ -22,6 +23,10 @@ public class ModuleService {
 
     public Uni<List<Module>> getAll(int offset, int size) {
         return repository.getAll();
+    }
+
+    public Uni<List<Module>> getAll(ModuleType ... defaultModules) {
+        return repository.getModules(defaultModules);
     }
     public Language get(String id) {
         return repository.findById(UUID.fromString(id));
@@ -45,6 +50,7 @@ public class ModuleService {
     public int delete (String id) {
         return repository.delete(UUID.fromString(id), AnonymousUser.ID);
     }
+
 
 
 }

@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.semantyca</groupId>
   <artifactId>jirascope</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Jirascope</name>
-
   <modules>
     <module>core</module>
     <module>officeframe</module>
     <module>projects</module>
   </modules>
-
   <properties>
     <grpc.version>1.55.1</grpc.version>
     <maven.compiler.source>17</maven.compiler.source>
@@ -26,7 +23,6 @@
     <quarkus-grpc-protoc-plugin-version>3.2.0.Final</quarkus-grpc-protoc-plugin-version>
     <quarkus.version>3.2.0.Final</quarkus.version>
   </properties>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -84,6 +80,24 @@
       <version>1.18.22</version>
     </dependency>
     <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>ST4</artifactId>
+      <version>4.3.4</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.13.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.13.0</version>
+    </dependency>
+
+
+
+    <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-jwt-build</artifactId>
     </dependency>
@@ -91,20 +105,11 @@
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-jwt</artifactId>
     </dependency>
-
-
-    <!--test dependencies-->
-  <!--  <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-core</artifactId>
-      <version>3.21.0</version>
-      <scope>test</scope>
-    </dependency>-->
-
-
-
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
+    </dependency>
   </dependencies>
-
   <build>
     <extensions>
       <extension>
@@ -113,9 +118,7 @@
         <version>${os-maven-plugin-version}</version>
       </extension>
     </extensions>
-
     <finalName>quarkus-jirascope</finalName>
-
     <plugins>
       <plugin>
         <groupId>io.quarkus.platform</groupId>
