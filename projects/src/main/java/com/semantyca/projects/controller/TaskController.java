@@ -50,7 +50,7 @@ public class TaskController extends AbstractSecuredController<TaskDTO> {
             viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
             viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
             if (pageNum == 0) pageNum = 1;
-            View dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
+            View<TaskDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
             viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
             return Response.ok(viewPage).build();
         });

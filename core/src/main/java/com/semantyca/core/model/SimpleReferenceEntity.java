@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class SimpleReferenceEntity extends DataEntity<UUID> {
+    protected UUID id;
     protected String identifier;
     private Map<LanguageCode, String> locName = new HashMap<LanguageCode, String>();
     public String getIdentifier() {

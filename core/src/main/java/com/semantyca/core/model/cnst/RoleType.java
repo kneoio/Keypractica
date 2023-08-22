@@ -1,22 +1,23 @@
 package com.semantyca.core.model.cnst;
 
-public enum ModuleType {
+public enum RoleType {
     UNKNOWN(0, "unknown", "???"),
-    OFFICE_FRAME(101, "officeframe", "of"),
-    PROJECTS(102,"projects" ,"prj");
+    USER(101, "user", "user_role"),
+    SUPERVISOR(102,"supervisor" ,"supervisor_role"),
+    CUSTOM(200,"custom" ,"custom_role");
 
     private final int code;
     private final String name;
     private final String shortName;
 
-    ModuleType(int code, String name, String shortName) {
+    RoleType(int code, String name, String shortName) {
         this.code = code;
         this.name = name;
         this.shortName = shortName;
     }
 
-    public static ModuleType getType(int code) {
-        for (ModuleType type : values()) {
+    public static RoleType getType(int code) {
+        for (RoleType type : values()) {
             if (type.code == code) {
                 return type;
             }

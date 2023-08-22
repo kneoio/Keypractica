@@ -6,7 +6,7 @@ package com.semantyca.core.server.cnst;
 public enum VisibilityMode {
     UNKNOWN(0), NORMAL(102), HIDDEN(103);
 
-    private int code;
+    private final int code;
 
     VisibilityMode(int code) {
         this.code = code;

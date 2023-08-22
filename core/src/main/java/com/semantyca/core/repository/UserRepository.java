@@ -117,9 +117,15 @@ public class UserRepository extends AsyncRepository {
         return user;
     }
 
-    public Long insert(User node, Long user) {
+    public Uni<Long> insert(User user) {
+        String sql = "INSERT INTO _users (name, email) VALUES ($2, $3) RETURNING id";
+        Tuple params = Tuple.of(user.getUserName(), user.getEmail());
+
+        Uni<Long> longUni = client.preparedQuery(sql)
+                .execute(params)
+                .onItem().transform(result -> result.iterator().next().getLong("id"));
         userCache.clear();
-        return node.getId();
+        return longUni;
     }
 
     public User update(User user) {

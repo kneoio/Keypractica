@@ -2,6 +2,7 @@ package com.semantyca.core.repository;
 
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.Module;
+import com.semantyca.core.model.cnst.ModuleType;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.server.EnvConst;
 import io.smallrye.mutiny.Multi;
@@ -20,6 +21,14 @@ public class ModuleRepository {
     PgPool client;
 
     public Uni<List<Module>> getAll() {
+        return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(row -> new Module.Builder().setName(row.getString("name")).build())
+                .collect().asList();
+    }
+    public Uni<List<Module>> getModules(ModuleType[] defaultModules) {
+        //SELECT * FROM _modules where identifier in ('officeframe', 'calendar') LIMIT 100 OFFSET 0;
         return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
@@ -47,4 +56,6 @@ public class ModuleRepository {
 
         return 1;
     }
+
+
 }

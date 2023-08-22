@@ -7,9 +7,7 @@
     <artifactId>jirascope</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-
   <artifactId>projects</artifactId>
-
   <dependencies>
     <dependency>
       <groupId>com.semantyca</groupId>
@@ -23,8 +21,11 @@
       <version>0.0.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-mailer</artifactId>
+    </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
@@ -44,5 +45,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>

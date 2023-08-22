@@ -4,3 +4,4 @@
 .env
 *.pub
 *.iml
+*.pem

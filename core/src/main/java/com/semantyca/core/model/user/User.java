@@ -1,6 +1,7 @@
 package com.semantyca.core.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.semantyca.core.dto.cnst.UserRegStatus;
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.Module;
@@ -18,7 +19,7 @@ import java.util.TimeZone;
 @Setter
 @Getter
 @NoArgsConstructor
-public class User extends DataEntity<Long> implements IUser{
+public class User extends DataEntity<Long> implements IUser {
     private Long id;
     @NotBlank
     private String login;
@@ -33,31 +34,26 @@ public class User extends DataEntity<Long> implements IUser{
     private Integer pageSize = EnvConst.DEFAULT_PAGE_SIZE;
     private Integer defaultLang;
     private TimeZone timeZone;
-
+    private UserRegStatus regStatus;
     @Override
     public Long getUserId() {
         return id;
     }
+
     @Override
     public String getUserName() {
         return login;
     }
 
     public static class Builder {
-        private Long id;
         private String login;
         private String pwd = "123";
         private String email;
         private TimeZone timeZone = TimeZone.getDefault();
         private List<String> roles;
         private Integer defaultLang = LanguageCode.ENG.getCode();
-        private final List<Module> modules = Collections.singletonList(new Module.Builder().build());
-
-
-        public Builder setId(long id) {
-            this.id = id;
-            return this;
-        }
+        private List<Module> modules = Collections.singletonList(new Module.Builder().build());
+        private UserRegStatus regStatus;
 
         public Builder setLogin(String login) {
             this.login = login;
@@ -71,6 +67,11 @@ public class User extends DataEntity<Long> implements IUser{
 
         public Builder setEmail(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder setModules(List<Module> modules) {
+            this.modules = modules;
             return this;
         }
 
@@ -89,9 +90,13 @@ public class User extends DataEntity<Long> implements IUser{
             return this;
         }
 
+        public Builder setRegStatus(UserRegStatus regStatus) {
+            this.regStatus = regStatus;
+            return this;
+        }
+
         public User build() {
             User newUser = new User();
-            newUser.setId(id);
             newUser.setLogin(login);
             newUser.setPwd(pwd);
             newUser.setEmail(email);
@@ -99,6 +104,7 @@ public class User extends DataEntity<Long> implements IUser{
             newUser.setTimeZone(timeZone);
             newUser.setModules(modules);
             newUser.setDefaultLang(defaultLang);
+            newUser.setRegStatus(regStatus);
             return newUser;
         }
 

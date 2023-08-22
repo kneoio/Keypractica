@@ -22,7 +22,7 @@ public class Module extends DataEntity<UUID> {
 
     public static class Builder {
         private String name;
-        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ModuleType.BIZ.getName());
+        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ModuleType.UNKNOWN.getName());
         protected ModuleType type = ModuleType.UNKNOWN;
 
         public Builder setName(String name) {

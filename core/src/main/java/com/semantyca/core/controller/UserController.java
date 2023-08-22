@@ -3,18 +3,22 @@ package com.semantyca.core.controller;
 import com.semantyca.core.dto.actions.ActionBar;
 import com.semantyca.core.dto.cnst.PayloadType;
 import com.semantyca.core.dto.document.UserDTO;
+import com.semantyca.core.dto.document.UserRegistrationDTO;
 import com.semantyca.core.dto.form.FormPage;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
 import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
+import com.semantyca.core.service.RegistrationService;
 import com.semantyca.core.service.UserService;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.net.URI;
 
@@ -23,8 +27,14 @@ import java.net.URI;
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserController {
 
+    @ConfigProperty(name = "mp.jwt.verify.issuer")
+    String issuer;
+
     @Inject
     UserService service;
+
+    @Inject
+    RegistrationService registrationService;
 
     @GET
     @Path("/")
@@ -55,6 +65,13 @@ public class UserController {
                     () ->  page.addPayload(PayloadType.FORM_DATA, "no_data"));
             return Response.ok(page).build();
         });
+    }
+
+    @POST
+    @Path("/register")
+    public Response register(@Valid UserRegistrationDTO userRegistration) {
+        String token = registrationService.register(userRegistration);
+        return Response.ok().entity(token).build();
     }
 
     @POST
