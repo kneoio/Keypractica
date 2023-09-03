@@ -11,11 +11,19 @@ import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.service.RegistrationService;
 import com.semantyca.core.service.UserService;
+import com.semantyca.core.service.messaging.exception.MsgException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -67,9 +75,15 @@ public class UserController {
         });
     }
 
+    @GET
+    @Path("/register")
+    public Response register(@PathParam("confirmation") String confirmation) {
+        String token = registrationService.confirmation(confirmation);
+        return Response.ok().entity(token).build();
+    }
     @POST
     @Path("/register")
-    public Response register(@Valid UserRegistrationDTO userRegistration) {
+    public Response register(@Valid UserRegistrationDTO userRegistration) throws MsgException {
         String token = registrationService.register(userRegistration);
         return Response.ok().entity(token).build();
     }

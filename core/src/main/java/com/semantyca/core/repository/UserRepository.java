@@ -17,9 +17,14 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -86,7 +91,7 @@ public class UserRepository extends AsyncRepository {
             return Optional.ofNullable(userAltCache.get(userName));
         }
         /*return client.preparedQuery("SELECT * FROM _users WHERE login = '$1'")
-                .execute(Tuple.of(userName))
+                .execute(Tuple.of(login))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromShort(iterator.next())) : Optional.of(UndefinedUser.Build()))
                 .await().indefinitely();*/
@@ -118,8 +123,12 @@ public class UserRepository extends AsyncRepository {
     }
 
     public Uni<Long> insert(User user) {
-        String sql = "INSERT INTO _users (name, email) VALUES ($2, $3) RETURNING id";
-        Tuple params = Tuple.of(user.getUserName(), user.getEmail());
+        ZonedDateTime zonedDateTime = ZonedDateTime.now();
+        LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
+        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, ui_theme, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
+        //String sql = "INSERT INTO _users (login, email) VALUES ($2, $3) RETURNING id";
+        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), user.getPwd(),  localDateTime);
+        params = params.addValue(user.getRegStatus()).addValue("cinzento").addInteger(user.getConfirmationCode());
 
         Uni<Long> longUni = client.preparedQuery(sql)
                 .execute(params)
@@ -128,9 +137,16 @@ public class UserRepository extends AsyncRepository {
         return longUni;
     }
 
-    public User update(User user) {
+    public Uni<Long> update(User user) {
+        String sql = "UPDATE _users SET default_lang=$1, email='', i_su=$2, pwd='', status=$3, ui_theme=$4, time_zone=0 WHERE id=$5";
+        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), user.getPwd());
+        params = params.addValue(user.getRegStatus()).addValue("cinzento").addInteger(user.getConfirmationCode());
+
+        Uni<Long> longUni = client.preparedQuery(sql)
+                .execute(params)
+                .onItem().transform(result -> result.iterator().next().getLong("id"));
         userCache.clear();
-        return user;
+        return longUni;
     }
 
     public int delete(Long id) {

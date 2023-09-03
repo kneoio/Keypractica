@@ -3,7 +3,6 @@ package com.semantyca.core.service.messaging;
 import com.semantyca.core.model.IDataEntity;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.service.messaging.email.MailAgent;
-import com.semantyca.core.service.messaging.email.Memo;
 import com.semantyca.core.service.messaging.exception.MsgException;
 
 import java.util.ArrayList;
@@ -21,9 +20,9 @@ public class MessagingHelper {
         String email = recipient.getEmail();
         if (email != null) {
             recipients.add(email);
-            MailAgent ma = new MailAgent(msgTemplate);
-            Memo memo = new Memo();
-            ma.sendMessage(recipients, subjectText, memo.getBody(msg));
+            MailAgent ma = new MailAgent();
+
+            ma.sendMessage(recipients, subjectText,msg);
         }
     }
 

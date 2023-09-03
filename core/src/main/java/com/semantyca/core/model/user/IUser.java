@@ -10,4 +10,7 @@ public interface IUser {
     };
     String getEmail();
 
+    default int getConfirmationCode(){
+        return 0;
+    }
 }

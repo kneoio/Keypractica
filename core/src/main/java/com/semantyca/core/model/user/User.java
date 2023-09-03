@@ -27,6 +27,7 @@ public class User extends DataEntity<Long> implements IUser {
     @NotBlank
     private String pwd;
     private String email;
+    private boolean isSupervisor;
     private List<Module> modules = new ArrayList<>();
     @JsonIgnore
     boolean authorized;
@@ -35,6 +36,7 @@ public class User extends DataEntity<Long> implements IUser {
     private Integer defaultLang;
     private TimeZone timeZone;
     private UserRegStatus regStatus;
+    private int confirmationCode;
     @Override
     public Long getUserId() {
         return id;
@@ -49,11 +51,13 @@ public class User extends DataEntity<Long> implements IUser {
         private String login;
         private String pwd = "123";
         private String email;
+        private boolean isSupervisor;
         private TimeZone timeZone = TimeZone.getDefault();
         private List<String> roles;
         private Integer defaultLang = LanguageCode.ENG.getCode();
         private List<Module> modules = Collections.singletonList(new Module.Builder().build());
         private UserRegStatus regStatus;
+        private int confirmationCode;
 
         public Builder setLogin(String login) {
             this.login = login;
@@ -67,6 +71,11 @@ public class User extends DataEntity<Long> implements IUser {
 
         public Builder setEmail(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder setSupervisor(boolean supervisor) {
+            isSupervisor = supervisor;
             return this;
         }
 
@@ -95,18 +104,27 @@ public class User extends DataEntity<Long> implements IUser {
             return this;
         }
 
+        public Builder setConfirmationCode(int confirmationCode) {
+            this.confirmationCode = confirmationCode;
+            return this;
+        }
+
+
         public User build() {
             User newUser = new User();
             newUser.setLogin(login);
             newUser.setPwd(pwd);
             newUser.setEmail(email);
+            newUser.setSupervisor(isSupervisor);
             newUser.setRoles(roles);
             newUser.setTimeZone(timeZone);
             newUser.setModules(modules);
             newUser.setDefaultLang(defaultLang);
             newUser.setRegStatus(regStatus);
+            newUser.setConfirmationCode(confirmationCode);
             return newUser;
         }
+
 
 
     }
