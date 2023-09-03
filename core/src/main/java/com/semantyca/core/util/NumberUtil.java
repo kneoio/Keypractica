@@ -18,8 +18,7 @@ public class NumberUtil {
             return low;
         } else {
             Random r = new Random();
-            int result = r.nextInt(high - low) + low;
-            return result;
+            return r.nextInt(high - low) + low;
         }
     }
 

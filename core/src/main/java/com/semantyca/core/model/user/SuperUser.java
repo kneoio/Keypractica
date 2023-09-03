@@ -14,7 +14,4 @@ public class SuperUser extends SystemAbstractUser {
         return USER_NAME;
     }
 
-
-
-
 }

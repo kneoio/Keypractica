@@ -1,17 +1,12 @@
 package com.semantyca.core.localization;
 
 
-import com.semantyca.core.server.EnvConst;
-import com.semantyca.core.server.Environment;
 import com.semantyca.core.service.messaging.MessagingType;
 import org.apache.commons.io.FileUtils;
 import org.jboss.logging.Logger;
-import org.stringtemplate.v4.ST;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class TemplatesSet {
     private static final Logger LOGGER = Logger.getLogger(TemplatesSet.class);
@@ -22,21 +17,6 @@ public class TemplatesSet {
     public TemplatesSet(String templatesFilePath) {
         templateDir = new File(templatesFilePath);
         templs = new HashMap<String, TemplateType>();
-    }
-
-    public static ST getRenderedTemplate(String m, Map<String, Object> variables) {
-        ST rawBody = getRenderedTemplate(m);
-        for (Entry<String, Object> entry : variables.entrySet()) {
-            rawBody.add(entry.getKey(), entry.getValue());
-        }
-        return rawBody;
-    }
-
-    public static ST getRenderedTemplate(String m) {
-        ST rawBody = new ST(m, '$', '$');
-        rawBody.add("orgname", Environment.orgName);
-        rawBody.add("appname", EnvConst.APP_ID);
-        return rawBody;
     }
 
     public String getTemplate(MessagingType type, String templateName, LanguageCode lang) {
@@ -65,10 +45,6 @@ public class TemplatesSet {
         }
     }
 
-    public String getTemplate(MessagingType type, String templateName, LanguageCode lang,
-                              HashMap<String, Object> variables) {
-        return getRenderedTemplate(getTemplate(type, templateName, lang), variables).render();
-    }
 
     public void reset() {
         templs.clear();
