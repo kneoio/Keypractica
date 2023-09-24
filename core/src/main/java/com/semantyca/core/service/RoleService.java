@@ -38,6 +38,7 @@ public class RoleService {
                         .collect(Collectors.toList()));
     }
 
+
     public Uni<Optional<RoleDTO>> get(String id) {
        // return repository.findById(UUID.fromString(id));
         return null;

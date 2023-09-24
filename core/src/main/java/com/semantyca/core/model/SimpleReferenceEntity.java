@@ -1,33 +1,23 @@
 package com.semantyca.core.model;
 
 import com.semantyca.core.localization.LanguageCode;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Getter
+@Setter
 public class SimpleReferenceEntity extends DataEntity<UUID> {
     protected UUID id;
     protected String identifier;
-    private Map<LanguageCode, String> locName = new HashMap<LanguageCode, String>();
-    public String getIdentifier() {
-        return identifier;
-    }
-    public Map<LanguageCode, String> getLocName() {
-        return locName;
-    }
-
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
-    }
-
-    public void setLocName(Map<LanguageCode, String> locName) {
-        this.locName = locName;
-    }
+    protected Map<LanguageCode, String> localizedName = new HashMap<>();
 
     public String getLocName(LanguageCode lang) {
         try {
-            String val = locName.get(lang);
+            String val = localizedName.get(lang);
             if (val != null && (!val.isEmpty())) {
                 return val;
             } else {
@@ -38,12 +28,4 @@ public class SimpleReferenceEntity extends DataEntity<UUID> {
         }
     }
 
-    public void setLocName(String val, LanguageCode languageCode) {
-        this.locName.put(languageCode, val);
-    }
-
-    @Override
-    public boolean isEditable() {
-        return true;
-    }
 }

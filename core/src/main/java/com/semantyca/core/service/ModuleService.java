@@ -22,10 +22,10 @@ public class ModuleService {
     private ModuleRepository repository;
 
     public Uni<List<Module>> getAll(int offset, int size) {
-        return repository.getAll();
+        return repository.getAll(offset, size);
     }
 
-    public Uni<List<Module>> getAll(ModuleType ... defaultModules) {
+    public Uni<List<Module>> findAll(ModuleType ... defaultModules) {
         return repository.getModules(defaultModules);
     }
     public Language get(String id) {
@@ -34,7 +34,7 @@ public class ModuleService {
 
     public String add(LanguageDTO dto) throws DocumentExistsException {
         Language node = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setCode(dto.getCode())
                 .setLocalizedNames(dto.getLocalizedNames())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
@@ -42,7 +42,7 @@ public class ModuleService {
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setCode(dto.getCode())
                 .build();
         return repository.update(user);
     }

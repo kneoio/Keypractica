@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,18 +13,23 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Language extends DataEntity<UUID> {
     protected String name;
-    private Map<LanguageCode, String> localizedNames = new HashMap<>();
-    private String code = LanguageCode.UNKNOWN.toString();
+    private Map<LanguageCode, String> localizedNames;
+    private LanguageCode code = LanguageCode.UNKNOWN;
     private boolean isOn;
     private int position;
 
-    public static class Builder {
-        private String code = LanguageCode.ENG.toString();
+    public static class Builder extends AbstractEntityBuilder {
+        private LanguageCode code = LanguageCode.ENG;
         private boolean isOn;
-        private int position;
+        private int position = 999;
         private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang());
 
-        public Builder setCode(String code) {
+        public Builder setId(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setCode(LanguageCode code) {
             this.code = code;
             return this;
         }
@@ -52,12 +56,13 @@ public class Language extends DataEntity<UUID> {
 
 
         public Language build() {
-            Language newNode = new Language();
-            newNode.setCode(code);
-            newNode.setOn(isOn);
-            newNode.setPosition(position);
-            newNode.setLocalizedNames(localizedNames);
-            return newNode;
+            Language doc = new Language();
+            setDefaultFields(doc);
+            doc.setCode(code);
+            doc.setOn(isOn);
+            doc.setPosition(position);
+            doc.setLocalizedNames(localizedNames);
+            return doc;
         }
 
 

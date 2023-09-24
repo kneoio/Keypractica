@@ -1,14 +1,7 @@
-package com.semantyca.officeframe.model;
+package com.semantyca.core.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.semantyca.core.model.SimpleReferenceEntity;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Setter
-@Getter
-@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Label extends SimpleReferenceEntity {
 

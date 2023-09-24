@@ -9,16 +9,25 @@ import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
 import com.semantyca.core.model.user.IUser;
+import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.util.RuntimeUtil;
 import com.semantyca.projects.actions.ProjectActionsFactory;
-import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.dto.TaskDTO;
 import com.semantyca.projects.service.TaskService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -32,13 +41,14 @@ import static com.semantyca.core.util.RuntimeUtil.countMaxPage;
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class TaskController extends AbstractSecuredController<TaskDTO> {
+public class TaskController extends AbstractSecuredController {
     @Inject
     TaskService service;
     @GET
     @Path("/")
     public Uni<Response> getAll(@BeanParam Parameters params, @Context ContainerRequestContext requestContext)  {
-        IUser user = (IUser) requestContext.getProperty("user");
+        //IUser user = (IUser) requestContext.getProperty("user");
+        IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount(user.getUserId());
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
         Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
@@ -69,13 +79,13 @@ public class TaskController extends AbstractSecuredController<TaskDTO> {
                     return Response.ok(page).build();
                 })
                 .onFailure().invoke(failure -> System.out.println("Failure: "  + failure.getMessage()))
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), "gfdgfdgfdgfd").build());
+                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build());
     }
 
 
     @POST
     @Path("/")
-    public Response create(ProjectDTO dto) throws DocumentExistsException {
+    public Response create(TaskDTO dto) throws DocumentExistsException {
         return Response.created(URI.create("/" + service.add(dto))).build();
     }
 

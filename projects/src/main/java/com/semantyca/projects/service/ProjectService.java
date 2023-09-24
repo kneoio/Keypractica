@@ -12,23 +12,38 @@ import com.semantyca.projects.repository.ProjectRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ProjectService extends AbstractService<Project> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("ProjectService");
     @Inject
     private ProjectRepository repository;
     @Inject
     private UserService userService;
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
-        return repository.getAll(limit, offset, userID);
+        Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
+        return uni
+                .onItem().transform(projectList -> projectList.stream()
+                        .map(project ->
+                                ProjectDTO.builder()
+                                        .id(project.getId())
+                                        .author(userRepository.getUserName(project.getAuthor()))
+                                        .regDate(project.getRegDate())
+                                        .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                                        .lastModifiedDate(project.getLastModifiedDate())
+                                        .name(project.getName())
+                                        .finishDate(project.getFinishDate())
+                                        .status(project.getStatus())
+                                        .manager(userService.getUserName(project.getManager()))
+                                        .coder(userService.getUserName(project.getCoder()))
+                                        .tester(userService.getUserName(project.getTester()))
+                                        .build())
+                        .collect(Collectors.toList()));
     }
 
     public Uni<Integer> getAllCount(final long userID) {
@@ -52,15 +67,15 @@ public class ProjectService extends AbstractService<Project> {
 
         return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
                     Project project = projectOptional.orElseThrow();
-                    return new ProjectDTO(
-                            project.getId(),
-                            project.getName(),
-                            project.getStatus(),
-                            project.getFinishDate(),
-                            userService.getUserName(project.getManager()),
-                            userService.getUserName(project.getCoder()),
-                            userService.getUserName(project.getTester()),
-                            rlsList);
+                    return ProjectDTO.builder()
+                            .id(project.getId())
+                            .name(project.getName())
+                            .status(project.getStatus())
+                            .finishDate(project.getFinishDate())
+                            .manager(userService.getUserName(project.getManager()))
+                            .coder(userService.getUserName(project.getCoder()))
+                            .tester(userService.getUserName(project.getTester()))
+                            .build();
                 }
         );
     }
@@ -71,14 +86,14 @@ public class ProjectService extends AbstractService<Project> {
 
     public String add(ProjectDTO dto) {
         Project node = new Project.Builder()
-                .setName(dto.name())
+                .setName(dto.getName())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setCode(dto.getCode())
                 .build();
         return repository.update(user);
     }
