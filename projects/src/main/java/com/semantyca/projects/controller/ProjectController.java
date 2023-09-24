@@ -8,6 +8,7 @@ import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
 import com.semantyca.core.model.user.IUser;
+import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.util.RuntimeUtil;
@@ -16,7 +17,16 @@ import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -36,7 +46,7 @@ public class ProjectController {
     @GET
     @Path("/")
     public Uni<Response> get(@BeanParam Parameters parameters, @Context ContainerRequestContext requestContext) {
-        IUser user = (IUser) requestContext.getProperty("user");
+        IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount(user.getUserId());
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
         Uni<Integer> pageNumUni = Uni.createFrom().item(parameters.page);
@@ -48,7 +58,7 @@ public class ProjectController {
             viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
             viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
             if (pageNum == 0) pageNum = 1;
-            View dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
+            View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
             viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
             return Response.ok(viewPage).build();
         });

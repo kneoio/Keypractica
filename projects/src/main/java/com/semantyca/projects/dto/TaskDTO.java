@@ -21,13 +21,16 @@ import java.util.Map;
 @SuperBuilder
 @NoArgsConstructor
 public class TaskDTO extends AbstractDTO {
+    String regNumber;
     String body;
     String assignee;
     Map<LanguageCode, String> taskType;
     ProjectDTO project;
     Task parent;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm") ZonedDateTime startDate;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm") ZonedDateTime targetDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
+    ZonedDateTime startDate;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
+    ZonedDateTime targetDate;
     int status;
     int priority;
     List<RLSDTO> rls;

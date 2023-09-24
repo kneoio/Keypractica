@@ -71,7 +71,7 @@ public class RegistrationService {
                 if (confirmationCode == u.get().getConfirmationCode()) {
                     User user = (User) u.get();
                     user.setLogin(userRegistration.login());
-                    Uni<List<Module>> modulesUni = moduleService.getAll(ExtensionMetaData.defaultModules);
+                    Uni<List<Module>> modulesUni = moduleService.findAll(ExtensionMetaData.defaultModules);
                     user.setModules(modulesUni.await().indefinitely());
                     user.setConfirmationCode(0);
                     user.setRegStatus(UserRegStatus.REGISTERED);

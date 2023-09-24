@@ -1,9 +1,15 @@
 package com.semantyca.core.repository;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.semantyca.core.localization.LanguageCode;
+import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.embedded.RLS;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
+import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -12,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +28,8 @@ public class AsyncRepository {
 
     @Inject
     public PgPool client;
+    @Inject
+    ObjectMapper mapper;
 
     public Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m, %s as acl WHERE m.id = acl.entity_id AND acl.reader = $1", mainTable, aclTable);
@@ -42,4 +51,38 @@ public class AsyncRepository {
                         row.getLong("can_delete")))
                 .collect().asList();
     }
+
+
+    public Uni<Void> delete(UUID uuid, String table) {
+        String sql = String.format("DELETE FROM %s WHERE id = $1", table);
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(Tuple.of(uuid))
+                .onItem().ignore().andContinueWithNull()
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to delete %s", table), throwable));
+                }));
+    }
+
+    public void setDefaultFields(DataEntity<UUID> entity, Row row) {
+        entity.setId(row.getUUID("id"));
+        entity.setAuthor(row.getLong("author"));
+        entity.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
+        entity.setLastModifier(row.getLong("last_mod_user"));
+        entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
+    }
+
+    public Map<LanguageCode, String> extractLanguageMap(Row row) {
+        Map<LanguageCode, String> map;
+        try {
+            map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
+            });
+        } catch (
+                JsonProcessingException e) {
+            LOGGER.error(e.getMessage());
+            throw new RuntimeException(e);
+        }
+        return map;
+    }
+
 }

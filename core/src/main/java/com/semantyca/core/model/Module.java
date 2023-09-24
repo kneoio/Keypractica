@@ -2,31 +2,59 @@ package com.semantyca.core.model;
 
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.cnst.ModuleType;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Setter
 @Getter
 @NoArgsConstructor
-public class Module extends DataEntity<UUID> {
-    protected String name;
+public class Module  extends SimpleReferenceEntity {
     protected ModuleType type;
-    private Map<LanguageCode, String> localizedNames = new HashMap<>();
+
+    private Map<LanguageCode, String> localizedDescriptions = new HashMap<>();
     private boolean isOn;
     private int position;
 
     public static class Builder {
-        private String name;
-        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, ModuleType.UNKNOWN.getName());
+        protected UUID id;
+        protected long author;
+        private ZonedDateTime regDate;
+        protected String identifier;
+        private boolean isOn;
+        private Map<LanguageCode, String> localizedName = new HashMap<>();
+        private Map<LanguageCode, String> localizedDescription = new HashMap<>();
         protected ModuleType type = ModuleType.UNKNOWN;
 
-        public Builder setName(String name) {
-            this.name = name;
+        public Builder setId(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder setAuthor(long author) {
+            this.author = author;
+            return this;
+        }
+
+        public Builder setOn(boolean on) {
+            isOn = on;
+            return this;
+        }
+
+        public Builder setIdentifier(String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder setRegDate(ZonedDateTime regDate) {
+            this.regDate = regDate;
             return this;
         }
 
@@ -36,20 +64,49 @@ public class Module extends DataEntity<UUID> {
         }
 
         public Builder addLocalizedName(String code, String name) {
-            this.localizedNames.put(LanguageCode.valueOf(code), name);
+            this.localizedName.put(LanguageCode.valueOf(code), name);
             return this;
         }
 
         public Builder setLocalizedNames(Map<LanguageCode, String> languageCodeStringMap) {
-            this.localizedNames = languageCodeStringMap;
+            this.localizedName = languageCodeStringMap;
             return this;
         }
+
+        public Builder setLocalizedNames(JsonObject json) {
+            this.localizedName = json.getMap().entrySet().stream()
+                    .collect(Collectors.toMap(
+                            entry -> LanguageCode.valueOf(entry.getKey()),
+                            entry -> String.valueOf(entry.getValue())));
+            return this;
+        }
+
+        public Builder setLocalizedDescription(Map<LanguageCode, String> localizedDescription) {
+            this.localizedDescription = localizedDescription;
+            return this;
+        }
+
+        public Builder setLocalizedDescriptions(JsonObject json) {
+            if (json != null) {
+                this.localizedDescription = json.getMap().entrySet().stream()
+                        .collect(Collectors.toMap(
+                                entry -> LanguageCode.valueOf(entry.getKey()),
+                                entry -> String.valueOf(entry.getValue())));
+            }
+            return this;
+        }
+
         public Module build() {
-            Module newNode = new Module();
-            newNode.setName(name);
-            newNode.setType(type);
-            newNode.setLocalizedNames(localizedNames);
-            return newNode;
+            Module module = new Module();
+            module.setId(id);
+            module.setAuthor(author);
+            module.setRegDate(regDate);
+            module.setIdentifier(identifier);
+            module.setLocalizedName(localizedName);
+            module.setOn(isOn);
+            module.setType(type);
+            module.setLocalizedDescriptions(localizedDescription);
+            return module;
         }
     }
 }

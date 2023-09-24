@@ -9,7 +9,6 @@ import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
 import com.semantyca.projects.dto.ProjectDTO;
 import com.semantyca.projects.dto.TaskDTO;
-import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
 import com.semantyca.projects.repository.TaskRepository;
 import io.smallrye.mutiny.Uni;
@@ -83,7 +82,7 @@ public class TaskService extends AbstractService<Task> {
                             .regNumber(task.getRegNumber())
                             .body(task.getBody())
                             .assignee(userRepository.getUserName(task.getAssignee()))
-                            .taskType(taskType.orElseThrow().getLocName())
+                            .taskType(taskType.orElseThrow().getLocalizedName())
                             .project(project)
                             .startDate(task.getStartDate())
                             .targetDate(task.getTargetDate())
@@ -95,16 +94,16 @@ public class TaskService extends AbstractService<Task> {
 
     }
 
-    public String add(ProjectDTO dto) {
-        Project node = new Project.Builder()
-                .setName(dto.name())
+    public String add(TaskDTO dto) {
+        Task node = new Task.Builder()
+                .setBody(dto.getBody())
                 .build();
         return repository.insert(node, AnonymousUser.ID).toString();
     }
 
     public Language update(LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setCode(dto.getCode())
                 .build();
         return repository.update(user);
     }

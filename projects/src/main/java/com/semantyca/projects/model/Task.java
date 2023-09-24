@@ -1,7 +1,7 @@
 package com.semantyca.projects.model;
 
+import com.semantyca.core.model.Label;
 import com.semantyca.core.model.SecureDataEntity;
-import com.semantyca.officeframe.model.Label;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

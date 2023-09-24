@@ -11,7 +11,6 @@ import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.service.RegistrationService;
 import com.semantyca.core.service.UserService;
-import com.semantyca.core.service.messaging.exception.MsgException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -83,21 +82,25 @@ public class UserController {
     }
     @POST
     @Path("/register")
-    public Response register(@Valid UserRegistrationDTO userRegistration) throws MsgException {
+    public Response register(@Valid UserRegistrationDTO userRegistration) {
         String token = registrationService.register(userRegistration);
         return Response.ok().entity(token).build();
     }
 
     @POST
     @Path("/")
-    public Response create(UserDTO userDTO) {
-        return Response.created(URI.create("/" + service.add(userDTO))).build();
+    public void create(UserDTO userDTO) {
+        Uni<Long> longUni =  service.add(userDTO);
+        longUni.subscribe().with(id -> Response.created(URI.create("/" + id)), failure -> {
+            String errorMessage = failure.getMessage();
+            Response.status(Response.Status.BAD_REQUEST).entity(errorMessage);
+        });
     }
 
     @PUT
     @Path("/")
     public Response update(UserDTO userDTO) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(userDTO).getId())).build();
+        return Response.ok(URI.create("/" + service.update(userDTO))).build();
     }
 
     @DELETE

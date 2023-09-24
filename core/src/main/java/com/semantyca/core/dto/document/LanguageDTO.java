@@ -16,6 +16,4 @@ import java.util.Map;
 public class LanguageDTO extends AbstractDTO{
     LanguageCode code;
     Map<LanguageCode, String> localizedNames;
-
-
 }

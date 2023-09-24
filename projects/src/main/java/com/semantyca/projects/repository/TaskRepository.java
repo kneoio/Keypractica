@@ -2,7 +2,6 @@ package com.semantyca.projects.repository;
 
 import com.semantyca.core.model.Language;
 import com.semantyca.core.repository.AsyncRepository;
-import com.semantyca.projects.model.Project;
 import com.semantyca.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -75,9 +74,9 @@ public class TaskRepository extends AsyncRepository {
 
 
 
-    public UUID insert(Project node, Long user) {
+    public UUID insert(Task doc, Long user) {
 
-        return node.getId();
+        return doc.getId();
     }
 
 

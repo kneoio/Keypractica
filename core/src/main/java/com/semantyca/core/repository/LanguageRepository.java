@@ -1,14 +1,11 @@
 package com.semantyca.core.repository;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.Language;
-import com.semantyca.core.repository.exception.DocumentExistsException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -18,8 +15,10 @@ import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
@@ -29,11 +28,8 @@ public class LanguageRepository extends AsyncRepository {
     @Inject
     PgPool client;
 
-    @Inject
-    ObjectMapper mapper;
-
     public Uni<List<Language>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM _langs l";
+        String sql = "SELECT * FROM _langs";
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -45,50 +41,72 @@ public class LanguageRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Language> findById(UUID uuid) {
-        return client.preparedQuery(  "SELECT * FROM _langs WHERE id = $1")
+    public Uni<Optional<Language>> findById(UUID uuid) {
+        return client.preparedQuery("SELECT * FROM _langs WHERE id = $1")
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+                .onItem().transform(iterator -> iterator.hasNext() ?  Optional.of(from(iterator.next())) : Optional.empty());
     }
 
-    public Uni<Language> findByCode(LanguageCode code) {
-        return client.preparedQuery(  "SELECT * FROM _langs WHERE code = $1")
+    public Uni<Optional<Language>> findByCode(LanguageCode code) {
+        return client.preparedQuery("SELECT * FROM _langs WHERE code = $1")
                 .execute(Tuple.of(code))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
     private Language from(Row row) {
-        Map<LanguageCode, String> map;
-        try {
-            map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
-        return new Language.Builder()
-                .setCode(row.getString("code"))
-                .setLocalizedNames(map)
-                .setOn(row.getBoolean("is_on"))
-                .setPosition(999)
-                .build();
+        Language doc = new Language();
+        setDefaultFields(doc, row);
+        doc.setCode(LanguageCode.valueOf(row.getString("code")));
+        doc.setLocalizedNames(extractLanguageMap(row));
+        doc.setOn(row.getBoolean("is_on"));
+        doc.setPosition(row.getInteger("position"));
+        return doc;
     }
 
 
-    public UUID insert(Language node, Long user) throws DocumentExistsException {
+    public Uni<UUID> insert(Language doc, Long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = "INSERT INTO _langs (author, code, reg_date, position, last_mod_date, last_mod_user, loc_name, is_on) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+        Tuple params = Tuple.of(user, doc.getCode(), nowTime, doc.getPosition(), nowTime, user);
+        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedNames())).addBoolean(doc.isOn());
 
-        return node.getId();
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.iterator().next().getUUID("id"))
+           .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException("Failed to insert language", throwable));
+                }));
     }
 
-
-    public Language update(Language node) {
-
-        return node;
+    public Uni<Integer> update(Language doc, long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = "UPDATE _langs SET code=$1, position=$2, last_mod_date=$3, last_mod_user=$4, is_on=$5, loc_name=$6 WHERE id=$7";
+        Tuple params = Tuple.of(doc.getCode(), doc.getPosition(), nowTime, user, doc.isOn(), JsonObject.mapFrom(doc.getLocalizedNames()));
+        Tuple finalParams = params.addUUID(doc.getId());
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().item(0);
+                }));
     }
 
-    public int delete(UUID uuid, long id) {
+    public Uni<Void> delete(UUID uuid) {
+       return delete(uuid, "_langs");
+    }
 
-        return 1;
+    public Uni<Void> delete(String code) {
+        String sql = "DELETE FROM _langs WHERE code = $1";
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(Tuple.of(code))
+                .onItem().ignore().andContinueWithNull()
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException("Failed to delete", throwable));
+                }));
     }
 }

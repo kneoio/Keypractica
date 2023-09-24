@@ -5,17 +5,17 @@ import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.repository.LanguageRepository;
-import com.semantyca.core.repository.exception.DocumentExistsException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class LanguageService implements IBasicService<LanguageDTO> {
+public class LanguageService extends AbstractService<Language> {
     @Inject
     private LanguageRepository repository;
 
@@ -25,43 +25,74 @@ public class LanguageService implements IBasicService<LanguageDTO> {
     public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
         Uni<List<Language>> langUni = repository.getAll(limit, offset);
         return langUni.onItem().transform(list -> list.stream()
-                        .map(language ->
-                                LanguageDTO.builder()
-                                        .id(language.getId())
-                                        .author(userService.getUserName(language.getAuthor()))
-                                        .regDate(language.getRegDate())
-                                        .lastModifier(userService.getUserName(language.getLastModifier()))
-                                        .lastModifiedDate(language.getLastModifiedDate())
-                                        .code(LanguageCode.valueOf(language.getCode()))
-                                        .localizedNames(language.getLocalizedNames())
-                                        .build())
-                        .collect(Collectors.toList()));
+                .map(language ->
+                        LanguageDTO.builder()
+                                .id(language.getId())
+                                .author(userService.getUserName(language.getAuthor()))
+                                .regDate(language.getRegDate())
+                                .lastModifier(userService.getUserName(language.getLastModifier()))
+                                .lastModifiedDate(language.getLastModifiedDate())
+                                .code(language.getCode())
+                                .localizedNames(language.getLocalizedNames())
+                                .build())
+                .collect(Collectors.toList()));
     }
 
-    public Uni<Language> findByCode(String code) {
-        return repository.findByCode(LanguageCode.valueOf(code));
+    public Uni<LanguageDTO> findByCode(String code) {
+        Uni<Optional<Language>> uni = repository.findByCode(LanguageCode.valueOf(code));
+        return uni.onItem().transform(languageOpt -> {
+            Language language = languageOpt.orElseThrow();
+            return LanguageDTO.builder()
+                    .id(language.getId())
+                    .author(userService.getUserName(language.getAuthor()))
+                    .regDate(language.getRegDate())
+                    .lastModifier(userService.getUserName(language.getLastModifier()))
+                    .lastModifiedDate(language.getLastModifiedDate())
+                    .code(language.getCode())
+                    .localizedNames(language.getLocalizedNames())
+                    .build();
+        });
     }
 
-    public Uni<Language> get(String id) {
-        return repository.findById(UUID.fromString(id));
+    public Uni<LanguageDTO> get(String id) {
+        Uni<Optional<Language>> uni = repository.findById(UUID.fromString(id));
+        return uni.onItem().transform(languageOpt -> {
+            Language language = languageOpt.orElseThrow();
+            return LanguageDTO.builder()
+                    .id(language.getId())
+                    .author(userService.getUserName(language.getAuthor()))
+                    .regDate(language.getRegDate())
+                    .lastModifier(userService.getUserName(language.getLastModifier()))
+                    .lastModifiedDate(language.getLastModifiedDate())
+                    .code(language.getCode())
+                    .localizedNames(language.getLocalizedNames())
+                    .build();
+        });
     }
 
-    public String add(LanguageDTO dto) throws DocumentExistsException {
+    public Uni<UUID> add(LanguageDTO dto) {
         Language node = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setId(dto.getId())
+                .setCode(dto.getCode())
                 .setLocalizedNames(dto.getLocalizedNames())
                 .build();
-        return repository.insert(node, AnonymousUser.ID).toString();
+        return repository.insert(node, AnonymousUser.ID);
     }
 
-    public Language update(LanguageDTO dto) {
+    public Uni<Integer> update(String id, LanguageDTO dto) {
         Language user = new Language.Builder()
-                .setCode(dto.getCode().toString())
+                .setId(UUID.fromString(id))
+                .setCode(dto.getCode())
+                .setLocalizedNames(dto.getLocalizedNames())
                 .build();
-        return repository.update(user);
+        return repository.update(user, AnonymousUser.ID);
     }
 
-    public int delete (String id) {
-        return repository.delete(UUID.fromString(id), AnonymousUser.ID);
+    public Uni<Void> delete(String id) {
+        return repository.delete(UUID.fromString(id));
+    }
+
+    public Uni<Void> deleteByCode(String id) {
+        return repository.delete(id);
     }
 }

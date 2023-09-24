@@ -10,7 +10,6 @@ import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
-import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-@Provider
+//@Provider
 //@Priority(Priorities.AUTHENTICATION)
 public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
 
@@ -30,7 +29,7 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
     @Context
     private JsonWebToken jwt;
 
-    String uuidRegex = "/(projects|tasks)/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
+    String uuidRegex = "/(projects|tasks)/[a-fA-F0-9]+-[a-fA-F0-9]+-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
 
     @Override
     public void filter(ContainerRequestContext requestContext) {

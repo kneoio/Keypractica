@@ -11,20 +11,33 @@ import io.vertx.mutiny.pgclient.PgPool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
 @ApplicationScoped
 public class ModuleRepository {
-
     @Inject
     PgPool client;
-
-    public Uni<List<Module>> getAll() {
-        return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
+    public Uni<List<Module>> getAll(final int limit, final int offset) {
+        String sql = "SELECT * FROM _modules";
+        if (limit > 0 ) {
+            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+        }
+        return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new Module.Builder().setName(row.getString("name")).build())
+                .onItem().transform(row -> {
+                    return new Module.Builder()
+                            .setId(row.getUUID("id"))
+                            .setAuthor(row.getLong("author"))
+                            .setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()))
+                            .setOn(row.getBoolean("is_on"))
+                            .setLocalizedNames(row.getJsonObject("loc_name"))
+                            .setLocalizedDescriptions(row.getJsonObject("loc_descr"))
+                            .setIdentifier(row.getString("identifier"))
+                            .build();
+                })
                 .collect().asList();
     }
     public Uni<List<Module>> getModules(ModuleType[] defaultModules) {
@@ -32,7 +45,7 @@ public class ModuleRepository {
         return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new Module.Builder().setName(row.getString("name")).build())
+                .onItem().transform(row -> new Module.Builder().setIdentifier(row.getString("identifier")).build())
                 .collect().asList();
     }
 

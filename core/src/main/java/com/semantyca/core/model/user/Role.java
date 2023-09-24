@@ -18,14 +18,13 @@ import java.util.UUID;
 @Setter
 @Getter
 @NoArgsConstructor
-public class Role extends SimpleReferenceEntity implements IRole {
+public class Role extends SimpleReferenceEntity {
 
     private RoleType roleType;
 
+    @Getter
     private Map<LanguageCode, String> localizedDescr;
-    public Map<LanguageCode, String> getLocalizedDescr() {
-        return localizedDescr;
-    }
+
     public void setLocalizedDescr(Map<LanguageCode, String> localizedDescr) {
         this.localizedDescr = localizedDescr;
     }
@@ -82,17 +81,17 @@ public class Role extends SimpleReferenceEntity implements IRole {
         }
 
         public Role build() {
-            Role newNode = new Role();
-            newNode.setId(id);
-            newNode.setIdentifier(identifier);
-            newNode.setLocName(localizedName);
-            newNode.setLocalizedDescr(localizedDescr);
-            newNode.setAuthor(author);
-            newNode.setRegDate(regDate);
-            newNode.setRoleType(roleType);
-            newNode.setLastModifier(lastModifier);
-            newNode.setLastModifiedDate(lastModifiedDate);
-            return newNode;
+            Role role = new Role();
+            role.setId(id);
+            role.setIdentifier(identifier);
+            role.setLocalizedName(localizedName);
+            role.setLocalizedDescr(localizedDescr);
+            role.setAuthor(author);
+            role.setRegDate(regDate);
+            role.setRoleType(roleType);
+            role.setLastModifier(lastModifier);
+            role.setLastModifiedDate(lastModifiedDate);
+            return role;
         }
     }
 }

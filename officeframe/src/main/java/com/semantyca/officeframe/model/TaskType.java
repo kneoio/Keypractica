@@ -69,7 +69,7 @@ public class TaskType extends SimpleReferenceEntity {
             TaskType newNode = new TaskType();
             newNode.setId(id);
             newNode.setIdentifier(identifier);
-            newNode.setLocName(locName);
+            newNode.setLocalizedName(locName);
             newNode.setAuthor(author);
             newNode.setRegDate(regDate);
             newNode.setLastModifier(lastModifier);

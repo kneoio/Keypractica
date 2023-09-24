@@ -86,18 +86,18 @@ public class Project extends SecureDataEntity<UUID> {
         }
 
         public Project build() {
-            Project newNode = new Project();
-            newNode.setId(id);
-            newNode.setName(name);
-            newNode.setManager(manager);
-            newNode.setCoder(coder);
-            newNode.setTester(tester);
-            newNode.setFinishDate(finishDate);
-            newNode.setStatus(status);
-            newNode.setPosition(position);
-            newNode.setPrimaryLang(primaryLang);
-            newNode.setComment(comment);
-            return newNode;
+            Project project = new Project();
+            project.setId(id);
+            project.setName(name);
+            project.setManager(manager);
+            project.setCoder(coder);
+            project.setTester(tester);
+            project.setFinishDate(finishDate);
+            project.setStatus(status);
+            project.setPosition(position);
+            project.setPrimaryLang(primaryLang);
+            project.setComment(comment);
+            return project;
         }
 
 

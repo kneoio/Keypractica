@@ -31,7 +31,7 @@ public class User extends DataEntity<Long> implements IUser {
     private List<Module> modules = new ArrayList<>();
     @JsonIgnore
     boolean authorized;
-    private List<String> roles = new ArrayList<>();
+    private List<Role> roles = new ArrayList<>();
     private Integer pageSize = EnvConst.DEFAULT_PAGE_SIZE;
     private Integer defaultLang;
     private TimeZone timeZone;
@@ -53,7 +53,7 @@ public class User extends DataEntity<Long> implements IUser {
         private String email;
         private boolean isSupervisor;
         private TimeZone timeZone = TimeZone.getDefault();
-        private List<String> roles;
+        private List<Role> roles;
         private Integer defaultLang = LanguageCode.ENG.getCode();
         private List<Module> modules = Collections.singletonList(new Module.Builder().build());
         private UserRegStatus regStatus;
@@ -89,7 +89,7 @@ public class User extends DataEntity<Long> implements IUser {
             return this;
         }
 
-        public Builder setRoles(List<String> roles) {
+        public Builder setRoles(List<Role> roles) {
             this.roles = roles;
             return this;
         }

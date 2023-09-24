@@ -18,7 +18,7 @@ public abstract class AbstractDTO implements IDTO{
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
     ZonedDateTime regDate;
     String lastModifier;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm") ZonedDateTime lastModifiedDate;
-    String regNumber;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
+    ZonedDateTime lastModifiedDate;
 
 }

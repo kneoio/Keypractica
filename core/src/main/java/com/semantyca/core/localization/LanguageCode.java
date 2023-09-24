@@ -11,7 +11,7 @@ public enum LanguageCode {
             "belarusian",
             "be"), CES(320, "czech", "cs"), GRE(321, "greek", "el"), UKR(322, "ukrainian", "uk"), TUR(
             323, "turkish", "tr"), ITA(324, "italian", "it"), KOR(325, "korean", "ko"), JPN(326,
-            "japanese", "ja"), HIN(327, "hindi", "hi"), ARA(328, "arabic", "ar");
+            "japanese", "ja"), HIN(327, "hindi", "hi"), ARA(328, "arabic", "ar"), LAV(329, "latvian", "lv");
     // @Deprecated CHN(3150, "chinese"), @Deprecated CHO(3151, "chinese");
 
     private int code;

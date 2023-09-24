@@ -1,7 +1,9 @@
 package com.semantyca.core.repository;
 
 
+import com.semantyca.core.model.Module;
 import com.semantyca.core.model.user.IUser;
+import com.semantyca.core.model.user.Role;
 import com.semantyca.core.model.user.UndefinedUser;
 import com.semantyca.core.model.user.User;
 import com.semantyca.core.server.EnvConst;
@@ -11,15 +13,19 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
+import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +36,7 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class UserRepository extends AsyncRepository {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger("UserRepository");
     @Inject
     PgPool client;
 
@@ -125,16 +131,35 @@ public class UserRepository extends AsyncRepository {
     public Uni<Long> insert(User user) {
         ZonedDateTime zonedDateTime = ZonedDateTime.now();
         LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
-        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, ui_theme, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id";
-        //String sql = "INSERT INTO _users (login, email) VALUES ($2, $3) RETURNING id";
+        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+        String modulesSQL = "INSERT INTO _user_modules (module_id, user_id, is_on) VALUES($1, $2, $3)";
+        String rolesSQL = "INSERT INTO _user_roles (role_id, user_id, is_on) VALUES($1, $2, $3)";
         Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), user.getPwd(),  localDateTime);
-        params = params.addValue(user.getRegStatus()).addValue("cinzento").addInteger(user.getConfirmationCode());
-
-        Uni<Long> longUni = client.preparedQuery(sql)
-                .execute(params)
-                .onItem().transform(result -> result.iterator().next().getLong("id"));
-        userCache.clear();
-        return longUni;
+        Tuple finalParams = params.addValue(user.getRegStatus()).addInteger(user.getConfirmationCode());
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.iterator().next().getLong("id"))
+                .onItem().transformToUni(id -> {
+                    List<Uni<Integer>> batch = new ArrayList<>();
+                    for (Module module : user.getModules()) {
+                        batch.add(tx.preparedQuery(modulesSQL)
+                                .execute(Tuple.of(module.getId(), id, true))
+                                .onItem().transform(SqlResult::rowCount));
+                    }
+                    return Uni.combine().all().unis(batch).combinedWith(results -> id);
+                })
+                .onItem().transformToUni(id -> {
+                    List<Uni<Integer>> batch = new ArrayList<>();
+                    for (Role role : user.getRoles()) {
+                        batch.add(tx.preparedQuery(rolesSQL)
+                                .execute(Tuple.of(role.getId(), id, true))
+                                .onItem().transform(SqlResult::rowCount));
+                    }
+                    return Uni.combine().all().unis(batch).combinedWith(results -> id);
+                }).onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException("Failed to insert user, roles or modules", throwable));
+                }));
     }
 
     public Uni<Long> update(User user) {
