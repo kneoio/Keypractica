@@ -1,35 +1,43 @@
 
 package com.semantyca.core.controller;
 
+import com.semantyca.core.dto.actions.ActionsFactory;
 import com.semantyca.core.dto.cnst.PayloadType;
-import com.semantyca.core.dto.document.LanguageDTO;
+import com.semantyca.core.dto.document.ModuleDTO;
 import com.semantyca.core.dto.view.View;
 import com.semantyca.core.dto.view.ViewOptionsFactory;
 import com.semantyca.core.dto.view.ViewPage;
-import com.semantyca.core.model.Language;
 import com.semantyca.core.model.Module;
-import com.semantyca.core.repository.exception.DocumentExistsException;
-import com.semantyca.core.repository.exception.DocumentModificationAccessException;
+import com.semantyca.core.model.user.IUser;
+import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.service.ModuleService;
+import com.semantyca.core.util.RuntimeUtil;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.BeanParam;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URI;
-import java.util.Set;
+import java.util.List;
+
+import static com.semantyca.core.util.RuntimeUtil.countMaxPage;
 
 @Path("/modules")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class ModuleController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ModuleController.class.getSimpleName());
+public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @Inject
     ModuleService service;
@@ -40,40 +48,46 @@ public class ModuleController {
     @GET
     @Path("/")
     @PermitAll
-    public Response get()  {
-        String userName = jwt.getName();
-        Set<String> userGroups = jwt.getGroups();
-        ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
-        View<Module> view = new View<>(service.getAll(0, 100).await().indefinitely());
-        viewPage.addPayload(PayloadType.VIEW_DATA, view);
-        return Response.ok(viewPage).build();
+    public Uni<Response> get(@BeanParam Parameters params)  {
+        IUser user = new SuperUser();
+        Uni<Integer> countUni = service.getAllCount();
+        Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
+        Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
+        Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
+        Uni<List<ModuleDTO>> listUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
+
+        return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
+            ViewPage viewPage = new ViewPage();
+            viewPage.addPayload(PayloadType.ACTIONS, ActionsFactory.getDefault());
+            viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getDefaultOptions());
+            if (pageNum == 0) pageNum = 1;
+            View<ModuleDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
+            viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+            return Response.ok(viewPage).build();
+        });
     }
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id)  {
-        Language user = service.get(id);
-        return Response.ok(user).build();
+    public Uni<Response> getById(@PathParam("id") String id)  {
+        return getDocument(service, id);
     }
 
     @POST
     @Path("/")
     @RolesAllowed({"supervisor","admin"})
-    public Response create(LanguageDTO dto) {
-        try {
-            return Response.created(URI.create("/" + service.add(dto))).build();
-        } catch (DocumentExistsException e) {
-            LOGGER.warn(e.getDetailedMessage());
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(e.getMessage())
-                    .build();
-        }
+    public Uni<Response> create(ModuleDTO dto) {
+        return service.add(dto)
+                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                });
     }
 
     @PUT
     @Path("/")
-    public Response update(LanguageDTO dto) throws DocumentModificationAccessException {
+    public Response update(ModuleDTO dto) {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 

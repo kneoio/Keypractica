@@ -13,8 +13,8 @@ import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.util.RuntimeUtil;
-import com.semantyca.projects.actions.ProjectActionsFactory;
 import com.semantyca.projects.dto.TaskDTO;
+import com.semantyca.projects.dto.actions.ProjectActionsFactory;
 import com.semantyca.projects.service.TaskService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -27,7 +27,6 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -102,9 +101,4 @@ public class TaskController extends AbstractSecuredController {
         return Response.ok().build();
     }
 
-
-    static class Parameters {
-        @QueryParam("page")
-        int page;
-    }
 }

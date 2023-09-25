@@ -1,50 +1,80 @@
 package com.semantyca.core.service;
 
-import com.semantyca.core.dto.document.LanguageDTO;
-import com.semantyca.core.model.Language;
+import com.semantyca.core.dto.document.ModuleDTO;
 import com.semantyca.core.model.Module;
 import com.semantyca.core.model.cnst.ModuleType;
 import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.repository.ModuleRepository;
-import com.semantyca.core.repository.exception.DocumentExistsException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
-
-;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class ModuleService {
+public class ModuleService extends AbstractService<Module, ModuleDTO> {
     @Inject
     private ModuleRepository repository;
 
-    public Uni<List<Module>> getAll(int offset, int size) {
-        return repository.getAll(offset, size);
+    public Uni<List<ModuleDTO>> getAll(final int limit, final int offset) {
+        Uni<List<Module>> listUni = repository.getAll(limit, offset);
+        return listUni.onItem().transform(list -> list.stream()
+                .map(doc ->
+                        ModuleDTO.builder()
+                                .id(doc.getId())
+                                .author(userService.getUserName(doc.getAuthor()))
+                                .regDate(doc.getRegDate())
+                                .lastModifier(userService.getUserName(doc.getLastModifier()))
+                                .lastModifiedDate(doc.getLastModifiedDate())
+                                .identifier(doc.getIdentifier())
+                                .localizedName(doc.getLocalizedName())
+                                .localizedDescription(doc.getLocalizedDescription())
+                                .build())
+                .collect(Collectors.toList()));
+    }
+
+    public Uni<Integer> getAllCount() {
+        return repository.getAllCount();
     }
 
     public Uni<List<Module>> findAll(ModuleType ... defaultModules) {
         return repository.getModules(defaultModules);
     }
-    public Language get(String id) {
-        return repository.findById(UUID.fromString(id));
+    public Uni<ModuleDTO> get(String id) {
+        Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
+        return uni.onItem().transform(optional -> {
+            Module doc = optional.orElseThrow();
+            ModuleDTO dto = new ModuleDTO();
+            dto.setId(doc.getId());
+            dto.setAuthor(userService.getUserName(doc.getAuthor()));
+            dto.setRegDate(doc.getRegDate());
+            dto.setLastModifier(userService.getUserName(doc.getLastModifier()));
+            dto.setLastModifiedDate(doc.getLastModifiedDate());
+            dto.setIdentifier(doc.getIdentifier());
+            dto.setOn(doc.isOn());
+            dto.setLocalizedName(doc.getLocalizedName());
+            dto.setLocalizedDescription(doc.getLocalizedDescription());
+            return dto;
+        });
     }
 
-    public String add(LanguageDTO dto) throws DocumentExistsException {
-        Language node = new Language.Builder()
-                .setCode(dto.getCode())
-                .setLocalizedNames(dto.getLocalizedNames())
+    public Uni<UUID> add(ModuleDTO dto) {
+        Module doc = new Module.Builder()
+                .setIdentifier(dto.getIdentifier())
+                .setLocalizedName(dto.getLocalizedName())
+                .setLocalizedDescription(dto.getLocalizedDescription())
                 .build();
-        return repository.insert(node, AnonymousUser.ID).toString();
+        return repository.insert(doc, AnonymousUser.ID);
     }
 
-    public Language update(LanguageDTO dto) {
-        Language user = new Language.Builder()
-                .setCode(dto.getCode())
+    public Module update(ModuleDTO dto) {
+        Module doc = new Module.Builder()
+                .setIdentifier(dto.getIdentifier())
                 .build();
-        return repository.update(user);
+        return repository.update(doc);
     }
 
     public int delete (String id) {

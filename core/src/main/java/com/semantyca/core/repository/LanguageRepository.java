@@ -59,7 +59,7 @@ public class LanguageRepository extends AsyncRepository {
         Language doc = new Language();
         setDefaultFields(doc, row);
         doc.setCode(LanguageCode.valueOf(row.getString("code")));
-        doc.setLocalizedNames(extractLanguageMap(row));
+        doc.setLocalizedName(extractLanguageMap(row));
         doc.setOn(row.getBoolean("is_on"));
         doc.setPosition(row.getInteger("position"));
         return doc;
@@ -70,7 +70,7 @@ public class LanguageRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = "INSERT INTO _langs (author, code, reg_date, position, last_mod_date, last_mod_user, loc_name, is_on) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
         Tuple params = Tuple.of(user, doc.getCode(), nowTime, doc.getPosition(), nowTime, user);
-        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedNames())).addBoolean(doc.isOn());
+        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addBoolean(doc.isOn());
 
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(finalParams)
@@ -84,7 +84,7 @@ public class LanguageRepository extends AsyncRepository {
     public Uni<Integer> update(Language doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = "UPDATE _langs SET code=$1, position=$2, last_mod_date=$3, last_mod_user=$4, is_on=$5, loc_name=$6 WHERE id=$7";
-        Tuple params = Tuple.of(doc.getCode(), doc.getPosition(), nowTime, user, doc.isOn(), JsonObject.mapFrom(doc.getLocalizedNames()));
+        Tuple params = Tuple.of(doc.getCode(), doc.getPosition(), nowTime, user, doc.isOn(), JsonObject.mapFrom(doc.getLocalizedName()));
         Tuple finalParams = params.addUUID(doc.getId());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(finalParams)

@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.HashMap;
 
 public class Environment {
-
     public static Date startTime;
     public static String orgName;
     public static String orgShortName;
@@ -24,7 +23,6 @@ public class Environment {
     public static HashMap<String, String> mimeHash = new HashMap<>();
     public static String tmpDir;
     public static String trash;
-
     public static Boolean isTLSEnable = false;
     public static int secureHttpPort;
     public static String certFile = "";
@@ -90,96 +88,7 @@ public class Environment {
 
         trash = jrDir.getAbsolutePath();
 
-       /*     orgName = XMLUtil.getTextContent(xmlDocument, "/nextbase/orgname");
-            if (orgName.isEmpty()) {
-                orgName = EnvConst.APP_ID;
-            }
-            orgShortName = orgName;
 
-            color = XMLUtil.getTextContent(xmlDocument, "/nextbase/orgcolor");
-            if (color.isEmpty()) {
-                color = EnvConst.DEFAULT_COLOR;
-            }
-
-            logo = XMLUtil.getTextContent(xmlDocument, "/nextbase/orglogo");
-            File logoFile = new File(EnvConst.WEB_APPS_FOLDER + logo);
-            if (!logoFile.exists()) {
-                logo = EnvConst.DEAFAULT_APP_LOGO;
-            }
-
-            wallpaper = XMLUtil.getTextContent(xmlDocument, "/nextbase/orgwallpaper");
-            if (wallpaper.isEmpty()) {
-                wallpaper = EnvConst.DEFAULT_WALLPAPER;
-            }
-
-
-            hostName = XMLUtil.getTextContent(xmlDocument, "/nextbase/hostname");
-            if (hostName.isEmpty()) {
-                InetAddress addr = null;
-                try {
-                    addr = InetAddress.getLocalHost();
-                } catch (final UnknownHostException e) {
-                    Server.logger.exception(e);
-                }
-                hostName = addr.getHostName();
-            }
-
-            virtualHostName = XMLUtil.getTextContent(xmlDocument, "/nextbase/virtualhostname");
-
-            final String portAsText = XMLUtil.getTextContent(xmlDocument, "/nextbase/port");
-            try {
-                httpPort = Integer.parseInt(portAsText);
-            } catch (final NumberFormatException nfe) {
-
-            }
-
-            try {
-                isTLSEnable = XMLUtil.getTextContent(xmlDocument, "/nextbase/tls/@mode").equalsIgnoreCase("on");
-                if (isTLSEnable) {
-                    String tlsPort = XMLUtil.getTextContent(xmlDocument, "/nextbase/tls/port");
-                    try {
-                        secureHttpPort = Integer.parseInt(tlsPort);
-                    } catch (final NumberFormatException nfe) {
-                        secureHttpPort = EnvConst.DEFAULT_HTTP_PORT;
-                    }
-                    certFile = XMLUtil.getTextContent(xmlDocument, "/nextbase/tls/certfile");
-                    certKeyFile = XMLUtil.getTextContent(xmlDocument, "/nextbase/tls/certkeyfile");
-
-                    Server.logger.info("TLS is enabled");
-                    httpPort = secureHttpPort;
-                    httpSchema = WebServer.HTTP_SECURE_SCHEMA;
-                }
-            } catch (final Exception ex) {
-                Server.logger.info("TLS configuration error");
-                isTLSEnable = false;
-                certFile = "";
-                certKeyFile = "";
-            }
-*/
-  /*          try {
-                mailEnable = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/@mode").equalsIgnoreCase("on") ? true
-                        : false;
-                if (mailEnable) {
-                    smtpHost = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtphost");
-                    if (!smtpHost.isEmpty()) {
-                        smtpAuth = Boolean.valueOf(XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtpauth"));
-                        smtpUser = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtpuser");
-                        smtpPassword = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtppassword");
-                        smtpUserName = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtpusername",
-                                EnvConst.APP_ID + ", bot");
-                        smtpPort = XMLUtil.getTextContent(xmlDocument, "/nextbase/mail/smtpport");
-                        Server.logger.info("MailAgent is going to redirect some messages to host: " + smtpHost);
-                    } else {
-                        Server.logger.warning("SMTP host is not set, the MailAgent has been switched off");
-                        mailEnable = false;
-                    }
-                } else {
-                    Server.logger.info("MailAgent is switched off");
-                }
-            } catch (final NumberFormatException nfe) {
-                Server.logger.info("MailAgent is not set");
-            }
-*/
 
 
     }

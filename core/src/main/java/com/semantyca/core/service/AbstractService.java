@@ -1,8 +1,6 @@
 package com.semantyca.core.service;
 
-import com.semantyca.core.dto.IDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
-import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.repository.AsyncRepository;
 import com.semantyca.core.repository.UserRepository;
@@ -14,11 +12,13 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public abstract class AbstractService<T> {
-
+public abstract class AbstractService<T, V> {
     @Inject
     protected UserRepository userRepository;
+    @Inject
+    protected UserService userService;
 
+    public abstract Uni<V> get(String id);
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->
@@ -33,13 +33,6 @@ public abstract class AbstractService<T> {
 
     protected RLSDTO convertRlSEntries(RLS rls) {
         return new RLSDTO(userRepository.getUserName(rls.getReader()), rls.getAccessLevel().getAlias(), rls.getReadingTime());
-    }
-
-    protected void fillCommonFileds(DataEntity dataEntity, IDTO dto) {
-          dto.setAuthor(userRepository.getUserName(dataEntity.getAuthor()));
-          dto.setRegDate(dataEntity.getRegDate());
-          dto.setLastModifier(userRepository.getUserName(dataEntity.getLastModifier()));
-          dto.setLastModifiedDate(dataEntity.getLastModifiedDate());
     }
 
 }

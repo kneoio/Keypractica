@@ -15,16 +15,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class LanguageService extends AbstractService<Language> {
+public class LanguageService extends AbstractService<Language, LanguageDTO> {
     @Inject
     private LanguageRepository repository;
 
-    @Inject
-    private UserService userService;
-
     public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
-        Uni<List<Language>> langUni = repository.getAll(limit, offset);
-        return langUni.onItem().transform(list -> list.stream()
+        Uni<List<Language>> listUni = repository.getAll(limit, offset);
+        return listUni.onItem().transform(list -> list.stream()
                 .map(language ->
                         LanguageDTO.builder()
                                 .id(language.getId())
@@ -33,7 +30,7 @@ public class LanguageService extends AbstractService<Language> {
                                 .lastModifier(userService.getUserName(language.getLastModifier()))
                                 .lastModifiedDate(language.getLastModifiedDate())
                                 .code(language.getCode())
-                                .localizedNames(language.getLocalizedNames())
+                                .localizedNames(language.getLocalizedName())
                                 .build())
                 .collect(Collectors.toList()));
     }
@@ -49,7 +46,7 @@ public class LanguageService extends AbstractService<Language> {
                     .lastModifier(userService.getUserName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
-                    .localizedNames(language.getLocalizedNames())
+                    .localizedNames(language.getLocalizedName())
                     .build();
         });
     }
@@ -65,7 +62,7 @@ public class LanguageService extends AbstractService<Language> {
                     .lastModifier(userService.getUserName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
-                    .localizedNames(language.getLocalizedNames())
+                    .localizedNames(language.getLocalizedName())
                     .build();
         });
     }
@@ -74,7 +71,7 @@ public class LanguageService extends AbstractService<Language> {
         Language node = new Language.Builder()
                 .setId(dto.getId())
                 .setCode(dto.getCode())
-                .setLocalizedNames(dto.getLocalizedNames())
+                .setLocalizedName(dto.getLocalizedNames())
                 .build();
         return repository.insert(node, AnonymousUser.ID);
     }
@@ -83,7 +80,7 @@ public class LanguageService extends AbstractService<Language> {
         Language user = new Language.Builder()
                 .setId(UUID.fromString(id))
                 .setCode(dto.getCode())
-                .setLocalizedNames(dto.getLocalizedNames())
+                .setLocalizedName(dto.getLocalizedNames())
                 .build();
         return repository.update(user, AnonymousUser.ID);
     }

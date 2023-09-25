@@ -26,7 +26,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/languages")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class LanguageController extends AbstractSecuredController {
+public class LanguageController extends AbstractController {
 
     @Inject
     LanguageService service;
@@ -67,7 +67,7 @@ public class LanguageController extends AbstractSecuredController {
     }
 
     @POST
-    public Uni<Response> createLanguage(LanguageDTO dto) {
+    public Uni<Response> create(LanguageDTO dto) {
         return service.add(dto)
                 .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
                 .onFailure().recoverWithItem(throwable -> {

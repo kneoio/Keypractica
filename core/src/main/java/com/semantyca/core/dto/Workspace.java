@@ -2,8 +2,8 @@ package com.semantyca.core.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.semantyca.core.dto.document.LanguageDTO;
+import com.semantyca.core.dto.document.ModuleDTO;
 import com.semantyca.core.dto.view.View;
-import com.semantyca.core.model.Module;
 import com.semantyca.core.model.user.IUser;
 import com.semantyca.core.server.EnvConst;
 import com.semantyca.core.service.LanguageService;
@@ -20,7 +20,7 @@ public class Workspace extends AbstractPage {
         addPayload("user", user.getUserName());
         addPayload("redirect", "projects");
         Uni<List<LanguageDTO>> languageListUni = languageService.getAll(100, 0);
-        Uni<List<Module>> moduleServiceAll = moduleService.getAll(100, 0);
+        Uni<List<ModuleDTO>> moduleServiceAll = moduleService.getAll(100, 0);
         addPayload("available_languages", new View(languageListUni.await().indefinitely()));
         addPayload("available_modules", new View(moduleServiceAll.await().indefinitely()));
     }
