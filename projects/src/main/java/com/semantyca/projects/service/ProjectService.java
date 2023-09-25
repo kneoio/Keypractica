@@ -4,6 +4,7 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.user.AnonymousUser;
+import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.service.AbstractService;
 import com.semantyca.core.service.UserService;
 import com.semantyca.projects.dto.ProjectDTO;
@@ -19,7 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class ProjectService extends AbstractService<Project> {
+public class ProjectService extends AbstractService<Project, ProjectDTO> {
     @Inject
     private ProjectRepository repository;
     @Inject
@@ -52,6 +53,10 @@ public class ProjectService extends AbstractService<Project> {
 
     public Uni<ProjectDTO> get(String uuid, final long userID) {
         return get(UUID.fromString(uuid), userID);
+    }
+
+    public Uni<ProjectDTO> get(String uuid) {
+        return get(uuid, SuperUser.ID);
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {

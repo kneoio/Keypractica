@@ -8,6 +8,7 @@ import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.embedded.RLS;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class AsyncRepository {
 
@@ -31,10 +33,17 @@ public class AsyncRepository {
     @Inject
     ObjectMapper mapper;
 
-    public Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
+    protected Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m, %s as acl WHERE m.id = acl.entity_id AND acl.reader = $1", mainTable, aclTable);
         return client.preparedQuery(sql)
                 .execute(Tuple.of(userID))
+                .onItem().transform(rows -> rows.iterator().next().getInteger(0));
+    }
+
+    protected Uni<Integer> getAllCount(String mainTable) {
+        String sql = String.format("SELECT count(m.id) FROM %s as m", mainTable);
+        return client.preparedQuery(sql)
+                .execute()
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
 
@@ -53,7 +62,7 @@ public class AsyncRepository {
     }
 
 
-    public Uni<Void> delete(UUID uuid, String table) {
+    protected Uni<Void> delete(UUID uuid, String table) {
         String sql = String.format("DELETE FROM %s WHERE id = $1", table);
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(Tuple.of(uuid))
@@ -64,7 +73,7 @@ public class AsyncRepository {
                 }));
     }
 
-    public void setDefaultFields(DataEntity<UUID> entity, Row row) {
+    protected void setDefaultFields(DataEntity<UUID> entity, Row row) {
         entity.setId(row.getUUID("id"));
         entity.setAuthor(row.getLong("author"));
         entity.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
@@ -72,7 +81,7 @@ public class AsyncRepository {
         entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
     }
 
-    public Map<LanguageCode, String> extractLanguageMap(Row row) {
+    protected Map<LanguageCode, String> extractLanguageMap(Row row) {
         Map<LanguageCode, String> map;
         try {
             map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
@@ -83,6 +92,13 @@ public class AsyncRepository {
             throw new RuntimeException(e);
         }
         return map;
+    }
+
+    protected static Map<LanguageCode, String> getLocalizedData(JsonObject json) {
+        return json.getMap().entrySet().stream()
+                .collect(Collectors.toMap(
+                        entry -> LanguageCode.valueOf(entry.getKey()),
+                        entry -> String.valueOf(entry.getValue())));
     }
 
 }

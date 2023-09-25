@@ -11,9 +11,8 @@ import java.util.UUID;
 @Setter
 @Getter
 @NoArgsConstructor
-public class Language extends DataEntity<UUID> {
+public class Language extends SimpleReferenceEntity {
     protected String name;
-    private Map<LanguageCode, String> localizedNames;
     private LanguageCode code = LanguageCode.UNKNOWN;
     private boolean isOn;
     private int position;
@@ -22,7 +21,7 @@ public class Language extends DataEntity<UUID> {
         private LanguageCode code = LanguageCode.ENG;
         private boolean isOn;
         private int position = 999;
-        private Map<LanguageCode, String> localizedNames = Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang());
+        private Map<LanguageCode, String> localizedName = Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang());
 
         public Builder setId(UUID id) {
             this.id = id;
@@ -35,12 +34,12 @@ public class Language extends DataEntity<UUID> {
         }
 
         public Builder addLocalizedName(String code, String name) {
-            this.localizedNames.put(LanguageCode.valueOf(code), name);
+            this.localizedName.put(LanguageCode.valueOf(code), name);
             return this;
         }
 
-        public Builder setLocalizedNames(Map<LanguageCode, String> languageCodeStringMap) {
-            this.localizedNames = languageCodeStringMap;
+        public Builder setLocalizedName(Map<LanguageCode, String> languageCodeStringMap) {
+            this.localizedName = languageCodeStringMap;
             return this;
         }
 
@@ -61,7 +60,7 @@ public class Language extends DataEntity<UUID> {
             doc.setCode(code);
             doc.setOn(isOn);
             doc.setPosition(position);
-            doc.setLocalizedNames(localizedNames);
+            doc.setLocalizedName(localizedName);
             return doc;
         }
 

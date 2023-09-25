@@ -4,6 +4,7 @@ import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.user.AnonymousUser;
+import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.service.AbstractService;
 import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
@@ -23,7 +24,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class TaskService extends AbstractService<Task> {
+public class TaskService extends AbstractService<Task, TaskDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("TaskService");
     @Inject
     private TaskRepository repository;
@@ -57,6 +58,9 @@ public class TaskService extends AbstractService<Task> {
         return repository.getAllCount(userID);
     }
 
+    public Uni<TaskDTO> get(String uuid) {
+        return get(uuid, SuperUser.ID);
+    }
     public Uni<TaskDTO> get(String uuid, final long userID) {
         UUID id = UUID.fromString(uuid);
         Uni<Optional<Task>> taskUni = repository.findById(userID, id);

@@ -8,11 +8,12 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.ZonedDateTime;
 import java.util.UUID;
+
 @Setter
 @Getter
 @SuperBuilder
 @NoArgsConstructor
-public abstract class AbstractDTO implements IDTO{
+public abstract class AbstractDTO implements IDTO {
     UUID id;
     String author;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")

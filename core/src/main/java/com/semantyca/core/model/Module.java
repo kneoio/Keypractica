@@ -2,7 +2,6 @@ package com.semantyca.core.model;
 
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.cnst.ModuleType;
-import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,17 +10,14 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Setter
 @Getter
 @NoArgsConstructor
 public class Module  extends SimpleReferenceEntity {
     protected ModuleType type;
-
-    private Map<LanguageCode, String> localizedDescriptions = new HashMap<>();
+    private Map<LanguageCode, String> localizedDescription = new HashMap<>();
     private boolean isOn;
-    private int position;
 
     public static class Builder {
         protected UUID id;
@@ -68,16 +64,8 @@ public class Module  extends SimpleReferenceEntity {
             return this;
         }
 
-        public Builder setLocalizedNames(Map<LanguageCode, String> languageCodeStringMap) {
+        public Builder setLocalizedName(Map<LanguageCode, String> languageCodeStringMap) {
             this.localizedName = languageCodeStringMap;
-            return this;
-        }
-
-        public Builder setLocalizedNames(JsonObject json) {
-            this.localizedName = json.getMap().entrySet().stream()
-                    .collect(Collectors.toMap(
-                            entry -> LanguageCode.valueOf(entry.getKey()),
-                            entry -> String.valueOf(entry.getValue())));
             return this;
         }
 
@@ -86,15 +74,6 @@ public class Module  extends SimpleReferenceEntity {
             return this;
         }
 
-        public Builder setLocalizedDescriptions(JsonObject json) {
-            if (json != null) {
-                this.localizedDescription = json.getMap().entrySet().stream()
-                        .collect(Collectors.toMap(
-                                entry -> LanguageCode.valueOf(entry.getKey()),
-                                entry -> String.valueOf(entry.getValue())));
-            }
-            return this;
-        }
 
         public Module build() {
             Module module = new Module();
@@ -105,7 +84,7 @@ public class Module  extends SimpleReferenceEntity {
             module.setLocalizedName(localizedName);
             module.setOn(isOn);
             module.setType(type);
-            module.setLocalizedDescriptions(localizedDescription);
+            module.setLocalizedDescription(localizedDescription);
             return module;
         }
     }

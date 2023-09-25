@@ -1,4 +1,4 @@
-package com.semantyca.projects.actions;
+package com.semantyca.projects.dto.actions;
 
 import com.semantyca.core.dto.actions.ActionBar;
 import com.semantyca.core.dto.actions.ActionsFactory;
