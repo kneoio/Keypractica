@@ -9,6 +9,7 @@ import java.time.ZonedDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"id", "author", "regDate", "lastModifier", "lastModifiedDate"})
 public interface IDataEntity<K> {
+    void setId(K id);
     K getId();
     void setAuthor(long author);
     long getAuthor();

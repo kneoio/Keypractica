@@ -1,5 +1,6 @@
 package com.semantyca.projects.model;
 
+import com.semantyca.core.model.AbstractEntityBuilder;
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.SecureDataEntity;
 import com.semantyca.core.model.constants.ProjectStatusType;
@@ -24,8 +25,7 @@ public class Project extends SecureDataEntity<UUID> {
     private LocalDate finishDate;
     private String comment;
 
-    public static class Builder {
-        private UUID id;
+    public static class Builder extends AbstractEntityBuilder {
         private String name;
         private int manager;
         private int coder;
@@ -86,18 +86,18 @@ public class Project extends SecureDataEntity<UUID> {
         }
 
         public Project build() {
-            Project project = new Project();
-            project.setId(id);
-            project.setName(name);
-            project.setManager(manager);
-            project.setCoder(coder);
-            project.setTester(tester);
-            project.setFinishDate(finishDate);
-            project.setStatus(status);
-            project.setPosition(position);
-            project.setPrimaryLang(primaryLang);
-            project.setComment(comment);
-            return project;
+            Project doc = new Project();
+            setDefaultFields(doc);
+            doc.setName(name);
+            doc.setManager(manager);
+            doc.setCoder(coder);
+            doc.setTester(tester);
+            doc.setFinishDate(finishDate);
+            doc.setStatus(status);
+            doc.setPosition(position);
+            doc.setPrimaryLang(primaryLang);
+            doc.setComment(comment);
+            return doc;
         }
 
 

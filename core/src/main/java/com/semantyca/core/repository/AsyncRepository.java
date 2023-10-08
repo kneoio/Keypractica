@@ -40,7 +40,7 @@ public class AsyncRepository {
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
 
-    protected Uni<Integer> getAllCount(String mainTable) {
+    public Uni<Integer> getAllCount(String mainTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m", mainTable);
         return client.preparedQuery(sql)
                 .execute()

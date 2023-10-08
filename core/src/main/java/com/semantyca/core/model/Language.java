@@ -8,14 +8,15 @@ import lombok.Setter;
 import java.util.Map;
 import java.util.UUID;
 
-@Setter
-@Getter
 @NoArgsConstructor
+@Getter
+@Setter
 public class Language extends SimpleReferenceEntity {
     protected String name;
     private LanguageCode code = LanguageCode.UNKNOWN;
     private boolean isOn;
     private int position;
+
 
     public static class Builder extends AbstractEntityBuilder {
         private LanguageCode code = LanguageCode.ENG;

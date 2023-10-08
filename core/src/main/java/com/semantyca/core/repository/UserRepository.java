@@ -45,8 +45,8 @@ public class UserRepository extends AsyncRepository {
 
 
     void onStart(@Observes StartupEvent ev) {
-        userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getUserId() != null)
-                        .collect(Collectors.toMap(IUser::getUserId, user -> user)))
+        userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
+                        .collect(Collectors.toMap(IUser::getId, user -> user)))
                 .await().indefinitely();
         userAltCache.putAll(userCache.values().stream()
                 .collect(Collectors.toMap(IUser::getUserName, Function.identity())));

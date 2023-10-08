@@ -7,6 +7,7 @@ import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.user.Role;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -16,13 +17,21 @@ import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.*;
+import java.time.ZonedDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 
 @ApplicationScoped
-public class RoleRepository {
+public class RoleRepository extends AsyncRepository {
 
+    private static final String TABLE_NAME = "_roles";
+    private static final String ENTITY_NAME = "role";
     @Inject
     PgPool client;
 
@@ -40,6 +49,10 @@ public class RoleRepository {
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(this::from).collect().asList();
+    }
+
+    public Uni<Integer> getAllCount() {
+        return getAllCount(TABLE_NAME);
     }
 
     public Uni<Optional<Role>> findById(UUID uuid) {
@@ -81,19 +94,38 @@ public class RoleRepository {
                 .build();
     }
 
-    public UUID insert(Role node, Long user) {
-
-        return node.getId();
+    public Uni<UUID> insert(Role doc, Long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", TABLE_NAME);
+        Tuple params = Tuple.of(user, doc.getIdentifier(), nowTime, nowTime, user);
+        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addJsonObject(JsonObject.mapFrom(doc.getLocalizedDescription()));
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                }));
     }
 
 
-    public Role update(Role node) {
-
-        return node;
+    public Uni<Integer> update(Role doc, long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", TABLE_NAME);
+        Tuple params = Tuple.of(doc.getIdentifier(), nowTime, user, JsonObject.mapFrom(doc.getLocalizedName()), JsonObject.mapFrom(doc.getLocalizedDescription()));
+        Tuple finalParams = params.addUUID(doc.getId());
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().item(0);
+                }));
     }
 
-    public int delete(Long id) {
-
-        return 1;
+    public Uni<Void> delete(UUID uuid) {
+        return delete(uuid, TABLE_NAME);
     }
+
+
 }

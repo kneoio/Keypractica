@@ -28,7 +28,7 @@ public class WorkspaceController {
     @Path("/workspace")
     public Response get(@Context ContainerRequestContext requestContext) {
         IUser currentUser = (IUser) requestContext.getProperty("user");
-        if (currentUser.getUserId() == AnonymousUser.ID) {
+        if (currentUser.getId() == AnonymousUser.ID) {
             return Response.ok(new Workspace(currentUser, languageService)).build();
         } else {
             return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();

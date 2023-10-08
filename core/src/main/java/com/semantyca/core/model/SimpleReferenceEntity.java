@@ -11,7 +11,6 @@ import java.util.UUID;
 @Getter
 @Setter
 public class SimpleReferenceEntity extends DataEntity<UUID> {
-    protected UUID id;
     protected String identifier;
     protected Map<LanguageCode, String> localizedName = new HashMap<>();
 

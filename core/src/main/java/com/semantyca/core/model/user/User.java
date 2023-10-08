@@ -20,7 +20,6 @@ import java.util.TimeZone;
 @Getter
 @NoArgsConstructor
 public class User extends DataEntity<Long> implements IUser {
-    private Long id;
     @NotBlank
     private String login;
     @JsonIgnore
@@ -37,14 +36,22 @@ public class User extends DataEntity<Long> implements IUser {
     private TimeZone timeZone;
     private UserRegStatus regStatus;
     private int confirmationCode;
-    @Override
-    public Long getUserId() {
-        return id;
-    }
 
     @Override
     public String getUserName() {
         return login;
+    }
+    @Override
+    public Integer getPageSize() {
+        return IUser.super.getPageSize();
+    }
+    @Override
+    public String getEmail() {
+        return email;
+    }
+    @Override
+    public int getConfirmationCode() {
+        return IUser.super.getConfirmationCode();
     }
 
     public static class Builder {
@@ -111,18 +118,19 @@ public class User extends DataEntity<Long> implements IUser {
 
 
         public User build() {
-            User newUser = new User();
-            newUser.setLogin(login);
-            newUser.setPwd(pwd);
-            newUser.setEmail(email);
-            newUser.setSupervisor(isSupervisor);
-            newUser.setRoles(roles);
-            newUser.setTimeZone(timeZone);
-            newUser.setModules(modules);
-            newUser.setDefaultLang(defaultLang);
-            newUser.setRegStatus(regStatus);
-            newUser.setConfirmationCode(confirmationCode);
-            return newUser;
+            User doc = new User();
+            doc.setLogin(login);
+            doc.setPwd(pwd);
+            doc.setEmail(email);
+            doc.setSupervisor(isSupervisor);
+            doc.setRoles(roles);
+            doc.setTimeZone(timeZone);
+            doc.setModules(modules);
+            doc.setDefaultLang(defaultLang);
+            doc.setRegStatus(regStatus);
+            doc.setConfirmationCode(confirmationCode);
+            doc.setSupervisor(isSupervisor);
+            return doc;
         }
 
 

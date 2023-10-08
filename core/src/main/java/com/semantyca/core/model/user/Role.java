@@ -19,20 +19,13 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class Role extends SimpleReferenceEntity {
-
     private RoleType roleType;
-
-    @Getter
-    private Map<LanguageCode, String> localizedDescr;
-
-    public void setLocalizedDescr(Map<LanguageCode, String> localizedDescr) {
-        this.localizedDescr = localizedDescr;
-    }
+    private Map<LanguageCode, String> localizedDescription;
 
     public static class Builder {
         protected UUID id;
         protected String identifier;
-        private Map<LanguageCode, String> localizedDescr = new HashMap<>();
+        private Map<LanguageCode, String> localizedDescription = new HashMap<>();
         private final Map<LanguageCode, String> localizedName = new HashMap<>();
         private long author;
         private ZonedDateTime regDate;
@@ -51,12 +44,12 @@ public class Role extends SimpleReferenceEntity {
         }
 
         public Role.Builder setLocalizedName(Map<LanguageCode, String> locName) {
-            this.localizedDescr = locName;
+            this.localizedDescription = locName;
             return this;
         }
 
-        public Builder setLocalizedDescr(Map<LanguageCode, String> localizedDescr) {
-            this.localizedDescr = localizedDescr;
+        public Builder setLocalizedDescription(Map<LanguageCode, String> localizedDescription) {
+            this.localizedDescription = localizedDescription;
             return this;
         }
 
@@ -85,7 +78,7 @@ public class Role extends SimpleReferenceEntity {
             role.setId(id);
             role.setIdentifier(identifier);
             role.setLocalizedName(localizedName);
-            role.setLocalizedDescr(localizedDescr);
+            role.setLocalizedDescription(localizedDescription);
             role.setAuthor(author);
             role.setRegDate(regDate);
             role.setRoleType(roleType);

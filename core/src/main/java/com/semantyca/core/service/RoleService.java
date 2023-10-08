@@ -13,10 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class RoleService {
+public class RoleService extends AbstractService<Role, RoleDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("RoleService");
     @Inject
     private RoleRepository repository;
@@ -38,23 +39,42 @@ public class RoleService {
                         .collect(Collectors.toList()));
     }
 
-
-    public Uni<Optional<RoleDTO>> get(String id) {
-       // return repository.findById(UUID.fromString(id));
-        return null;
+    public Uni<Integer> getAllCount() {
+        return repository.getAllCount();
     }
 
-    public String  add(RoleDTO dto) {
-        Role node = new Role.Builder()
-               // .setName(dto.name())
-                .build();
-        return repository.insert(node, AnonymousUser.ID).toString();
+    public Uni<RoleDTO> get(String id) {
+        Uni<Optional<Role>> uni = repository.findById(UUID.fromString(id));
+        return uni.onItem().transform(optional -> {
+            Role doc = optional.orElseThrow();
+            RoleDTO dto = new RoleDTO();
+            setDefaultFields(dto, doc);
+            dto.setIdentifier(doc.getIdentifier());
+            dto.setLocalizedName(doc.getLocalizedName());
+            dto.setLocalizedDescription(doc.getLocalizedDescription());
+            return dto;
+        });
     }
 
-    public Role update(RoleDTO dto) {
-        Role user = new Role.Builder()
-            //    .setCode(dto.code())
+    public Uni<UUID> add(RoleDTO dto) {
+        Role doc = new Role.Builder()
+                .setIdentifier(dto.getIdentifier())
+                .setLocalizedName(dto.getLocalizedName())
+                .setLocalizedDescription(dto.getLocalizedDescription())
                 .build();
-        return repository.update(user);
+        return repository.insert(doc, AnonymousUser.ID);
+    }
+
+    public Uni<Integer> update(String id, RoleDTO dto) {
+        Role doc = new Role.Builder()
+                .setId(UUID.fromString(id))
+                .setIdentifier(dto.getIdentifier())
+                .setLocalizedName(dto.getLocalizedName())
+                .build();
+        return repository.update(doc, AnonymousUser.ID);
+    }
+
+    public Uni<Void> delete(String id) {
+        return repository.delete(UUID.fromString(id));
     }
 }
