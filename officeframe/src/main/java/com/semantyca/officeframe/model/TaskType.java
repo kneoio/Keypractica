@@ -1,6 +1,5 @@
 package com.semantyca.officeframe.model;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.semantyca.core.localization.LanguageCode;
 import com.semantyca.core.model.SimpleReferenceEntity;
@@ -12,7 +11,6 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Setter
@@ -66,15 +64,15 @@ public class TaskType extends SimpleReferenceEntity {
         }
 
         public TaskType build() {
-            TaskType newNode = new TaskType();
-            newNode.setId(id);
-            newNode.setIdentifier(identifier);
-            newNode.setLocalizedName(locName);
-            newNode.setAuthor(author);
-            newNode.setRegDate(regDate);
-            newNode.setLastModifier(lastModifier);
-            newNode.setLastModifiedDate(lastModifiedDate);
-            return newNode;
+            TaskType doc = new TaskType();
+            doc.setId(id);
+            doc.setIdentifier(identifier);
+            doc.setLocalizedName(locName);
+            doc.setAuthor(author);
+            doc.setRegDate(regDate);
+            doc.setLastModifier(lastModifier);
+            doc.setLastModifiedDate(lastModifiedDate);
+            return doc;
         }
     }
 

@@ -48,11 +48,11 @@ public class TaskController extends AbstractSecuredController {
     public Uni<Response> getAll(@BeanParam Parameters params, @Context ContainerRequestContext requestContext)  {
         //IUser user = (IUser) requestContext.getProperty("user");
         IUser user = new SuperUser();
-        Uni<Integer> countUni = service.getAllCount(user.getUserId());
+        Uni<Integer> countUni = service.getAllCount(user.getId());
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
         Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
         Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-        Uni<List<TaskDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getUserId()));
+        Uni<List<TaskDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
 
         return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
             ViewPage viewPage = new ViewPage();
@@ -72,7 +72,7 @@ public class TaskController extends AbstractSecuredController {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.ACTIONS, new ActionBar());
 
-        return service.get(id, user.getUserId())
+        return service.get(id, user.getId())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();

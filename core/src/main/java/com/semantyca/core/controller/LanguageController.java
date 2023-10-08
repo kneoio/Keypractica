@@ -78,7 +78,7 @@ public class LanguageController extends AbstractController {
 
     @PUT
     @Path("/{id}")
-    public Uni<Response> update(LanguageDTO dto, String id) {
+    public Uni<Response> update(LanguageDTO dto, @PathParam("id") String id) {
         return service.update(id, dto)
                 .onItem().transform(res -> Response.status(Response.Status.OK).build())
                 .onFailure().recoverWithItem(throwable -> {

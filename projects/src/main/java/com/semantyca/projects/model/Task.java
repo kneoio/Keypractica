@@ -1,5 +1,6 @@
 package com.semantyca.projects.model;
 
+import com.semantyca.core.model.AbstractEntityBuilder;
 import com.semantyca.core.model.Label;
 import com.semantyca.core.model.SecureDataEntity;
 import lombok.Getter;
@@ -28,12 +29,7 @@ public class Task extends SecureDataEntity<UUID> {
     private boolean initiative;
     private List<Label> tags;
 
-    public static class Builder {
-        private UUID id;
-        private long author;
-        private ZonedDateTime regDate;
-        private ZonedDateTime lastModifiedDate;
-        private long lastModifier;
+    public static class Builder extends AbstractEntityBuilder {
         private String regNumber;
         private String body;
         protected Long assignee;
@@ -138,26 +134,22 @@ public class Task extends SecureDataEntity<UUID> {
         }
 
         public Task build() {
-            Task newNode = new Task();
-            newNode.setId(id);
-            newNode.setAuthor(author);
-            newNode.setRegDate(regDate);
-            newNode.setLastModifier(lastModifier);
-            newNode.setLastModifiedDate(lastModifiedDate);
-            newNode.setRegNumber(regNumber);
-            newNode.setBody(body);
-            newNode.setAssignee(assignee);
-            newNode.setTaskType(taskType);
-            newNode.setProject(project);
-            newNode.setParent(parent);
-            newNode.setTargetDate(targetDate);
-            newNode.setStartDate(startDate);
-            newNode.setStatus(status);
-            newNode.setPriority(priority);
-            newNode.setCancellationComment(cancellationComment);
-            newNode.setInitiative(initiative);
-            newNode.setTags(tags);
-            return newNode;
+            Task doc = new Task();
+            setDefaultFields(doc);
+            doc.setRegNumber(regNumber);
+            doc.setBody(body);
+            doc.setAssignee(assignee);
+            doc.setTaskType(taskType);
+            doc.setProject(project);
+            doc.setParent(parent);
+            doc.setTargetDate(targetDate);
+            doc.setStartDate(startDate);
+            doc.setStatus(status);
+            doc.setPriority(priority);
+            doc.setCancellationComment(cancellationComment);
+            doc.setInitiative(initiative);
+            doc.setTags(tags);
+            return doc;
         }
 
     }

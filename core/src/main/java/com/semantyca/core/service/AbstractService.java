@@ -1,6 +1,8 @@
 package com.semantyca.core.service;
 
+import com.semantyca.core.dto.AbstractDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
+import com.semantyca.core.model.DataEntity;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.repository.AsyncRepository;
 import com.semantyca.core.repository.UserRepository;
@@ -34,5 +36,14 @@ public abstract class AbstractService<T, V> {
     protected RLSDTO convertRlSEntries(RLS rls) {
         return new RLSDTO(userRepository.getUserName(rls.getReader()), rls.getAccessLevel().getAlias(), rls.getReadingTime());
     }
+
+    protected void setDefaultFields(AbstractDTO dto, DataEntity<UUID> doc) {
+        dto.setId(doc.getId());
+        dto.setAuthor(userService.getUserName(doc.getAuthor()));
+        dto.setRegDate(doc.getRegDate());
+        dto.setLastModifier(userService.getUserName(doc.getLastModifier()));
+        dto.setLastModifiedDate(doc.getLastModifiedDate());
+    }
+
 
 }

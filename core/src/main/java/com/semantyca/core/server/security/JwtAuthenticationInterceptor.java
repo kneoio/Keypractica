@@ -39,7 +39,7 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
         String userName = jwt.getSubject();
         Set<String> userGroups = jwt.getGroups();
         Optional<IUser> user = userRepository.findByLogin(userName);
-        if (user.isPresent() && user.get().getUserId() > 1) {
+        if (user.isPresent() && user.get().getId() > 1) {
             boolean allowByGroup = switch (path) {
                 case "/projects", "/tasks" -> userGroups.contains("developer");
                 case "/workspace" -> true;

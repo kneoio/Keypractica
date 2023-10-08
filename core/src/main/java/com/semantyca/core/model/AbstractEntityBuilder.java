@@ -16,7 +16,7 @@ public class AbstractEntityBuilder {
     protected ZonedDateTime lastModifiedDate;
     protected long lastModifier;
 
-    public void setDefaultFields(DataEntity<UUID> entity) {
+    public void setDefaultFields(IDataEntity<UUID> entity) {
         entity.setId(id);
         entity.setAuthor(author);
         entity.setRegDate(regDate);
