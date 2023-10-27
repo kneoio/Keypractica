@@ -29,9 +29,7 @@ public class DatabaseResource implements QuarkusTestResourceLifecycleManager {
 
     @Override
     public void stop() {
-        if (db != null) {
-            db.stop();
-        }
+        db.stop();
     }
 
 }
