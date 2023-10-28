@@ -1,10 +1,10 @@
-package com.semantyca.projects.repository;
+package io.kneo.projects.repository;
 
 import com.semantyca.core.model.Language;
 import com.semantyca.core.model.constants.ProjectStatusType;
 import com.semantyca.core.model.embedded.RLS;
 import com.semantyca.core.repository.AsyncRepository;
-import com.semantyca.projects.model.Project;
+import io.kneo.projects.model.Project;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.sqlclient.Row;

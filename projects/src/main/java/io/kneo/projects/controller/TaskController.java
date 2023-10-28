@@ -1,4 +1,4 @@
-package com.semantyca.projects.controller;
+package io.kneo.projects.controller;
 
 import com.semantyca.core.controller.AbstractSecuredController;
 import com.semantyca.core.dto.actions.ActionBar;
@@ -13,9 +13,9 @@ import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.repository.exception.DocumentExistsException;
 import com.semantyca.core.repository.exception.DocumentModificationAccessException;
 import com.semantyca.core.util.RuntimeUtil;
-import com.semantyca.projects.dto.TaskDTO;
-import com.semantyca.projects.dto.actions.ProjectActionsFactory;
-import com.semantyca.projects.service.TaskService;
+import io.kneo.projects.dto.TaskDTO;
+import io.kneo.projects.dto.actions.ProjectActionsFactory;
+import io.kneo.projects.service.TaskService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;

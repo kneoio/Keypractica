@@ -1,4 +1,4 @@
-package com.semantyca.projects.service;
+package io.kneo.projects.service;
 
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
@@ -7,9 +7,9 @@ import com.semantyca.core.model.user.AnonymousUser;
 import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.service.AbstractService;
 import com.semantyca.core.service.UserService;
-import com.semantyca.projects.dto.ProjectDTO;
-import com.semantyca.projects.model.Project;
-import com.semantyca.projects.repository.ProjectRepository;
+import io.kneo.projects.dto.ProjectDTO;
+import io.kneo.projects.model.Project;
+import io.kneo.projects.repository.ProjectRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

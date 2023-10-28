@@ -1,4 +1,4 @@
-package com.semantyca.projects.dto;
+package io.kneo.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.semantyca.core.dto.AbstractDTO;

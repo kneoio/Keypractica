@@ -1,11 +1,11 @@
-package com.semantyca.projects.dto;
+package io.kneo.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.semantyca.core.dto.AbstractDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
 import com.semantyca.core.localization.LanguageCode;
-import com.semantyca.projects.model.Task;
+import io.kneo.projects.model.Task;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

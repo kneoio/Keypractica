@@ -1,4 +1,4 @@
-package com.semantyca.projects.dto.actions;
+package io.kneo.projects.dto.actions;
 
 import com.semantyca.core.dto.actions.ActionBar;
 import com.semantyca.core.dto.actions.ActionsFactory;
