@@ -1,4 +1,4 @@
-package com.semantyca.projects;
+package io.kneo.projects;
 
 
 import com.semantyca.core.server.DefaultAppConst;

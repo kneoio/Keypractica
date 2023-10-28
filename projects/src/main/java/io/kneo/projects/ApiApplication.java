@@ -1,4 +1,4 @@
-package com.semantyca.projects;
+package io.kneo.projects;
 
 import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;

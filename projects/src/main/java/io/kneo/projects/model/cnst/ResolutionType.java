@@ -1,4 +1,4 @@
-package com.semantyca.projects.model.cnst;
+package io.kneo.projects.model.cnst;
 
 /**
  * 

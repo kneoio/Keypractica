@@ -1,4 +1,4 @@
-package com.semantyca.projects.model;
+package io.kneo.projects.model;
 
 import com.semantyca.core.model.AbstractEntityBuilder;
 import com.semantyca.core.model.Language;

@@ -1,4 +1,4 @@
-package com.semantyca.projects.service;
+package io.kneo.projects.service;
 
 import com.semantyca.core.dto.document.LanguageDTO;
 import com.semantyca.core.dto.rls.RLSDTO;
@@ -8,10 +8,10 @@ import com.semantyca.core.model.user.SuperUser;
 import com.semantyca.core.service.AbstractService;
 import com.semantyca.officeframe.model.TaskType;
 import com.semantyca.officeframe.repository.TaskTypeRepository;
-import com.semantyca.projects.dto.ProjectDTO;
-import com.semantyca.projects.dto.TaskDTO;
-import com.semantyca.projects.model.Task;
-import com.semantyca.projects.repository.TaskRepository;
+import io.kneo.projects.dto.ProjectDTO;
+import io.kneo.projects.dto.TaskDTO;
+import io.kneo.projects.model.Task;
+import io.kneo.projects.repository.TaskRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
