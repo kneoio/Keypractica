@@ -1,9 +1,9 @@
 package io.kneo.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.semantyca.core.dto.AbstractDTO;
-import com.semantyca.core.dto.rls.RLSDTO;
-import com.semantyca.core.model.constants.ProjectStatusType;
+import io.kneo.core.dto.AbstractDTO;
+import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.core.model.constants.ProjectStatusType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

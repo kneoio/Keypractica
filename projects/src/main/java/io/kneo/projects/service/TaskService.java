@@ -1,13 +1,13 @@
 package io.kneo.projects.service;
 
-import com.semantyca.core.dto.document.LanguageDTO;
-import com.semantyca.core.dto.rls.RLSDTO;
-import com.semantyca.core.model.Language;
-import com.semantyca.core.model.user.AnonymousUser;
-import com.semantyca.core.model.user.SuperUser;
-import com.semantyca.core.service.AbstractService;
-import com.semantyca.officeframe.model.TaskType;
-import com.semantyca.officeframe.repository.TaskTypeRepository;
+import io.kneo.core.dto.document.LanguageDTO;
+import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.core.model.Language;
+import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.SuperUser;
+import io.kneo.core.service.AbstractService;
+import io.kneo.officeframe.model.TaskType;
+import io.kneo.officeframe.repository.TaskTypeRepository;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.model.Task;

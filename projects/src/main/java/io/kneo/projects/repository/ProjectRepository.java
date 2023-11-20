@@ -1,9 +1,9 @@
 package io.kneo.projects.repository;
 
-import com.semantyca.core.model.Language;
-import com.semantyca.core.model.constants.ProjectStatusType;
-import com.semantyca.core.model.embedded.RLS;
-import com.semantyca.core.repository.AsyncRepository;
+import io.kneo.core.model.Language;
+import io.kneo.core.model.constants.ProjectStatusType;
+import io.kneo.core.model.embedded.RLS;
+import io.kneo.core.repository.AsyncRepository;
 import io.kneo.projects.model.Project;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;

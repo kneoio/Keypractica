@@ -1,21 +1,22 @@
 package io.kneo.projects.controller;
 
-import com.semantyca.core.dto.actions.ActionBar;
-import com.semantyca.core.dto.cnst.PayloadType;
-import com.semantyca.core.dto.document.LanguageDTO;
-import com.semantyca.core.dto.form.FormPage;
-import com.semantyca.core.dto.view.View;
-import com.semantyca.core.dto.view.ViewOptionsFactory;
-import com.semantyca.core.dto.view.ViewPage;
-import com.semantyca.core.model.user.IUser;
-import com.semantyca.core.model.user.SuperUser;
-import com.semantyca.core.repository.exception.DocumentExistsException;
-import com.semantyca.core.repository.exception.DocumentModificationAccessException;
-import com.semantyca.core.util.RuntimeUtil;
+import io.kneo.core.dto.actions.ActionBar;
+import io.kneo.core.dto.cnst.PayloadType;
+import io.kneo.core.dto.document.LanguageDTO;
+import io.kneo.core.dto.form.FormPage;
+import io.kneo.core.dto.view.View;
+import io.kneo.core.dto.view.ViewOptionsFactory;
+import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.user.IUser;
+import io.kneo.core.model.user.SuperUser;
+import io.kneo.core.repository.exception.DocumentExistsException;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -35,7 +36,7 @@ import jakarta.ws.rs.core.Response;
 import java.net.URI;
 import java.util.List;
 
-import static com.semantyca.core.util.RuntimeUtil.countMaxPage;
+import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @Path("/projects")
 @Produces(MediaType.APPLICATION_JSON)
@@ -45,6 +46,7 @@ public class ProjectController {
     ProjectService service;
     @GET
     @Path("/")
+    @RolesAllowed("dev")
     public Uni<Response> get(@BeanParam Parameters parameters, @Context ContainerRequestContext requestContext) {
         IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount(user.getId());

@@ -13,11 +13,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
                 @Tag(name="officeframe", description="Officeframe operations")
         },
         info = @Info(
-                title="JIrascope",
+                title="Keypractica",
                 version = "1.0.1",
                 contact = @Contact(
                         name = "syspo",
-                        url = "http://semantyca.com",
+                        url = "http://keypractica.com",
                         email = "biosubj@gmail.com"),
                 license = @License(
                         name = "Apache 2.0",

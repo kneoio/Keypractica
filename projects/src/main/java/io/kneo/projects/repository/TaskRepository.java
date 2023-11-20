@@ -1,7 +1,7 @@
 package io.kneo.projects.repository;
 
-import com.semantyca.core.model.Language;
-import com.semantyca.core.repository.AsyncRepository;
+import io.kneo.core.model.Language;
+import io.kneo.core.repository.AsyncRepository;
 import io.kneo.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;

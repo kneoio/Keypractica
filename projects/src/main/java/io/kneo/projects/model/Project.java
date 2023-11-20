@@ -1,9 +1,9 @@
 package io.kneo.projects.model;
 
-import com.semantyca.core.model.AbstractEntityBuilder;
-import com.semantyca.core.model.Language;
-import com.semantyca.core.model.SecureDataEntity;
-import com.semantyca.core.model.constants.ProjectStatusType;
+import io.kneo.core.model.AbstractEntityBuilder;
+import io.kneo.core.model.Language;
+import io.kneo.core.model.SecureDataEntity;
+import io.kneo.core.model.constants.ProjectStatusType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -2,8 +2,8 @@ package io.kneo.projects.model;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.semantyca.core.model.SecureDataEntity;
-import com.semantyca.officeframe.model.RequestType;
+import io.kneo.core.model.SecureDataEntity;
+import io.kneo.officeframe.model.RequestType;
 import io.kneo.projects.model.cnst.ResolutionType;
 
 import java.time.ZonedDateTime;
