@@ -1,7 +1,7 @@
 package io.kneo.projects.dto.actions;
 
-import com.semantyca.core.dto.actions.ActionBar;
-import com.semantyca.core.dto.actions.ActionsFactory;
+import io.kneo.core.dto.actions.ActionBar;
+import io.kneo.core.dto.actions.ActionsFactory;
 
 
 public class ProjectActionsFactory {

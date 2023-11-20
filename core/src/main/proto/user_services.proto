@@ -3,10 +3,10 @@ syntax = "proto3";
 import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
-option java_package = "com.semantyca.jirascope.grpc.dictionary.user";
+option java_package = "io.kneo.keypractica.grpc.dictionary.user";
 option java_outer_classname = "UserGrpcServicesOuter";
 
-package jirascope.system;
+package keypractica.system;
 
 message UserProto {
   string id = 1;

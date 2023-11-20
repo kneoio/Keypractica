@@ -1,7 +1,7 @@
 package io.kneo.projects;
 
 
-import com.semantyca.core.server.DefaultAppConst;
+import io.kneo.core.server.DefaultAppConst;
 
 public class ModuleConst extends DefaultAppConst {
 	public static final String CODE = "prj";

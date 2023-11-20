@@ -1,8 +1,8 @@
 package io.kneo.projects.model;
 
-import com.semantyca.core.model.AbstractEntityBuilder;
-import com.semantyca.core.model.Label;
-import com.semantyca.core.model.SecureDataEntity;
+import io.kneo.core.model.AbstractEntityBuilder;
+import io.kneo.core.model.Label;
+import io.kneo.core.model.SecureDataEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
