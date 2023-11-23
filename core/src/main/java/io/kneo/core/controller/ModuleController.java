@@ -13,7 +13,6 @@ import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.ModuleService;
 import io.kneo.core.util.RuntimeUtil;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
@@ -25,6 +24,8 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
@@ -47,8 +48,8 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @GET
     @Path("/")
-    @PermitAll
-    public Uni<Response> get(@BeanParam Parameters params)  {
+    @RolesAllowed("**")
+    public Uni<Response> get(@Context ContainerRequestContext requestContext, @BeanParam Parameters params)  {
         IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount();
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));

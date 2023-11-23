@@ -54,7 +54,6 @@ public class UserService {
     public Uni<Long> add(UserDTO userDTO) {
         User user = new User.Builder()
                 .setLogin(userDTO.login())
-                .setPwd(userDTO.pwd())
                 .setEmail(userDTO.email())
                 .setRegStatus(UserRegStatus.REGISTERED)
                 .build();
@@ -73,7 +72,6 @@ public class UserService {
     public Uni<Long> update(UserDTO userDTO) {
         User user = new User.Builder()
                 .setLogin(userDTO.login())
-                .setPwd(userDTO.pwd())
                 .setEmail(userDTO.email())
                 .build();
 

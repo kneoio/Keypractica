@@ -24,7 +24,6 @@ public class User extends DataEntity<Long> implements IUser {
     private String login;
     @JsonIgnore
     @NotBlank
-    private String pwd;
     private String email;
     private boolean isSupervisor;
     private List<Module> modules = new ArrayList<>();
@@ -56,7 +55,6 @@ public class User extends DataEntity<Long> implements IUser {
 
     public static class Builder {
         private String login;
-        private String pwd = "123";
         private String email;
         private boolean isSupervisor;
         private TimeZone timeZone = TimeZone.getDefault();
@@ -68,11 +66,6 @@ public class User extends DataEntity<Long> implements IUser {
 
         public Builder setLogin(String login) {
             this.login = login;
-            return this;
-        }
-
-        public Builder setPwd(String pwd) {
-            this.pwd = pwd;
             return this;
         }
 
@@ -120,7 +113,6 @@ public class User extends DataEntity<Long> implements IUser {
         public User build() {
             User doc = new User();
             doc.setLogin(login);
-            doc.setPwd(pwd);
             doc.setEmail(email);
             doc.setSupervisor(isSupervisor);
             doc.setRoles(roles);
