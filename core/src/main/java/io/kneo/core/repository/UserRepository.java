@@ -131,10 +131,10 @@ public class UserRepository extends AsyncRepository {
     public Uni<Long> insert(User user) {
         ZonedDateTime zonedDateTime = ZonedDateTime.now();
         LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
-        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id";
         String modulesSQL = "INSERT INTO _user_modules (module_id, user_id, is_on) VALUES($1, $2, $3)";
         String rolesSQL = "INSERT INTO _user_roles (role_id, user_id, is_on) VALUES($1, $2, $3)";
-        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), user.getPwd(),  localDateTime);
+        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), localDateTime);
         Tuple finalParams = params.addValue(user.getRegStatus()).addInteger(user.getConfirmationCode());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(finalParams)
@@ -163,8 +163,8 @@ public class UserRepository extends AsyncRepository {
     }
 
     public Uni<Long> update(User user) {
-        String sql = "UPDATE _users SET default_lang=$1, email='', i_su=$2, pwd='', status=$3, ui_theme=$4, time_zone=0 WHERE id=$5";
-        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), user.getPwd());
+        String sql = "UPDATE _users SET default_lang=$1, email='', i_su=$2, status=$3, ui_theme=$4, time_zone=0 WHERE id=$5";
+        Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin());
         params = params.addValue(user.getRegStatus()).addValue("cinzento").addInteger(user.getConfirmationCode());
 
         Uni<Long> longUni = client.preparedQuery(sql)
