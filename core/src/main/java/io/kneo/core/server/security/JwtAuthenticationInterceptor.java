@@ -73,11 +73,11 @@ public class JwtAuthenticationInterceptor implements ContainerRequestFilter {
                 default -> false;
             };
             if (allowAnonymously) {
-                requestContext.setProperty("user", AnonymousUser.Build());
+                requestContext.setProperty("user", AnonymousUser.build());
                 return;
             } else {
                 //TODO temporary allowed
-                requestContext.setProperty("user", AnonymousUser.Build());
+                requestContext.setProperty("user", AnonymousUser.build());
                 return;
             }
         }

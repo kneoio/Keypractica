@@ -4,7 +4,7 @@ package io.kneo.core.model.user;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.SimpleReferenceEntity;
-import io.kneo.core.model.cnst.RoleType;
+import io.kneo.core.model.cnst.SystemRoleType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class Role extends SimpleReferenceEntity {
-    private RoleType roleType;
+    private SystemRoleType roleType;
     private Map<LanguageCode, String> localizedDescription;
 
     public static class Builder {
@@ -31,7 +31,7 @@ public class Role extends SimpleReferenceEntity {
         private ZonedDateTime regDate;
         private ZonedDateTime lastModifiedDate;
         private long lastModifier;
-        private final RoleType roleType = RoleType.CUSTOM;
+        private final SystemRoleType roleType = SystemRoleType.UNKNOWN;
 
         public Builder setId(UUID id) {
             this.id = id;

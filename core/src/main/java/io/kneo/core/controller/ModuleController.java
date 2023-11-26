@@ -15,6 +15,7 @@ import io.kneo.core.util.RuntimeUtil;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -38,6 +39,7 @@ import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 @Path("/modules")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @Inject
@@ -48,7 +50,6 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @GET
     @Path("/")
-    @RolesAllowed("**")
     public Uni<Response> get(@Context ContainerRequestContext requestContext, @BeanParam Parameters params)  {
         IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount();
@@ -77,7 +78,7 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
     @POST
     @Path("/")
     @RolesAllowed({"supervisor","admin"})
-    public Uni<Response> create(ModuleDTO dto) {
+    public Uni<Response> create(@Valid ModuleDTO dto) {
         return service.add(dto)
                 .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
                 .onFailure().recoverWithItem(throwable -> {
@@ -88,7 +89,7 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @PUT
     @Path("/")
-    public Response update(ModuleDTO dto) {
+    public Response update(@Valid ModuleDTO dto) {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 

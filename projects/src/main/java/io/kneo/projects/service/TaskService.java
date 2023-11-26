@@ -63,20 +63,20 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
     public Uni<TaskDTO> get(String uuid, final long userID) {
         UUID id = UUID.fromString(uuid);
-        Uni<Optional<Task>> taskUni = repository.findById(userID, id);
+        Uni<Task> taskUni = repository.findById(userID, id);
 
         Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item ->
-                projectService.get(item.orElseThrow().getProject(), userID)
+                projectService.get(item.getProject(), userID)
         );
 
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeRepository.findById(item.orElseThrow().getTaskType())
+                taskTypeRepository.findById(item.getTaskType())
         );
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, taskUni, id);
 
         return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, rls) -> {
-                    Task task = taskOpt.orElseThrow();
+                    Task task = taskOpt;
                     return TaskDTO.builder()
                             .id(task.getId())
                             .author(userRepository.getUserName(task.getAuthor()))

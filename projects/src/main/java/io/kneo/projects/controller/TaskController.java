@@ -16,7 +16,9 @@ import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.service.TaskService;
+import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -34,19 +36,21 @@ import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @Path("/tasks")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class TaskController extends AbstractSecuredController {
     @Inject
     TaskService service;
+
     @GET
     @Path("/")
-    public Uni<Response> getAll(@BeanParam Parameters params, @Context ContainerRequestContext requestContext)  {
-        //IUser user = (IUser) requestContext.getProperty("user");
+    public Uni<Response> getAll(@BeanParam Parameters params, @Context ContainerRequestContext requestContext) {
         IUser user = new SuperUser();
         Uni<Integer> countUni = service.getAllCount(user.getId());
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
@@ -67,18 +71,23 @@ public class TaskController extends AbstractSecuredController {
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@PathParam("id") String id, @Context ContainerRequestContext requestContext)  {
-        IUser user = (IUser) requestContext.getProperty("user");
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+    public Uni<Response> get(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+        DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
+        Optional<IUser> currentUser = getUserId(securityIdentity);
+        if (currentUser.isPresent()) {
+            IUser user = currentUser.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.ACTIONS, new ActionBar());
 
-        return service.get(id, user.getId())
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().invoke(failure -> System.out.println("Failure: "  + failure.getMessage()))
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build());
+            return service.get(id, user.getId())
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.FORM_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
     }
 
 
