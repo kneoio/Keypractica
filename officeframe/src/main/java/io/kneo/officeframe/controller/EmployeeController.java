@@ -12,6 +12,7 @@ import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.service.EmployeeService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -29,6 +30,7 @@ import java.net.URI;
 @Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class EmployeeController {
     @Inject
     EmployeeService service;

@@ -2,12 +2,12 @@
 package io.kneo.core.controller;
 
 import io.kneo.core.dto.Workspace;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.User;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.ModuleService;
-import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
-import jakarta.annotation.security.PermitAll;
+import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -36,18 +36,18 @@ public class WorkspaceController extends AbstractController {
 
     @GET
     @Path("/workspace")
-    @PermitAll
+    //@PermitAll
     public Response get(@Context ContainerRequestContext requestContext) {
-        OidcJwtCallerPrincipal securityIdentity = (OidcJwtCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
+        DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
         if (securityIdentity != null) {
             IUser currentUser = new User.Builder().setLogin(getUserName(securityIdentity)).build();
             if (isSupervisor(securityIdentity)) {
-                return Response.ok(new Workspace(currentUser, languageService)).build();
+                return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();
             } else {
                 return Response.ok(new Workspace(currentUser, languageService)).build();
             }
         } else {
-            return Response.status(Response.Status.UNAUTHORIZED).build();
+            return Response.ok(new Workspace(AnonymousUser.build(), languageService)).build();
         }
     }
 }

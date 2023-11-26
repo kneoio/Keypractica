@@ -1,7 +1,7 @@
 package io.kneo.core.repository.exception;
 
 
-public class DocumentHasNotFoundException extends Exception  {
+public class DocumentHasNotFoundException extends RuntimeException  {
     private final String  docId;
 
     public DocumentHasNotFoundException(String id) {

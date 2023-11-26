@@ -8,11 +8,13 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.model.user.User;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.RegistrationService;
 import io.kneo.core.service.UserService;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -32,7 +34,8 @@ import java.net.URI;
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class UserController {
+@RolesAllowed("**")
+public class UserController extends AbstractController<User, UserDTO> {
 
     @ConfigProperty(name = "mp.jwt.verify.issuer")
     String issuer;
@@ -89,17 +92,19 @@ public class UserController {
 
     @POST
     @Path("/")
-    public void create(UserDTO userDTO) {
-        Uni<Long> longUni =  service.add(userDTO);
-        longUni.subscribe().with(id -> Response.created(URI.create("/" + id)), failure -> {
-            String errorMessage = failure.getMessage();
-            Response.status(Response.Status.BAD_REQUEST).entity(errorMessage);
-        });
+    public Uni<Response> create(@Valid UserDTO userDTO) {
+        return service.add(userDTO)
+                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                .onFailure().recoverWithItem(e -> {
+                    LOGGER.error(e.getMessage(), e);
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+                });
+
     }
 
     @PUT
     @Path("/")
-    public Response update(UserDTO userDTO) throws DocumentModificationAccessException {
+    public Response update(@Valid UserDTO userDTO) throws DocumentModificationAccessException {
         return Response.ok(URI.create("/" + service.update(userDTO))).build();
     }
 

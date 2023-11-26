@@ -14,7 +14,7 @@ public class AnonymousUser extends SystemAbstractUser {
         return USER_NAME;
     }
 
-    public static AnonymousUser Build() {
+    public static AnonymousUser build() {
         return new AnonymousUser();
     }
 

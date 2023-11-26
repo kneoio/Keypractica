@@ -60,7 +60,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
-        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
+        Uni<Project> projectUni = repository.findById(id, userID);
 
         Uni<List<RLSDTO>> rlsDtoListUni;
 
@@ -71,7 +71,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         }
 
         return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
-                    Project project = projectOptional.orElseThrow();
+                    Project project = projectOptional;
                     return ProjectDTO.builder()
                             .id(project.getId())
                             .name(project.getName())

@@ -10,7 +10,7 @@ import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.service.LanguageService;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -26,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 @Path("/languages")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class LanguageController extends AbstractController {
 
     @Inject
@@ -33,7 +34,6 @@ public class LanguageController extends AbstractController {
 
     @GET
     @Path("/")
-    @PermitAll
     public Response get()  {
         ViewPage viewPage = new ViewPage();
         viewPage.addPayload(PayloadType.ACTIONS, new ActionBar());

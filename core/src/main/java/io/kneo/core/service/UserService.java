@@ -10,6 +10,7 @@ import io.kneo.core.model.user.User;
 import io.kneo.core.repository.ModuleRepository;
 import io.kneo.core.repository.RoleRepository;
 import io.kneo.core.repository.UserRepository;
+import io.kneo.core.service.exception.ServiceException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -47,32 +48,42 @@ public class UserService {
         return repository.findById(Long.parseLong(id));
     }
 
+    public Optional<IUser> findByLogin(String login) {
+        return repository.findByLogin(login);
+    }
+
     public String getUserName(long id) {
         return repository.getUserName(id);
     }
 
     public Uni<Long> add(UserDTO userDTO) {
         User user = new User.Builder()
-                .setLogin(userDTO.login())
-                .setEmail(userDTO.email())
+                .setLogin(userDTO.getLogin())
+                .setEmail(userDTO.getEmail())
                 .setRegStatus(UserRegStatus.REGISTERED)
                 .build();
         Uni<List<Role>> rolesUni = roleRepository.getAll(0, 1000);
         Uni<List<Module>> moduleUni = moduleRepository.getAll(0, 1000);
 
         return rolesUni.onItem().transformToUni(roles -> {
-            user.setRoles(getAllValidReferences(roles, userDTO.roles()));
+            user.setRoles(getAllValidReferences(roles, userDTO.getRoles()));
             return moduleUni;
+        }).onFailure().recoverWithUni(failure -> {
+            throw new ServiceException(failure);
         }).onItem().transformToUni(modules -> {
-            user.setModules(getAllValidReferences(modules, userDTO.modules()));
-            return repository.insert(user);
+            try {
+                user.setModules(getAllValidReferences(modules, userDTO.getModules()));
+                return repository.insert(user);
+            } catch (Exception e) {
+                return Uni.createFrom().failure(e);
+            }
         });
     }
 
     public Uni<Long> update(UserDTO userDTO) {
         User user = new User.Builder()
-                .setLogin(userDTO.login())
-                .setEmail(userDTO.email())
+                .setLogin(userDTO.getLogin())
+                .setEmail(userDTO.getEmail())
                 .build();
 
         return repository.insert(user);

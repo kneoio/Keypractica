@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -95,10 +96,14 @@ public class AsyncRepository {
     }
 
     protected static Map<LanguageCode, String> getLocalizedData(JsonObject json) {
-        return json.getMap().entrySet().stream()
-                .collect(Collectors.toMap(
-                        entry -> LanguageCode.valueOf(entry.getKey()),
-                        entry -> String.valueOf(entry.getValue())));
+        if (json != null) {
+            return json.getMap().entrySet().stream()
+                    .collect(Collectors.toMap(
+                            entry -> LanguageCode.valueOf(entry.getKey()),
+                            entry -> String.valueOf(entry.getValue())));
+        } else {
+            return Collections.emptyMap();
+        }
     }
 
 }

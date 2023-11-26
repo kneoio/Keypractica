@@ -131,7 +131,7 @@ public class UserRepository extends AsyncRepository {
     public Uni<Long> insert(User user) {
         ZonedDateTime zonedDateTime = ZonedDateTime.now();
         LocalDateTime localDateTime = zonedDateTime.toLocalDateTime();
-        String sql = "INSERT INTO _users (default_lang, email, i_su, login, pwd, reg_date, status, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id";
+        String sql = "INSERT INTO _users (default_lang, email, i_su, login, reg_date, status, confirmation_code)VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id";
         String modulesSQL = "INSERT INTO _user_modules (module_id, user_id, is_on) VALUES($1, $2, $3)";
         String rolesSQL = "INSERT INTO _user_roles (role_id, user_id, is_on) VALUES($1, $2, $3)";
         Tuple params = Tuple.of(user.getDefaultLang(), user.getEmail(), user.isSupervisor(), user.getLogin(), localDateTime);
@@ -140,24 +140,34 @@ public class UserRepository extends AsyncRepository {
                 .execute(finalParams)
                 .onItem().transform(result -> result.iterator().next().getLong("id"))
                 .onItem().transformToUni(id -> {
-                    List<Uni<Integer>> batch = new ArrayList<>();
+                    List<Uni<Integer>> userModulesList = new ArrayList<>();
                     for (Module module : user.getModules()) {
-                        batch.add(tx.preparedQuery(modulesSQL)
+                        userModulesList.add(tx.preparedQuery(modulesSQL)
                                 .execute(Tuple.of(module.getId(), id, true))
                                 .onItem().transform(SqlResult::rowCount));
                     }
-                    return Uni.combine().all().unis(batch).combinedWith(results -> id);
+                    if (userModulesList.isEmpty()) {
+                        return Uni.createFrom().item(id);
+                    } else {
+                        return Uni.combine().all().unis(userModulesList).combinedWith(results -> id);
+                    }
                 })
                 .onItem().transformToUni(id -> {
-                    List<Uni<Integer>> batch = new ArrayList<>();
+                    List<Uni<Integer>> userRolesList = new ArrayList<>();
                     for (Role role : user.getRoles()) {
-                        batch.add(tx.preparedQuery(rolesSQL)
+                        userRolesList.add(tx.preparedQuery(rolesSQL)
                                 .execute(Tuple.of(role.getId(), id, true))
                                 .onItem().transform(SqlResult::rowCount));
                     }
-                    return Uni.combine().all().unis(batch).combinedWith(results -> id);
+                    if (userRolesList.isEmpty()) {
+                        return Uni.createFrom().item(id);
+                    } else {
+                        userCache.clear();
+                        userAltCache.clear();
+                        return Uni.combine().all().unis(userRolesList).combinedWith(results -> id);
+                    }
                 }).onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
+                    LOGGER.error(throwable.getMessage(), throwable);
                     return Uni.createFrom().failure(new RuntimeException("Failed to insert user, roles or modules", throwable));
                 }));
     }
@@ -171,11 +181,13 @@ public class UserRepository extends AsyncRepository {
                 .execute(params)
                 .onItem().transform(result -> result.iterator().next().getLong("id"));
         userCache.clear();
+        userAltCache.clear();
         return longUni;
     }
 
     public int delete(Long id) {
         userCache.clear();
+        userAltCache.clear();
         return 1;
     }
 

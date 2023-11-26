@@ -1,7 +1,9 @@
 package io.kneo.projects.repository;
 
 import io.kneo.core.model.Language;
+import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -9,6 +11,7 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.NotFoundException;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -31,20 +34,25 @@ public class TaskRepository extends AsyncRepository {
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(this::from)
-                                .collect().asList();
+                .collect().asList();
     }
 
     public Uni<Integer> getAllCount(long userID) {
         return getAllCount(userID, "prj__tasks", "prj__task_readers");
     }
 
-    public Uni<Optional<Task>> findById(Long userID, UUID uuid) {
+    public Uni<Task> findById(Long userID, UUID uuid) {
         return client.preparedQuery(BASE_REQUEST + "WHERE ptr.reader = $1 AND pt.id = $2")
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> {
+                    if (iterator.hasNext()) {
+                        return from(iterator.next());
+                    } else {
+                        throw new NotFoundException("No item found for userID: " + userID + " and uuid: " + uuid);
+                    }
+                });
     }
-
 
 
     private Task from(Row row) {
@@ -63,13 +71,27 @@ public class TaskRepository extends AsyncRepository {
                 .setTargetDate(Optional.ofNullable(row.getLocalDateTime("target_date"))
                         .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
                 .setStartDate(Optional.ofNullable(row.getLocalDateTime("start_date"))
-                    .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
+                        .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
                 .setStatus(row.getInteger("status"))
                 .setPriority(row.getInteger("priority"))
                 .setCancellationComment(row.getString("cancel_comment"))
                 .setInitiative(Optional.ofNullable(row.getBoolean("initiative")).orElse(false))
                 //.setTags()
                 .build();
+    }
+
+    private Uni<RuntimeException> clarifyException(UUID uuid) {
+        Uni<Task> taskUni = findById(SuperUser.build().getId(), uuid)
+                .onItem().ifNotNull().failWith(new DocumentHasNotFoundException("Task found"))
+                .onItem().ifNull().failWith(new DocumentHasNotFoundException("Task not found"));
+
+        return taskUni.onItem().transform(task -> {
+            if (task == null) {
+                return new RuntimeException("Task not found");
+            } else {
+                return new RuntimeException("Task found");
+            }
+        });
     }
 
 

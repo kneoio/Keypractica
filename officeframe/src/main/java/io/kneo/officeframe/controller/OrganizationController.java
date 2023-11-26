@@ -10,6 +10,7 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -27,6 +28,7 @@ import java.net.URI;
 @Path("/orgs")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class OrganizationController {
     @Inject
     OrganizationService service;

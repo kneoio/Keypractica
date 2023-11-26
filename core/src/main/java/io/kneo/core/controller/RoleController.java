@@ -13,9 +13,9 @@ import io.kneo.core.model.user.Role;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.RoleService;
 import io.kneo.core.util.RuntimeUtil;
-import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
 import jakarta.ws.rs.Consumes;
@@ -35,6 +35,7 @@ import java.util.List;
 @Path("/roles")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed("**")
 public class RoleController extends AbstractController<Role, RoleDTO> {
     @Inject
     RoleService service;
@@ -44,7 +45,6 @@ public class RoleController extends AbstractController<Role, RoleDTO> {
 
     @GET
     @Path("/")
-    @Authenticated
     public Uni<Response> get(@BeanParam Parameters params)  {
         String token = jwt.getClaim("token");
         JsonObject realmAccess = jwt.getClaim("realm_access");
