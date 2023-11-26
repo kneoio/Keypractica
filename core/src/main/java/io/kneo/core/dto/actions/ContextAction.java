@@ -11,12 +11,12 @@ import java.util.ArrayList;
 @Setter
 @Getter
 @NoArgsConstructor
-public class ActionBar {
+public class ContextAction {
     public String caption;
     public String hint;
     private ArrayList<Action> actions = new ArrayList<>();
 
-    public ActionBar addAction(Action action) {
+    public ContextAction addAction(Action action) {
         actions.add(action);
         return this;
     }

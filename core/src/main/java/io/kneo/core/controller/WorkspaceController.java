@@ -7,7 +7,6 @@ import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.User;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.ModuleService;
-import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -18,10 +17,13 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Optional;
+
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class WorkspaceController extends AbstractController {
+@SuppressWarnings("rawtypes")
+public class WorkspaceController extends AbstractSecuredController {
 
     @Inject
     private LanguageService languageService;
@@ -36,16 +38,13 @@ public class WorkspaceController extends AbstractController {
 
     @GET
     @Path("/workspace")
-    //@PermitAll
     public Response get(@Context ContainerRequestContext requestContext) {
-        DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
-        if (securityIdentity != null) {
-            IUser currentUser = new User.Builder().setLogin(getUserName(securityIdentity)).build();
-            if (isSupervisor(securityIdentity)) {
-                return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();
-            } else {
-                return Response.ok(new Workspace(currentUser, languageService)).build();
-            }
+        @SuppressWarnings("unchecked")
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            IUser currentUser = new User.Builder().setLogin(user.getUserName()).build();
+            return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();
         } else {
             return Response.ok(new Workspace(AnonymousUser.build(), languageService)).build();
         }

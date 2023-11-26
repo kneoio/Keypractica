@@ -2,10 +2,12 @@ package io.kneo.projects.dto.actions;
 
 import io.kneo.core.dto.actions.ActionsFactory;
 import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.model.user.IRole;
 
-public class ProjectActionsFactory {
+import java.util.List;
 
-    public static ContextAction getViewActions() {
+public class TaskActionsFactory {
+    public static ContextAction getViewActions(List<IRole> roles) {
         return ActionsFactory.getDefault();
     }
 

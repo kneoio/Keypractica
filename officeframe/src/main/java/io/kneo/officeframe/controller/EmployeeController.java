@@ -1,12 +1,10 @@
 package io.kneo.officeframe.controller;
 
 
-import io.kneo.core.dto.actions.ActionBar;
+import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
-import io.kneo.core.repository.exception.DocumentExistsException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.service.EmployeeService;
@@ -39,7 +37,6 @@ public class EmployeeController {
     @PermitAll
     public Uni<Response> get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.ACTIONS, ViewOptionsFactory.getProjectOptions());
         return service.getAll(100, 0).onItem().transform(userList -> {
             viewPage.addPayload(PayloadType.VIEW_DATA, userList);
             return Response.ok(viewPage).build();
@@ -50,7 +47,7 @@ public class EmployeeController {
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.get(id)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
@@ -61,7 +58,7 @@ public class EmployeeController {
 
     @POST
     @Path("/")
-    public Response create(OrganizationDTO dto) throws DocumentExistsException {
+    public Response create(OrganizationDTO dto) {
         return Response.created(URI.create("/" + service.add(dto))).build();
     }
 

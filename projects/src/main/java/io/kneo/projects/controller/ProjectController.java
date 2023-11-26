@@ -1,21 +1,18 @@
 package io.kneo.projects.controller;
 
-import io.kneo.core.controller.AbstractController;
-import io.kneo.core.dto.actions.ActionBar;
+import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentExistsException;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
+import io.kneo.projects.model.Project;
 import io.kneo.projects.service.ProjectService;
-import io.quarkus.oidc.runtime.OidcJwtCallerPrincipal;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -44,14 +41,14 @@ import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class ProjectController extends AbstractController {
+public class ProjectController extends AbstractSecuredController<Project, ProjectDTO> {
     @Inject
     ProjectService service;
+
     @GET
     @Path("/")
     public Uni<Response> get(@BeanParam Parameters parameters, @Context ContainerRequestContext requestContext) {
-        OidcJwtCallerPrincipal securityIdentity = (OidcJwtCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
-        Optional<IUser> userOptional = getUserId(securityIdentity);
+        Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             Uni<Integer> countUni = service.getAllCount(user.getId());
@@ -59,11 +56,9 @@ public class ProjectController extends AbstractController {
             Uni<Integer> pageNumUni = Uni.createFrom().item(parameters.page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
             Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
-
             return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.ACTIONS, ProjectActionsFactory.getViewActions());
-                viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ProjectActionsFactory.getViewActions());
                 if (pageNum == 0) pageNum = 1;
                 View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
@@ -77,28 +72,32 @@ public class ProjectController extends AbstractController {
     @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
-        IUser user = (IUser) requestContext.getProperty("user");
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
-
-        return service.get(id, user.getId())
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.get(id, user.getId())
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.FORM_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+        } else {
+            return Uni.createFrom().item(Response.ok(String.format("user %s is not exists", getUserOIDCName(requestContext))).build());
+        }
     }
 
 
     @POST
     @Path("/")
-    public Response create(ProjectDTO dto) throws DocumentExistsException {
+    public Response create(ProjectDTO dto)  {
         return Response.created(URI.create("/" + service.add(dto))).build();
     }
 
     @PUT
     @Path("/")
-    public Response update(LanguageDTO dto) throws DocumentModificationAccessException {
+    public Response update(LanguageDTO dto)  {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 

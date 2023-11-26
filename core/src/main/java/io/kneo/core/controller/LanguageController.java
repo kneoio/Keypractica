@@ -1,13 +1,13 @@
 
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.actions.ActionBar;
+import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.Language;
 import io.kneo.core.service.LanguageService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -27,7 +27,7 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class LanguageController extends AbstractController {
+public class LanguageController extends AbstractSecuredController<Language, LanguageDTO> {
 
     @Inject
     LanguageService service;
@@ -36,8 +36,7 @@ public class LanguageController extends AbstractController {
     @Path("/")
     public Response get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.ACTIONS, new ActionBar());
-        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
+        viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         View<LanguageDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
         viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
@@ -47,7 +46,7 @@ public class LanguageController extends AbstractController {
     @Path("/code/{code}")
     public Response getByCode(@PathParam("code") String code)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         page.addPayload(PayloadType.FORM_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
         return Response.ok(page).build();
     }
@@ -56,7 +55,7 @@ public class LanguageController extends AbstractController {
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.get(id)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);

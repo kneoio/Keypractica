@@ -5,7 +5,6 @@ import io.kneo.core.dto.actions.ActionsFactory;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.IUser;
@@ -29,7 +28,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.net.URI;
 import java.util.List;
@@ -40,13 +38,10 @@ import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class ModuleController extends AbstractController<Module, ModuleDTO> {
+public class ModuleController extends AbstractSecuredController<Module, ModuleDTO> {
 
     @Inject
     ModuleService service;
-
-    @Inject
-    JsonWebToken jwt;
 
     @GET
     @Path("/")
@@ -60,8 +55,7 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
         return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
             ViewPage viewPage = new ViewPage();
-            viewPage.addPayload(PayloadType.ACTIONS, ActionsFactory.getDefault());
-            viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getDefaultOptions());
+            viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
             if (pageNum == 0) pageNum = 1;
             View<ModuleDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
             viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
@@ -77,7 +71,6 @@ public class ModuleController extends AbstractController<Module, ModuleDTO> {
 
     @POST
     @Path("/")
-    @RolesAllowed({"supervisor","admin"})
     public Uni<Response> create(@Valid ModuleDTO dto) {
         return service.add(dto)
                 .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
