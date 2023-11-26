@@ -18,13 +18,18 @@ import java.util.UUID;
 @Setter
 @Getter
 @NoArgsConstructor
-public class Role extends SimpleReferenceEntity {
+public class Role extends SimpleReferenceEntity implements IRole {
     private SystemRoleType roleType;
     private Map<LanguageCode, String> localizedDescription;
 
+    @Override
+    public String getName() {
+        return identifier;
+    }
+
     public static class Builder {
-        protected UUID id;
-        protected String identifier;
+        private UUID id;
+        private String identifier;
         private Map<LanguageCode, String> localizedDescription = new HashMap<>();
         private final Map<LanguageCode, String> localizedName = new HashMap<>();
         private long author;
@@ -32,6 +37,7 @@ public class Role extends SimpleReferenceEntity {
         private ZonedDateTime lastModifiedDate;
         private long lastModifier;
         private final SystemRoleType roleType = SystemRoleType.UNKNOWN;
+
 
         public Builder setId(UUID id) {
             this.id = id;

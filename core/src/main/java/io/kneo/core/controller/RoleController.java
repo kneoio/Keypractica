@@ -1,20 +1,17 @@
 package io.kneo.core.controller;
 
 import io.kneo.core.dto.RoleDTO;
-import io.kneo.core.dto.actions.ActionBar;
 import io.kneo.core.dto.actions.ActionsFactory;
+import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
-import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.RoleService;
 import io.kneo.core.util.RuntimeUtil;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.BeanParam;
@@ -26,50 +23,51 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.List;
+import java.util.Optional;
 
 @Path("/roles")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class RoleController extends AbstractController<Role, RoleDTO> {
+public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
     @Inject
     RoleService service;
 
-    @Inject
-    JsonWebToken jwt;
-
     @GET
     @Path("/")
-    public Uni<Response> get(@BeanParam Parameters params)  {
-        String token = jwt.getClaim("token");
-        JsonObject realmAccess = jwt.getClaim("realm_access");
-        IUser user = new SuperUser();
-        Uni<Integer> countUni = service.getAllCount();
-        Uni<Integer> maxPageUni = countUni.onItem().transform(c -> RuntimeUtil.countMaxPage(c, user.getPageSize()));
-        Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
-        Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-        Uni<List<RoleDTO>> listUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
-        return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
-            ViewPage viewPage = new ViewPage();
-            viewPage.addPayload(PayloadType.ACTIONS, ActionsFactory.getDefault());
-            viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getDefaultOptions());
-            if (pageNum == 0) pageNum = 1;
-            View<RoleDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
-            viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-            return Response.ok(viewPage).build();
-        });
+    public Uni<Response> get(@BeanParam Parameters params, @Context ContainerRequestContext requestContext)  {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            Uni<Integer> countUni = service.getAllCount();
+            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> RuntimeUtil.countMaxPage(c, user.getPageSize()));
+            Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
+            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
+            Uni<List<RoleDTO>> listUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
+            return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
+                ViewPage viewPage = new ViewPage();
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
+                if (pageNum == 0) pageNum = 1;
+                View<RoleDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
+                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                return Response.ok(viewPage).build();
+            });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
     }
 
     @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.ACTIONS, new ActionBar());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.get(id)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);

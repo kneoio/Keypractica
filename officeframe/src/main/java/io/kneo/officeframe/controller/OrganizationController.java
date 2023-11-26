@@ -3,7 +3,6 @@ package io.kneo.officeframe.controller;
 
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewOptionsFactory;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.repository.exception.DocumentExistsException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -36,7 +35,6 @@ public class OrganizationController {
     @Path("/")
     public Response get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.VIEW_OPTIONS, ViewOptionsFactory.getProjectOptions());
         View<OrganizationDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
         viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();

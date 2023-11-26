@@ -27,15 +27,12 @@ public class User extends DataEntity<Long> implements IUser {
     private String email;
     private boolean isSupervisor;
     private List<Module> modules = new ArrayList<>();
-    @JsonIgnore
-    boolean authorized;
     private List<Role> roles = new ArrayList<>();
     private Integer pageSize = EnvConst.DEFAULT_PAGE_SIZE;
     private Integer defaultLang;
     private TimeZone timeZone;
     private UserRegStatus regStatus;
     private int confirmationCode;
-
     @Override
     public String getUserName() {
         return login;
@@ -48,9 +45,10 @@ public class User extends DataEntity<Long> implements IUser {
     public String getEmail() {
         return email;
     }
+
     @Override
-    public int getConfirmationCode() {
-        return IUser.super.getConfirmationCode();
+    public List<IRole> getActivatedRoles() {
+        return new ArrayList<>(roles);
     }
 
     public static class Builder {

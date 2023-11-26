@@ -5,8 +5,8 @@ import io.kneo.core.dto.cnst.RunMode;
 
 public class ActionsFactory {
 
-    public static ActionBar getDefault() {
-        ActionBar bar = new ActionBar();
+    public static ContextAction getDefault() {
+        ContextAction bar = new ContextAction();
         Action action = new Action();
         action.setIsOn(RunMode.ON);
         action.setCaption(ActionType.CLOSE.getAlias());
