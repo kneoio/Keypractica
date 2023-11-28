@@ -16,7 +16,9 @@ import io.kneo.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BeanParam;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -47,13 +49,13 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @GET
     @Path("/")
-    public Uni<Response> get(@BeanParam Parameters parameters, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             Uni<Integer> countUni = service.getAllCount(user.getId());
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(parameters.page);
+            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
             Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
             return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
@@ -71,7 +73,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -100,17 +102,11 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     public Response update(LanguageDTO dto)  {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
-
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(@PathParam("id") String id) {
         return Response.ok().build();
-    }
-
-    static class Parameters {
-        @QueryParam("page")
-        int page;
     }
 
 }

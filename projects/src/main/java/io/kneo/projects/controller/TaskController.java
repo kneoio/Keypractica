@@ -16,7 +16,9 @@ import io.kneo.projects.service.TaskService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.BeanParam;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -25,6 +27,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -46,13 +49,13 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @GET
     @Path("/")
-    public Uni<Response> getAll(@BeanParam Parameters params, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             Uni<Integer> countUni = service.getAllCount(user.getId());
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
+            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
             Uni<List<TaskDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
 
@@ -71,13 +74,12 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-
             return service.get(id, user.getId())
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.FORM_DATA, p);
@@ -89,11 +91,15 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
         }
     }
 
-
     @POST
     @Path("/")
-    public Response create(TaskDTO dto) {
-        return Response.created(URI.create("/" + service.add(dto))).build();
+    public Uni<Response> create(TaskDTO dto) {
+        return service.add(dto)
+                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                });
     }
 
     @PUT
