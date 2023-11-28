@@ -98,11 +98,13 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     }
 
-    public String add(TaskDTO dto) {
+    public Uni<UUID> add(TaskDTO dto) {
         Task node = new Task.Builder()
+                .setId(dto.getId())
+                .setAssignee(Long.valueOf(dto.getAssignee()))
                 .setBody(dto.getBody())
                 .build();
-        return repository.insert(node, AnonymousUser.ID).toString();
+        return repository.insert(node, AnonymousUser.ID);
     }
 
     public Language update(LanguageDTO dto) {

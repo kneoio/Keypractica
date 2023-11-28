@@ -7,12 +7,14 @@ import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.NotFoundException;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -22,8 +24,10 @@ import java.util.UUID;
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
 
+    private static final String TABLE_NAME = "_tasks";
+    private static final String ENTITY_NAME = "task";
     private static final String BASE_REQUEST = """
-            SELECT pt.*, ptr.*  FROM prj__tasks pt  JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
+            SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
 
     public Uni<List<Task>> getAll(final int limit, final int offset, final long userID) {
         String sql = BASE_REQUEST + "WHERE ptr.reader = " + userID;
@@ -94,11 +98,19 @@ public class TaskRepository extends AsyncRepository {
         });
     }
 
+    public Uni<UUID> insert(Task doc, Long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = "INSERT INTO _langs (author, code, reg_date, position, last_mod_date, last_mod_user, loc_name, is_on) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
+        Tuple params = Tuple.of(user, doc.getAssignee(), nowTime, doc.getBody(), nowTime, user);
+        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getAssignee())).addBoolean(doc.isInitiative());
 
-
-    public UUID insert(Task doc, Long user) {
-
-        return doc.getId();
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(finalParams)
+                .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException("Failed to insert", throwable));
+                }));
     }
 
 
