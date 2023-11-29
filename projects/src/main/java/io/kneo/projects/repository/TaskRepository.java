@@ -1,13 +1,11 @@
 package io.kneo.projects.repository;
 
-import io.kneo.core.model.Language;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -24,7 +22,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
 
-    private static final String TABLE_NAME = "_tasks";
+    private static final String TABLE_NAME = "prj__tasks";
+    private static final String ACCESS_TABLE_NAME = "prj__task_readers";
     private static final String ENTITY_NAME = "task";
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
@@ -100,21 +99,49 @@ public class TaskRepository extends AsyncRepository {
 
     public Uni<UUID> insert(Task doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = "INSERT INTO _langs (author, code, reg_date, position, last_mod_date, last_mod_user, loc_name, is_on) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
-        Tuple params = Tuple.of(user, doc.getAssignee(), nowTime, doc.getBody(), nowTime, user);
-        Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getAssignee())).addBoolean(doc.isInitiative());
+        String sql = String.format("INSERT INTO %s" +
+                "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);", TABLE_NAME);
+        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple allParams = params
+                .addLong(doc.getAssignee())
+                .addString(doc.getBody())
+                .addLocalDateTime(doc.getTargetDate().toLocalDateTime())
+                .addInteger(doc.getPriority())
+                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addInteger(doc.getStatus())
+                .addString(doc.getTitle())
+                .addUUID(doc.getParent())
+                .addUUID(doc.getProject())
+                .addUUID(doc.getTaskType())
+                .addString(doc.getRegNumber())
+                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addString(doc.getCancellationComment());
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
+        Tuple paramsForAccess = Tuple.of(user, user, nowTime, user);
+        return client.withTransaction(tx -> {
+            Uni<UUID> insertTask = tx.preparedQuery(sql)
+                    .execute(allParams)
+                    .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                    .onFailure().recoverWithUni(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                    });
 
-        return client.withTransaction(tx -> tx.preparedQuery(sql)
-                .execute(finalParams)
-                .onItem().transform(result -> result.iterator().next().getUUID("id"))
-                .onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException("Failed to insert", throwable));
-                }));
+            Uni<UUID> insertReader = tx.preparedQuery(readersSql)
+                    .execute(paramsForAccess)
+                    .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                    .onFailure().recoverWithUni(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ACCESS_TABLE_NAME), throwable));
+                    });
+
+            return Uni.combine().all().unis(insertTask, insertReader).combinedWith((taskId, reader) -> taskId);
+        });
     }
 
 
-    public Language update(Language node) {
+    public Task update(Task node) {
 
         return node;
     }

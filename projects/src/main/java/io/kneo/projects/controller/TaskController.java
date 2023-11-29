@@ -3,7 +3,6 @@ package io.kneo.projects.controller;
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
-import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
@@ -93,7 +92,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @POST
     @Path("/")
-    public Uni<Response> create(TaskDTO dto) {
+    public Uni<Response> create(@Valid TaskDTO dto) {
         return service.add(dto)
                 .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
                 .onFailure().recoverWithItem(throwable -> {
@@ -104,7 +103,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @PUT
     @Path("/")
-    public Response update(LanguageDTO dto) {
+    public Response update(@Valid TaskDTO dto) {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 

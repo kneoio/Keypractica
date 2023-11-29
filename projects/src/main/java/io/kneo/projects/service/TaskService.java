@@ -1,8 +1,6 @@
 package io.kneo.projects.service;
 
-import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.rls.RLSDTO;
-import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.AbstractService;
@@ -107,10 +105,12 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return repository.insert(node, AnonymousUser.ID);
     }
 
-    public Language update(LanguageDTO dto) {
-        Language user = new Language.Builder()
-                .setCode(dto.getCode())
+    public Task update(TaskDTO dto) {
+        Task doc = new Task.Builder()
+                .setId(dto.getId())
+                .setAssignee(Long.valueOf(dto.getAssignee()))
+                .setBody(dto.getBody())
                 .build();
-        return repository.update(user);
+        return repository.update(doc);
     }
 }

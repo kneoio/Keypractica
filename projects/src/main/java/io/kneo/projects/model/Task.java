@@ -16,6 +16,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Task extends SecureDataEntity<UUID> {
     private String regNumber;
+    private String title;
     private String body;
     private Long assignee;
     private UUID taskType;
@@ -31,6 +32,7 @@ public class Task extends SecureDataEntity<UUID> {
 
     public static class Builder extends AbstractEntityBuilder {
         private String regNumber;
+        private String title;
         private String body;
         protected Long assignee;
         private UUID taskType;
@@ -46,6 +48,11 @@ public class Task extends SecureDataEntity<UUID> {
 
         public Builder setId(UUID id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder setTitle(String title) {
+            this.title = title;
             return this;
         }
 
@@ -137,6 +144,7 @@ public class Task extends SecureDataEntity<UUID> {
             Task doc = new Task();
             setDefaultFields(doc);
             doc.setRegNumber(regNumber);
+            doc.setTitle(title);
             doc.setBody(body);
             doc.setAssignee(assignee);
             doc.setTaskType(taskType);
