@@ -1,11 +1,15 @@
 package io.kneo.projects.service;
 
 import io.kneo.core.dto.rls.RLSDTO;
-import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.AbstractService;
+import io.kneo.core.service.UserService;
+import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.repository.TaskTypeRepository;
+import io.kneo.officeframe.service.LabelService;
+import io.kneo.projects.dto.AssigneeDTO;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.model.Task;
@@ -26,6 +30,10 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("TaskService");
     @Inject
     private TaskRepository repository;
+    @Inject
+    private UserService userService;
+    @Inject
+    private LabelService labelService;
     @Inject
     private ProjectService projectService;
     @Inject
@@ -59,6 +67,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     public Uni<TaskDTO> get(String uuid) {
         return get(uuid, SuperUser.ID);
     }
+
     public Uni<TaskDTO> get(String uuid, final long userID) {
         UUID id = UUID.fromString(uuid);
         Uni<Task> taskUni = repository.findById(userID, id);
@@ -83,7 +92,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .lastModifiedDate(task.getLastModifiedDate())
                             .regNumber(task.getRegNumber())
                             .body(task.getBody())
-                            .assignee(userRepository.getUserName(task.getAssignee()))
+                            .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
                             .taskType(taskType.orElseThrow().getLocalizedName())
                             .project(project)
                             .startDate(task.getStartDate())
@@ -96,19 +105,44 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     }
 
-    public Uni<UUID> add(TaskDTO dto) {
+    private static AssigneeDTO getAssigneeDTO(Optional<IUser> assigneeOptional, Task task) {
+        AssigneeDTO assigneeDTO = new AssigneeDTO();
+        if (assigneeOptional.isPresent()) {
+            IUser assignee = assigneeOptional.get();
+            assigneeDTO.setFullName(assignee.getUserName());
+            assigneeDTO.setId(assignee.getId());
+            assigneeDTO.setAvailable(assignee.isActive());
+        } else {
+            assigneeDTO.setId(task.getAssignee());
+            assigneeDTO.setAvailable(false);
+        }
+        return assigneeDTO;
+    }
+
+    public Uni<UUID> add(TaskDTO dto, IUser user) {
+        Optional<IUser> assignee = userService.findById(dto.getAssignee().getId());
+      //  dto.getLabels().stream().map(v -> labelService.get(v.getId());
+      //  Optional<IUser> assignee = labelService.findById(dto.getLabels().getId());
         Task node = new Task.Builder()
-                .setId(dto.getId())
-                .setAssignee(Long.valueOf(dto.getAssignee()))
+                .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
                 .setBody(dto.getBody())
+                .setAssignee(assignee.orElseThrow().getId())
+                .setPriority(dto.getPriority())
+                .setTargetDate(dto.getTargetDate())
+                .setCancellationComment(dto.getCancellationComment())
+                .setTitle(dto.getTitle())
+                //.setTags()
+                //.setTaskType(dto.getTaskType())
+                //.setProject(dto.getProject())
+                //.setParent(dto.getParent())
                 .build();
-        return repository.insert(node, AnonymousUser.ID);
+        return repository.insert(node, user.getId());
     }
 
     public Task update(TaskDTO dto) {
         Task doc = new Task.Builder()
                 .setId(dto.getId())
-                .setAssignee(Long.valueOf(dto.getAssignee()))
+              //  .setAssignee(Long.valueOf(dto.getAssignee()))
                 .setBody(dto.getBody())
                 .build();
         return repository.update(doc);

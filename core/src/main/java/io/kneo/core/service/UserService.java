@@ -45,34 +45,38 @@ public class UserService {
     }
 
     public Uni<Optional<IUser>> get(String id) {
-        return repository.findById(Long.parseLong(id));
+        return repository.get(Long.parseLong(id));
     }
 
     public Optional<IUser> findByLogin(String login) {
         return repository.findByLogin(login);
     }
 
+    public Optional<IUser> findById(long id) {
+        return repository.findById(id);
+    }
+
     public String getUserName(long id) {
         return repository.getUserName(id);
     }
 
-    public Uni<Long> add(UserDTO userDTO) {
+    public Uni<Long> add(UserDTO dto) {
         User user = new User.Builder()
-                .setLogin(userDTO.getLogin())
-                .setEmail(userDTO.getEmail())
+                .setLogin(dto.getLogin())
+                .setEmail(dto.getEmail())
                 .setRegStatus(UserRegStatus.REGISTERED)
                 .build();
         Uni<List<Role>> rolesUni = roleRepository.getAll(0, 1000);
         Uni<List<Module>> moduleUni = moduleRepository.getAll(0, 1000);
 
         return rolesUni.onItem().transformToUni(roles -> {
-            user.setRoles(getAllValidReferences(roles, userDTO.getRoles()));
+            user.setRoles(getAllValidReferences(roles, dto.getRoles()));
             return moduleUni;
         }).onFailure().recoverWithUni(failure -> {
             throw new ServiceException(failure);
         }).onItem().transformToUni(modules -> {
             try {
-                user.setModules(getAllValidReferences(modules, userDTO.getModules()));
+                user.setModules(getAllValidReferences(modules, dto.getModules()));
                 return repository.insert(user);
             } catch (Exception e) {
                 return Uni.createFrom().failure(e);

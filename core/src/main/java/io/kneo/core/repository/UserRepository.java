@@ -77,7 +77,7 @@ public class UserRepository extends AsyncRepository {
                 .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
     }
 
-    public Uni<Optional<IUser>> findById(Long id) {
+    public Uni<Optional<IUser>> get(Long id) {
         IUser user = userCache.get(id);
         if (user == null) {
             return client.preparedQuery("SELECT * FROM _users WHERE id = $1")
@@ -90,17 +90,17 @@ public class UserRepository extends AsyncRepository {
         }
     }
 
+    public Optional<IUser> findById(long id) {
+         return Optional.ofNullable(userCache.get(id));
+        //TODO it needs to initialize the cache
+    }
     public Optional<IUser> findByLogin(String userName) {
         if (userName == null) {
             return Optional.empty();
         } else {
             return Optional.ofNullable(userAltCache.get(userName));
         }
-        /*return client.preparedQuery("SELECT * FROM _users WHERE login = '$1'")
-                .execute(Tuple.of(login))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromShort(iterator.next())) : Optional.of(UndefinedUser.Build()))
-                .await().indefinitely();*/
+        //TODO it needs to initialize the cache
     }
 
     public String getUserName(long id) {
