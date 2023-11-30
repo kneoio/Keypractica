@@ -25,6 +25,7 @@ public class TaskRepository extends AsyncRepository {
     private static final String TABLE_NAME = "prj__tasks";
     private static final String ACCESS_TABLE_NAME = "prj__task_readers";
     private static final String ENTITY_NAME = "task";
+
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
 
@@ -70,7 +71,7 @@ public class TaskRepository extends AsyncRepository {
                 .setBody(row.getString("body"))
                 .setProject(row.getUUID("project_id"))
                 .setParent(row.getUUID("parent_id"))
-                .setTaskType(row.getUUID("tasktype_id"))
+                .setTaskType(row.getUUID("task_type_id"))
                 .setTargetDate(Optional.ofNullable(row.getLocalDateTime("target_date"))
                         .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
                 .setStartDate(Optional.ofNullable(row.getLocalDateTime("start_date"))
@@ -78,7 +79,6 @@ public class TaskRepository extends AsyncRepository {
                 .setStatus(row.getInteger("status"))
                 .setPriority(row.getInteger("priority"))
                 .setCancellationComment(row.getString("cancel_comment"))
-                .setInitiative(Optional.ofNullable(row.getBoolean("initiative")).orElse(false))
                 //.setTags()
                 .build();
     }
@@ -117,26 +117,25 @@ public class TaskRepository extends AsyncRepository {
                 .addString(doc.getRegNumber())
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addString(doc.getCancellationComment());
-        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
-        Tuple paramsForAccess = Tuple.of(user, user, nowTime, user);
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4, $5)", ACCESS_TABLE_NAME);
         return client.withTransaction(tx -> {
-            Uni<UUID> insertTask = tx.preparedQuery(sql)
+            return tx.preparedQuery(sql)
                     .execute(allParams)
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(throwable -> {
                         LOGGER.error(throwable.getMessage());
                         return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                    })
+                    .onItem().transformToUni(id -> {
+                        return tx.preparedQuery(readersSql)
+                                .execute(Tuple.of(user, id, 1, 1))
+                                .onItem().ignore().andContinueWithNull()
+                                .onFailure().recoverWithUni(throwable -> {
+                                    LOGGER.error(throwable.getMessage());
+                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s", ACCESS_ENTITY_NAME), throwable));
+                                })
+                                .onItem().transform(unused -> id);
                     });
-
-            Uni<UUID> insertReader = tx.preparedQuery(readersSql)
-                    .execute(paramsForAccess)
-                    .onItem().transform(result -> result.iterator().next().getUUID("id"))
-                    .onFailure().recoverWithUni(throwable -> {
-                        LOGGER.error(throwable.getMessage());
-                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ACCESS_TABLE_NAME), throwable));
-                    });
-
-            return Uni.combine().all().unis(insertTask, insertReader).combinedWith((taskId, reader) -> taskId);
         });
     }
 

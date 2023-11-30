@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class AsyncRepository {
+    protected static final String ACCESS_ENTITY_NAME = "access";
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
 

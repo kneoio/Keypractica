@@ -59,6 +59,10 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return get(uuid, SuperUser.ID);
     }
 
+    public Uni<ProjectDTO> get(UUID id, final long userID) {
+        return get(id, userID, false);
+    }
+
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
         Uni<Project> projectUni = repository.findById(id, userID);
 
@@ -85,9 +89,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         );
     }
 
-    public Uni<ProjectDTO> get(UUID id, final long userID) {
-       return get(id, userID, false);
-    }
+
 
     public String add(ProjectDTO dto) {
         Project node = new Project.Builder()

@@ -12,4 +12,8 @@ public interface IUser {
     }
     String getEmail();
     List<IRole> getActivatedRoles();
+
+    default boolean isActive(){
+        return true;
+    }
 }
