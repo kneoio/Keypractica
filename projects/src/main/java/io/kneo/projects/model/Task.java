@@ -2,8 +2,6 @@ package io.kneo.projects.model;
 
 import io.kneo.core.model.AbstractEntityBuilder;
 import io.kneo.core.model.SecureDataEntity;
-import io.kneo.officeframe.dto.LabelDTO;
-import io.kneo.officeframe.model.Label;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,7 +26,7 @@ public class Task extends SecureDataEntity<UUID> {
     private int status;
     private int priority;
     private String cancellationComment;
-    private List<Label> labels;
+    private List<UUID> labels;
 
     public static class Builder extends AbstractEntityBuilder {
         private String regNumber;
@@ -43,7 +41,7 @@ public class Task extends SecureDataEntity<UUID> {
         private int status;
         private int priority;
         private String cancellationComment;
-        private List<LabelDTO> labels;
+        private List<UUID> labels;
 
         public Builder setId(UUID id) {
             this.id = id;
@@ -129,7 +127,7 @@ public class Task extends SecureDataEntity<UUID> {
             return this;
         }
 
-        public Builder setLabels(List<LabelDTO> tags) {
+        public Builder setLabels(List<UUID> tags) {
             this.labels = tags;
             return this;
         }
@@ -149,7 +147,7 @@ public class Task extends SecureDataEntity<UUID> {
             doc.setStatus(status);
             doc.setPriority(priority);
             doc.setCancellationComment(cancellationComment);
-           // doc.setLabels(labels);
+            doc.setLabels(labels);
             return doc;
         }
 
