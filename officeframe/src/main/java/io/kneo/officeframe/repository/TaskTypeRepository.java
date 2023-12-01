@@ -52,6 +52,13 @@ public class TaskTypeRepository {
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
+    public Uni<Optional<TaskType>> findByIdentifier(String  identifier) {
+        return client.preparedQuery("SELECT * FROM ref__task_types rtt WHERE rtt.identifier = $1")
+                .execute(Tuple.of(identifier))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+    }
+
     public Uni<Optional<TaskType>> findByUserId(long id) {
         return client.preparedQuery("SELECT * FROM ref__task_types rtt WHERE rtt.user_id = $1")
                 .execute(Tuple.of(id))

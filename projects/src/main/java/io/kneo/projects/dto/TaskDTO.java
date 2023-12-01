@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.rls.RLSDTO;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.projects.model.Task;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,7 +16,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Map;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Setter
@@ -31,7 +29,7 @@ public class TaskDTO extends AbstractDTO {
     @NotEmpty(message = "Body must not be empty")
     String body;
     AssigneeDTO assignee;
-    Map<LanguageCode, String> taskType;
+    TaskTypeDTO taskType;
     ProjectDTO project;
     Task parent;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")

@@ -1,17 +1,20 @@
 package io.kneo.projects.service;
 
 import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.NumberUtil;
+import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.repository.TaskTypeRepository;
 import io.kneo.officeframe.service.LabelService;
 import io.kneo.projects.dto.AssigneeDTO;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.TaskDTO;
+import io.kneo.projects.dto.TaskTypeDTO;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.repository.TaskRepository;
 import io.smallrye.mutiny.Uni;
@@ -93,7 +96,10 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .regNumber(task.getRegNumber())
                             .body(task.getBody())
                             .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
-                            .taskType(taskType.orElseThrow().getLocalizedName())
+                            .taskType(TaskTypeDTO.builder()
+                                    .identifier(taskType.orElseThrow().getIdentifier())
+                                    .localizedName(taskType.orElseThrow().getLocName(LanguageCode.ENG))
+                                    .build())
                             .project(project)
                             .startDate(task.getStartDate())
                             .targetDate(task.getTargetDate())
@@ -121,7 +127,18 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     public Uni<UUID> add(TaskDTO dto, IUser user) {
         Optional<IUser> assignee = userService.findById(dto.getAssignee().getId());
-      //  dto.getLabels().stream().map(v -> labelService.get(v.getId());
+        List<LabelDTO> labelDTOs = dto.getLabels();
+        List<UUID> labels = labelDTOs.stream().map(v -> {
+                return labelService.get(v.getId())
+                        .onItem()
+                        .transform(LabelDTO::getId)
+                        .await()
+                        .indefinitely();
+        }).toList();
+
+        Uni<Optional<TaskType>> taskTypeUni = taskTypeRepository.findByIdentifier(dto.getTaskType().getIdentifier());
+
+
       //  Optional<IUser> assignee = labelService.findById(dto.getLabels().getId());
         Task node = new Task.Builder()
                 .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
@@ -131,7 +148,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 .setTargetDate(dto.getTargetDate())
                 .setCancellationComment(dto.getCancellationComment())
                 .setTitle(dto.getTitle())
-                //.setTags()
+                .setLabels(labels)
                 //.setTaskType(dto.getTaskType())
                 //.setProject(dto.getProject())
                 //.setParent(dto.getParent())
