@@ -9,8 +9,8 @@ import io.kneo.core.service.UserService;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.TaskType;
-import io.kneo.officeframe.repository.TaskTypeRepository;
 import io.kneo.officeframe.service.LabelService;
+import io.kneo.officeframe.service.TaskTypeService;
 import io.kneo.projects.dto.AssigneeDTO;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.TaskDTO;
@@ -23,6 +23,9 @@ import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,7 +43,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     @Inject
     private ProjectService projectService;
     @Inject
-    private TaskTypeRepository taskTypeRepository;
+    private TaskTypeService taskTypeService;
 
     public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final long userID) {
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, userID);
@@ -55,8 +58,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                                         .lastModifiedDate(task.getLastModifiedDate())
                                         .regNumber(task.getRegNumber())
                                         .body(task.getBody())
-                                        .startDate(task.getStartDate())
-                                        .targetDate(task.getTargetDate())
+                                        .startDate(LocalDate.from(task.getStartDate()))
+                                        .targetDate(LocalDate.from(task.getTargetDate()))
                                         .status(task.getStatus())
                                         .priority(task.getPriority())
                                         .build())
@@ -73,20 +76,20 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     public Uni<TaskDTO> get(String uuid, final long userID) {
         UUID id = UUID.fromString(uuid);
-        Uni<Task> taskUni = repository.findById(userID, id);
+        Uni<Optional<Task>> taskUni = repository.findById(id, userID);
 
         Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item ->
-                projectService.get(item.getProject(), userID)
+                projectService.get(item.get().getProject(), userID)
         );
 
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeRepository.findById(item.getTaskType())
+                taskTypeService.findById(item.get().getTaskType())
         );
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, taskUni, id);
 
         return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, rls) -> {
-                    Task task = taskOpt;
+                    Task task = taskOpt.orElseThrow();
                     return TaskDTO.builder()
                             .id(task.getId())
                             .author(userRepository.getUserName(task.getAuthor()))
@@ -101,8 +104,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                                     .localizedName(taskType.orElseThrow().getLocName(LanguageCode.ENG))
                                     .build())
                             .project(project)
-                            .startDate(task.getStartDate())
-                            .targetDate(task.getTargetDate())
+                            .startDate(LocalDate.from(task.getStartDate()))
+                            .targetDate(LocalDate.from(task.getTargetDate()))
                             .status(task.getStatus())
                             .priority(task.getPriority())
                             .rls(rls).build();
@@ -126,35 +129,44 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
     public Uni<UUID> add(TaskDTO dto, IUser user) {
-        Optional<IUser> assignee = userService.findById(dto.getAssignee().getId());
         List<LabelDTO> labelDTOs = dto.getLabels();
-        List<UUID> labels = labelDTOs.stream().map(v -> {
-                return labelService.get(v.getId())
-                        .onItem()
-                        .transform(LabelDTO::getId)
-                        .await()
-                        .indefinitely();
-        }).toList();
+        List<Uni<UUID>> labelUnis = labelDTOs.stream().map(v -> labelService.get(v.getId())
+                .onItem()
+                .transform(LabelDTO::getId)).collect(Collectors.toList());
 
-        Uni<Optional<TaskType>> taskTypeUni = taskTypeRepository.findByIdentifier(dto.getTaskType().getIdentifier());
+        Uni<List> labelsUni;
+        if (labelUnis.isEmpty()) {
+            labelsUni = Uni.createFrom().item(Collections.emptyList());
+        } else {
+            labelsUni = Uni.combine().all().unis(labelUnis).combinedWith(list -> list);
+        }
 
+        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
+        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
+        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
+        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
 
-      //  Optional<IUser> assignee = labelService.findById(dto.getLabels().getId());
-        Task node = new Task.Builder()
-                .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
-                .setBody(dto.getBody())
-                .setAssignee(assignee.orElseThrow().getId())
-                .setPriority(dto.getPriority())
-                .setTargetDate(dto.getTargetDate())
-                .setCancellationComment(dto.getCancellationComment())
-                .setTitle(dto.getTitle())
-                .setLabels(labels)
-                //.setTaskType(dto.getTaskType())
-                //.setProject(dto.getProject())
-                //.setParent(dto.getParent())
-                .build();
-        return repository.insert(node, user.getId());
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, labelsUni).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+            Task node = new Task.Builder()
+                    .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
+                    .setBody(dto.getBody())
+                    .setAssignee(assignee.orElseThrow().getId())
+                    .setPriority(dto.getPriority())
+                    .setCancellationComment(dto.getCancellationComment())
+                    .setTitle(dto.getTitle())
+                    .setLabels(labels)
+                    .setTaskType(taskType.orElseThrow().getId())
+                    .setProject(project.getId())
+                    .setStartDate(dto.getStartDate().atStartOfDay(ZoneId.systemDefault()))
+                    .build();
+            taskOpt.ifPresent(task -> node.setParent(task.getParent()));
+            if (dto.getTargetDate() != null) {
+                node.setTargetDate(dto.getTargetDate().atStartOfDay(ZoneId.systemDefault()));
+            }
+            return repository.insert(node, user.getId());
+        }).flatMap(uni -> uni);
     }
+
 
     public Task update(TaskDTO dto) {
         Task doc = new Task.Builder()

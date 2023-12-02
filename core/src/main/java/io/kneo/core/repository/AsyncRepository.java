@@ -107,4 +107,11 @@ public class AsyncRepository {
         }
     }
 
+    protected static String getBaseSelect(String baseRequest, final int limit, final int offset) {
+        String sql = baseRequest;
+        if (limit > 0) {
+            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+        }
+        return sql;
+    }
 }

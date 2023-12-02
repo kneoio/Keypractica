@@ -1,7 +1,7 @@
-
-package io.kneo.projects.dto;
+package io.kneo.officeframe.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.kneo.core.dto.AbstractReferenceDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,13 +12,6 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @SuperBuilder
 @NoArgsConstructor
-public class AssigneeDTO {
-    long id;
-    String fullName;
-    boolean isAvailable;
-
-    public AssigneeDTO(int id) {
-        this.id = id;
-    }
+public class TaskTypeDTO extends AbstractReferenceDTO {
 
 }

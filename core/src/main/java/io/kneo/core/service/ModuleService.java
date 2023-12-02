@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class ModuleService extends AbstractService<Module, ModuleDTO> {
+public class ModuleService extends AbstractService<Module, ModuleDTO>  implements IRESTService<ModuleDTO> {
     @Inject
     private ModuleRepository repository;
 
@@ -34,6 +34,11 @@ public class ModuleService extends AbstractService<Module, ModuleDTO> {
                                 .localizedDescription(doc.getLocalizedDescription())
                                 .build())
                 .collect(Collectors.toList()));
+    }
+
+    @Override
+    public Uni<Optional<ModuleDTO>> getByIdentifier(String identifier) {
+        return null;
     }
 
     public Uni<Integer> getAllCount() {
@@ -60,6 +65,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO> {
             return dto;
         });
     }
+
 
     public Uni<UUID> add(ModuleDTO dto) {
         Module doc = new Module.Builder()

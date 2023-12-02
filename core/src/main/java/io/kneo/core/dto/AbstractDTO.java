@@ -14,12 +14,12 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 public abstract class AbstractDTO implements IDTO {
-    UUID id;
-    String author;
+    protected UUID id;
+    protected String author;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
-    ZonedDateTime regDate;
-    String lastModifier;
+    protected ZonedDateTime regDate;
+    protected String lastModifier;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy HH:mm")
-    ZonedDateTime lastModifiedDate;
+    protected ZonedDateTime lastModifiedDate;
 
 }

@@ -37,11 +37,11 @@ public class ProjectRepository extends AsyncRepository {
         return getAllCount(userID, "prj__projects", "prj__project_readers");
     }
 
-    public Uni<Project> findById(UUID uuid, Long userID) {
+    public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
         return client.preparedQuery("SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.reader = $2")
                 .execute(Tuple.of(uuid, userID))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
     public Uni<List<RLS>> getAllReaders(UUID uuid) {

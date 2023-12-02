@@ -10,7 +10,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.NotFoundException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -42,18 +41,19 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, "prj__tasks", "prj__task_readers");
+        return getAllCount(userID, TABLE_NAME, ACCESS_TABLE_NAME);
     }
 
-    public Uni<Task> findById(Long userID, UUID uuid) {
+    public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
         return client.preparedQuery(BASE_REQUEST + "WHERE ptr.reader = $1 AND pt.id = $2")
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
-                        return from(iterator.next());
+                        return Optional.of(from(iterator.next()));
                     } else {
-                        throw new NotFoundException("No item found for userID: " + userID + " and uuid: " + uuid);
+                        //throw new NotFoundException("No task found for userID: " + userID + " and uuid: " + uuid);
+                        return Optional.empty();
                     }
                 });
     }
@@ -79,17 +79,16 @@ public class TaskRepository extends AsyncRepository {
                 .setStatus(row.getInteger("status"))
                 .setPriority(row.getInteger("priority"))
                 .setCancellationComment(row.getString("cancel_comment"))
-                //.setTags()
                 .build();
     }
 
     private Uni<RuntimeException> clarifyException(UUID uuid) {
-        Uni<Task> taskUni = findById(SuperUser.build().getId(), uuid)
+        Uni<Optional<Task>> taskUni = findById(uuid, SuperUser.build().getId())
                 .onItem().ifNotNull().failWith(new DocumentHasNotFoundException("Task found"))
                 .onItem().ifNull().failWith(new DocumentHasNotFoundException("Task not found"));
 
         return taskUni.onItem().transform(task -> {
-            if (task == null) {
+            if (task.isPresent()) {
                 return new RuntimeException("Task not found");
             } else {
                 return new RuntimeException("Task found");
@@ -101,12 +100,17 @@ public class TaskRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);", TABLE_NAME);
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", TABLE_NAME);
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addLong(doc.getAssignee())
-                .addString(doc.getBody())
-                .addLocalDateTime(doc.getTargetDate().toLocalDateTime())
+                .addString(doc.getBody());
+        if (doc.getTargetDate() != null) {
+            allParams.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+        } else {
+            allParams.addLocalDateTime(null);
+        }
+        allParams = params
                 .addInteger(doc.getPriority())
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addInteger(doc.getStatus())
@@ -117,13 +121,15 @@ public class TaskRepository extends AsyncRepository {
                 .addString(doc.getRegNumber())
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addString(doc.getCancellationComment());
-        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4, $5)", ACCESS_TABLE_NAME);
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
+        String labelsSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
+        Tuple finalAllParams = allParams;
         return client.withTransaction(tx -> {
             return tx.preparedQuery(sql)
-                    .execute(allParams)
+                    .execute(finalAllParams)
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(throwable -> {
-                        LOGGER.error(throwable.getMessage());
+                        LOGGER.error(throwable.getMessage(), throwable);
                         return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
                     })
                     .onItem().transformToUni(id -> {

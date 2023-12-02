@@ -98,7 +98,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
             return service.add(dto, userOptional.get())
                     .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
                     .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage());
+                        LOGGER.error(throwable.getMessage(), throwable);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     });
         }else {
