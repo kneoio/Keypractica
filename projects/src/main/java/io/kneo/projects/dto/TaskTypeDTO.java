@@ -1,4 +1,3 @@
-
 package io.kneo.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -15,4 +14,8 @@ import lombok.experimental.SuperBuilder;
 public class TaskTypeDTO {
     String identifier;
     String localizedName;
+
+    public TaskTypeDTO(String identifier) {
+        this.identifier = identifier;
+    }
 }

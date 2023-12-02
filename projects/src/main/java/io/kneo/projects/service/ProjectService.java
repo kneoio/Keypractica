@@ -4,6 +4,7 @@ import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
@@ -46,13 +47,14 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                                         .build())
                         .collect(Collectors.toList()));
     }
-
     public Uni<Integer> getAllCount(final long userID) {
         return repository.getAllCount(userID);
     }
-
     public Uni<ProjectDTO> get(String uuid, final long userID) {
         return get(UUID.fromString(uuid), userID);
+    }
+    public Uni<ProjectDTO> get(UUID id, IUser user) {
+        return get(id, user.getId(), false);
     }
 
     public Uni<ProjectDTO> get(String uuid) {
@@ -64,7 +66,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
-        Uni<Project> projectUni = repository.findById(id, userID);
+        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
 
         Uni<List<RLSDTO>> rlsDtoListUni;
 
@@ -75,7 +77,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         }
 
         return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
-                    Project project = projectOptional;
+                    Project project = projectOptional.get();
                     return ProjectDTO.builder()
                             .id(project.getId())
                             .name(project.getName())
@@ -88,8 +90,6 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 }
         );
     }
-
-
 
     public String add(ProjectDTO dto) {
         Project node = new Project.Builder()
@@ -104,6 +104,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 .build();
         return repository.update(user);
     }
+
 
 
 }

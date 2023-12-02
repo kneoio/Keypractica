@@ -48,6 +48,9 @@ public class UserService {
         return repository.get(Long.parseLong(id));
     }
 
+    public Uni<Optional<IUser>> get(long id) {
+        return repository.get(id);
+    }
     public Optional<IUser> findByLogin(String login) {
         return repository.findByLogin(login);
     }

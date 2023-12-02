@@ -1,9 +1,13 @@
+package io.kneo.officeframe.controller;
 
-package io.kneo.core.controller;
-
-import io.kneo.core.dto.document.ModuleDTO;
-import io.kneo.core.model.Module;
-import io.kneo.core.service.ModuleService;
+import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.cnst.PayloadType;
+import io.kneo.core.dto.form.FormPage;
+import io.kneo.officeframe.dto.LabelDTO;
+import io.kneo.officeframe.dto.TaskTypeDTO;
+import io.kneo.officeframe.model.TaskType;
+import io.kneo.officeframe.service.TaskTypeService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -25,30 +29,36 @@ import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
 
-@Path("/modules")
+@Path("/tasktypes")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class ModuleController extends AbstractSecuredController<Module, ModuleDTO> {
-
+public class TaskTypeController extends AbstractSecuredController<TaskType, TaskTypeDTO> {
     @Inject
-    ModuleService service;
+    TaskTypeService service;
 
     @GET
     @Path("/")
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page,  @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         return getAll(service, requestContext, page);
     }
 
     @GET
-    @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id)  {
-        return getDocument(service, id);
+    @Path("/{identifier}")
+    public Uni<Response> get(String identifier) {
+        FormPage page = new FormPage();
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        return service.findByIdentifier(identifier)
+                .onItem().transform(p -> {
+                    page.addPayload(PayloadType.FORM_DATA, p);
+                    return Response.ok(page).build();
+                })
+                .onFailure().recoverWithItem(this::postError);
     }
 
     @POST
     @Path("/")
-    public Uni<Response> create(@Valid ModuleDTO dto) {
+    public Uni<Response> create(@Valid LabelDTO dto) {
         return service.add(dto)
                 .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
                 .onFailure().recoverWithItem(throwable -> {
@@ -59,7 +69,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
 
     @PUT
     @Path("/")
-    public Response update(@Valid ModuleDTO dto) {
+    public Response update(@Valid LabelDTO dto) {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
 
