@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,7 +53,7 @@ public class TaskRepository extends AsyncRepository {
                     if (iterator.hasNext()) {
                         return Optional.of(from(iterator.next()));
                     } else {
-                        //throw new NotFoundException("No task found for userID: " + userID + " and uuid: " + uuid);
+                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_NAME));
                         return Optional.empty();
                     }
                 });
@@ -122,7 +123,7 @@ public class TaskRepository extends AsyncRepository {
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addString(doc.getCancellationComment());
         String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
-        String labelsSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
+        String labelsSql = "INSERT INTO prj__task_labels(task_id, label_id) VALUES($1, $2)";
         Tuple finalAllParams = allParams;
         return client.withTransaction(tx -> {
             return tx.preparedQuery(sql)
@@ -130,7 +131,7 @@ public class TaskRepository extends AsyncRepository {
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(throwable -> {
                         LOGGER.error(throwable.getMessage(), throwable);
-                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s ", ENTITY_NAME), throwable));
                     })
                     .onItem().transformToUni(id -> {
                         return tx.preparedQuery(readersSql)
@@ -138,9 +139,24 @@ public class TaskRepository extends AsyncRepository {
                                 .onItem().ignore().andContinueWithNull()
                                 .onFailure().recoverWithUni(throwable -> {
                                     LOGGER.error(throwable.getMessage());
-                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s", ACCESS_ENTITY_NAME), throwable));
+                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s ", ACCESS_ENTITY_NAME), throwable));
                                 })
                                 .onItem().transform(unused -> id);
+                    })
+                    .onItem().transformToUni(id -> {
+                        List<Uni<UUID>> unis = new ArrayList<>();
+                        for (UUID label : doc.getLabels()) {
+                            Uni<UUID> uni = tx.preparedQuery(labelsSql)
+                                    .execute(Tuple.of(id, label))
+                                    .onItem().ignore().andContinueWithNull()
+                                    .onFailure().recoverWithUni(throwable -> {
+                                        LOGGER.error(throwable.getMessage());
+                                        return Uni.createFrom().failure(new RuntimeException("Failed to add Labels", throwable));
+                                    })
+                                    .onItem().transform(unused -> label);
+                            unis.add(uni);
+                        }
+                        return Uni.combine().all().unis(unis).combinedWith(l -> id);
                     });
         });
     }
