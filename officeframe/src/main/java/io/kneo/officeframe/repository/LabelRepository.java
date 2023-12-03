@@ -12,13 +12,14 @@ import jakarta.ws.rs.NotFoundException;
 
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @ApplicationScoped
 public class LabelRepository extends AsyncRepository {
 
     private static final String TABLE_NAME = "ref__labels";
-    private static final String ENTITY_NAME = "labels";
+    private static final String ENTITY_NAME = "label";
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s", TABLE_NAME);
 
     public Uni<List<Label>> getAll(final int limit, final int offset) {
@@ -50,6 +51,19 @@ public class LabelRepository extends AsyncRepository {
                 });
     }
 
+    public Uni<Optional<Label>> findByIdentifier(String identifier) {
+        return client.preparedQuery(BASE_REQUEST + " WHERE identifier = $1")
+                .execute(Tuple.of(identifier))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> {
+                    if (iterator.hasNext()) {
+                        return Optional.of(from(iterator.next()));
+                    } else {
+                        LOGGER.warn(String.format("No %s found with identifier: " + identifier, ENTITY_NAME));
+                        return Optional.empty();
+                    }
+                });
+    }
 
     private Label from(Row row) {
         Label label = new Label();

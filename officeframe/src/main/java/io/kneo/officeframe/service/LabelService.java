@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -45,13 +46,25 @@ public class LabelService extends AbstractService<Label, LabelDTO> {
         return repository.getAllCount();
     }
 
-
     public Uni<LabelDTO> get(String uuid) {
-        return get(UUID.fromString(uuid));
+        Uni<Label> labelUni = get(UUID.fromString(uuid));
+        return labelUni.onItem().transform(label -> {
+            return LabelDTO.builder()
+                    .author(userRepository.getUserName(label.getAuthor()))
+                    .regDate(label.getRegDate())
+                    .lastModifier(userRepository.getUserName(label.getLastModifier()))
+                    .lastModifiedDate(label.getLastModifiedDate())
+                    .identifier(label.getIdentifier())
+                    .build();
+        });
     }
 
-    public Uni<LabelDTO> get(UUID uuid) {
-       return null;
+    public Uni<Optional<Label>> findByIdentifier(String identifier) {
+        return repository.findByIdentifier(identifier);
+    }
+
+    public Uni<Label> get(UUID uuid) {
+        return repository.findById(uuid);
     }
 
     public Uni<Object> add(LabelDTO dto) {

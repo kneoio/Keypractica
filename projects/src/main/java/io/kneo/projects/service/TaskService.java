@@ -8,6 +8,7 @@ import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
+import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.LabelService;
 import io.kneo.officeframe.service.TaskTypeService;
@@ -88,6 +89,11 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, taskUni, id);
 
+   /*     List<Uni<Optional<Label>>> labelUnis = taskUni.onItem().transformToUni(item ->
+                item.get().getLabels().stream().map(v -> labelService.get(v))
+
+        )*/
+
         return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, rls) -> {
                     Task task = taskOpt.orElseThrow();
                     return TaskDTO.builder()
@@ -105,7 +111,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                                     .build())
                             .project(project)
                             .startDate(LocalDate.from(task.getStartDate()))
-                            .targetDate(LocalDate.from(task.getTargetDate()))
+                            .targetDate(Optional.ofNullable(task.getTargetDate()).map(LocalDate::from).orElse(null))
                             .status(task.getStatus())
                             .priority(task.getPriority())
                             .rls(rls).build();
@@ -130,15 +136,21 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     public Uni<UUID> add(TaskDTO dto, IUser user) {
         List<LabelDTO> labelDTOs = dto.getLabels();
-        List<Uni<UUID>> labelUnis = labelDTOs.stream().map(v -> labelService.get(v.getId())
-                .onItem()
-                .transform(LabelDTO::getId)).collect(Collectors.toList());
+        List<Uni<Optional<Label>>> labelUnis = labelDTOs.stream()
+                .map(v ->
+                        labelService.findByIdentifier(v.getIdentifier())
+                                .onItem()
+                                .transform(item -> item)
+                )
+                .collect(Collectors.toList());
 
-        Uni<List> labelsUni;
+
+        Uni<List<Optional<Label>>> combinedLabelUnis;
         if (labelUnis.isEmpty()) {
-            labelsUni = Uni.createFrom().item(Collections.emptyList());
+            combinedLabelUnis = Uni.createFrom().item(Collections.emptyList());
         } else {
-            labelsUni = Uni.combine().all().unis(labelUnis).combinedWith(list -> list);
+            combinedLabelUnis = Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Optional<Label>>) list);
+
         }
 
         Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
@@ -146,7 +158,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
         Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
 
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, labelsUni).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
             Task node = new Task.Builder()
                     .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
                     .setBody(dto.getBody())
@@ -154,7 +166,10 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                     .setPriority(dto.getPriority())
                     .setCancellationComment(dto.getCancellationComment())
                     .setTitle(dto.getTitle())
-                    .setLabels(labels)
+                    .setLabels(labels.stream()
+                            .filter(Optional::isPresent)
+                            .map(o -> o.get().getId())
+                            .collect(Collectors.toList()))
                     .setTaskType(taskType.orElseThrow().getId())
                     .setProject(project.getId())
                     .setStartDate(dto.getStartDate().atStartOfDay(ZoneId.systemDefault()))
@@ -171,7 +186,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     public Task update(TaskDTO dto) {
         Task doc = new Task.Builder()
                 .setId(dto.getId())
-              //  .setAssignee(Long.valueOf(dto.getAssignee()))
+                //  .setAssignee(Long.valueOf(dto.getAssignee()))
                 .setBody(dto.getBody())
                 .build();
         return repository.update(doc);
