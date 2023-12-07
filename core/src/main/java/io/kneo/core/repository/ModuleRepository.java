@@ -28,7 +28,7 @@ public class ModuleRepository extends AsyncRepository {
     @Inject
     PgPool client;
     public Uni<List<Module>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM _modules";
+        String sql = "SELECT * FROM " + TABLE_NAME;
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -50,11 +50,10 @@ public class ModuleRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount("_modules");
+        return getAllCount(TABLE_NAME);
     }
 
     public Uni<List<Module>> getModules(ModuleType[] defaultModules) {
-        //SELECT * FROM _modules where identifier in ('officeframe', 'calendar') LIMIT 100 OFFSET 0;
         return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
@@ -98,9 +97,8 @@ public class ModuleRepository extends AsyncRepository {
         return doc;
     }
 
-    public int delete(UUID uuid, long id) {
-
-        return 1;
+    public Uni<Void> delete(UUID uuid) {
+        return delete(uuid, TABLE_NAME);
     }
 
 

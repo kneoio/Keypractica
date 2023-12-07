@@ -29,12 +29,10 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class RoleRepository extends AsyncRepository {
-
     private static final String TABLE_NAME = "_roles";
     private static final String ENTITY_NAME = "role";
     @Inject
     PgPool client;
-
     @Inject
     ObjectMapper mapper;
 

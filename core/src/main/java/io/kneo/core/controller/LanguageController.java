@@ -28,7 +28,6 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
 public class LanguageController extends AbstractSecuredController<Language, LanguageDTO> {
-
     @Inject
     LanguageService service;
 
@@ -91,19 +90,6 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<Response> delete(@PathParam("id") String id) {
         return service.delete(id)
-                .onItem().transformToUni(result -> Uni.createFrom().voidItem())
-                .onItem().transform(ignore -> Response.status(Response.Status.OK).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
-    }
-
-    @DELETE
-    @Path("/code/{code}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> deleteByCode(@PathParam("code") String code) {
-        return service.deleteByCode(code)
                 .onItem().transformToUni(result -> Uni.createFrom().voidItem())
                 .onItem().transform(ignore -> Response.status(Response.Status.OK).build())
                 .onFailure().recoverWithItem(throwable -> {

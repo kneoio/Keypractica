@@ -160,15 +160,42 @@ public class TaskRepository extends AsyncRepository {
                     });
         });
     }
+    public Uni<Integer> update(Task doc, Long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
+                "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
+                "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
+                "WHERE id=$16;", TABLE_NAME);
+        Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
+        if (doc.getTargetDate() != null) {
+            params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+        } else {
+            params.addLocalDateTime(null);
+        }
+        Tuple allParams = params
+                .addInteger(doc.getPriority())
+                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addInteger(doc.getStatus())
+                .addString(doc.getTitle())
+                .addUUID(doc.getParent())
+                .addUUID(doc.getProject())
+                .addUUID(doc.getTaskType())
+                .addString(doc.getRegNumber())
+                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addString(doc.getCancellationComment())
+                .addLocalDateTime(nowTime)
+                .addLong(user);
 
-
-    public Task update(Task node) {
-
-        return node;
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(allParams)
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().item(0);
+                }));
     }
 
-    public int delete(Long id) {
-
-        return 1;
+    public Uni<Void> delete(UUID uuid) {
+        return delete(uuid, TABLE_NAME);
     }
 }
