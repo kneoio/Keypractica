@@ -89,7 +89,4 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
         return repository.delete(UUID.fromString(id));
     }
 
-    public Uni<Void> deleteByCode(String id) {
-        return repository.delete(id);
-    }
 }

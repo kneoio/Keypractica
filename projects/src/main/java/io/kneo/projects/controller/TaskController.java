@@ -32,7 +32,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -101,15 +100,25 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
                         LOGGER.error(throwable.getMessage(), throwable);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     });
-        }else {
+        } else {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
 
     @PUT
     @Path("/")
-    public Response update(@Valid TaskDTO dto) {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
+    public Uni<Response> update(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.update(dto, userOptional.get())
+                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                    .onFailure().recoverWithItem(throwable -> {
+                        LOGGER.error(throwable.getMessage(), throwable);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
     }
 
     @DELETE

@@ -25,6 +25,9 @@ import java.util.UUID;
 public class LanguageRepository extends AsyncRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
+
+    private static final String TABLE_NAME = "_langs";
+    private static final String ENTITY_NAME = "language";
     @Inject
     PgPool client;
 
@@ -97,16 +100,5 @@ public class LanguageRepository extends AsyncRepository {
 
     public Uni<Void> delete(UUID uuid) {
        return delete(uuid, "_langs");
-    }
-
-    public Uni<Void> delete(String code) {
-        String sql = "DELETE FROM _langs WHERE code = $1";
-        return client.withTransaction(tx -> tx.preparedQuery(sql)
-                .execute(Tuple.of(code))
-                .onItem().ignore().andContinueWithNull()
-                .onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException("Failed to delete", throwable));
-                }));
     }
 }

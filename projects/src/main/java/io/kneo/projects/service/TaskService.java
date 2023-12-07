@@ -183,12 +183,12 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
 
-    public Task update(TaskDTO dto) {
+    public Uni<Integer> update(TaskDTO dto, IUser user) {
         Task doc = new Task.Builder()
                 .setId(dto.getId())
                 //  .setAssignee(Long.valueOf(dto.getAssignee()))
                 .setBody(dto.getBody())
                 .build();
-        return repository.update(doc);
+        return repository.update(doc, user.getId());
     }
 }

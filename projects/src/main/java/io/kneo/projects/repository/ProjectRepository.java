@@ -20,7 +20,11 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class ProjectRepository extends AsyncRepository {
-
+    private static final String TABLE_NAME = "prj__projects";
+    private static final String ACCESS_TABLE_NAME = "prj__project_readers";
+    private static final String ENTITY_NAME = "project";
+    private static final String BASE_REQUEST = """
+            SELECT pt.*, ptr.*  FROM prj__projects pt JOIN prj__project_readers ptr ON pt.id = ptr.entity_id\s""";
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
         if (limit > 0) {
@@ -34,7 +38,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, "prj__projects", "prj__project_readers");
+        return getAllCount(userID, TABLE_NAME, ACCESS_TABLE_NAME);
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
@@ -84,9 +88,8 @@ public class ProjectRepository extends AsyncRepository {
         return node;
     }
 
-    public int delete(Long id) {
-
-        return 1;
+    public Uni<Void> delete(UUID uuid) {
+        return delete(uuid, TABLE_NAME);
     }
 
 }

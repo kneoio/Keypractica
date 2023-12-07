@@ -24,7 +24,6 @@ import java.util.Optional;
 @Consumes(MediaType.APPLICATION_JSON)
 @SuppressWarnings("rawtypes")
 public class WorkspaceController extends AbstractSecuredController {
-
     @Inject
     private LanguageService languageService;
     @Inject
