@@ -83,8 +83,8 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return repository.update(doc);
     }
 
-    public int delete (String id) {
-        return repository.delete(UUID.fromString(id), AnonymousUser.ID);
+    public Uni<Void> delete (String id) {
+        return repository.delete(UUID.fromString(id));
     }
 
 
