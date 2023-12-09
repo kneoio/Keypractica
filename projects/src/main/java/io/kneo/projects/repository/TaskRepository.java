@@ -3,6 +3,8 @@ package io.kneo.projects.repository;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.rls.RLSRepository;
 import io.kneo.projects.model.Task;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -10,6 +12,7 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,7 +28,8 @@ public class TaskRepository extends AsyncRepository {
     private static final String TABLE_NAME = "prj__tasks";
     private static final String ACCESS_TABLE_NAME = "prj__task_readers";
     private static final String ENTITY_NAME = "task";
-
+    @Inject
+    private RLSRepository rlsRepository;
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
 
@@ -160,42 +164,47 @@ public class TaskRepository extends AsyncRepository {
                     });
         });
     }
-    public Uni<Integer> update(Task doc, Long user) {
-        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
-                "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
-                "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
-                "WHERE id=$16;", TABLE_NAME);
-        Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
-        if (doc.getTargetDate() != null) {
-            params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
-        } else {
-            params.addLocalDateTime(null);
-        }
-        Tuple allParams = params
-                .addInteger(doc.getPriority())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                .addInteger(doc.getStatus())
-                .addString(doc.getTitle())
-                .addUUID(doc.getParent())
-                .addUUID(doc.getProject())
-                .addUUID(doc.getTaskType())
-                .addString(doc.getRegNumber())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                .addString(doc.getCancellationComment())
-                .addLocalDateTime(nowTime)
-                .addLong(user);
+    public Uni<Integer> update(Task doc, Long user) throws DocumentModificationAccessException {
+        UUID docId = doc.getId();
+        if (1 == rlsRepository.findById(TABLE_NAME, user, docId)[0]) {
+            LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+            String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
+                    "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
+                    "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
+                    "WHERE id=$16;", TABLE_NAME);
+            Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
+            if (doc.getTargetDate() != null) {
+                params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+            } else {
+                params.addLocalDateTime(null);
+            }
+            Tuple allParams = params
+                    .addInteger(doc.getPriority())
+                    .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                    .addInteger(doc.getStatus())
+                    .addString(doc.getTitle())
+                    .addUUID(doc.getParent())
+                    .addUUID(doc.getProject())
+                    .addUUID(doc.getTaskType())
+                    .addString(doc.getRegNumber())
+                    .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                    .addString(doc.getCancellationComment())
+                    .addLocalDateTime(nowTime)
+                    .addLong(user);
 
-        return client.withTransaction(tx -> tx.preparedQuery(sql)
-                .execute(allParams)
-                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
-                .onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().item(0);
-                }));
+            return client.withTransaction(tx -> tx.preparedQuery(sql)
+                    .execute(allParams)
+                    .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                    .onFailure().recoverWithUni(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        return Uni.createFrom().item(0);
+                    }));
+        } else {
+            throw new DocumentModificationAccessException(docId);
+        }
     }
 
-    public Uni<Void> delete(UUID uuid) {
+    public Uni<Void> delete(UUID uuid, Long user) {
         return delete(uuid, TABLE_NAME);
     }
 }
