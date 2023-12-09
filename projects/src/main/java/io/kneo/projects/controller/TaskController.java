@@ -6,7 +6,10 @@ import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
@@ -107,7 +110,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @PUT
     @Path("/")
-    public Uni<Response> update(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> update(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.update(dto, userOptional.get())
@@ -117,7 +120,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     });
         } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+            throw new UserNotFoundException(AnonymousUser.USER_NAME);
         }
     }
 
