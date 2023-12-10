@@ -2,9 +2,9 @@ package io.kneo.core.service;
 
 import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.model.Module;
-import io.kneo.core.model.cnst.ModuleType;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.repository.ModuleRepository;
+import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -45,11 +45,26 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return repository.getAllCount();
     }
 
-    public Uni<List<Module>> findAll(ModuleType ... defaultModules) {
-        return repository.getModules(defaultModules);
+    public Uni<List<ModuleDTO>> findAll(String[] defaultModules) {
+        return repository.getModules(defaultModules)
+                .onItem().transformToUni(modules ->
+                        Multi.createFrom().iterable(modules)
+                                .onItem().transformToUniAndMerge(moduleOpt ->
+                                        moduleOpt.map(module ->
+                                                mapToDTO(Uni.createFrom().item(Optional.of(module)))
+                                        ).orElse(Uni.createFrom().nullItem())
+                                )
+                                .collect().asList()
+                );
     }
+
+
     public Uni<ModuleDTO> get(String id) {
         Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
+        return mapToDTO( uni);
+    }
+
+    private Uni<ModuleDTO> mapToDTO(Uni<Optional<Module>> uni) {
         return uni.onItem().transform(optional -> {
             Module doc = optional.orElseThrow();
             ModuleDTO dto = new ModuleDTO();
@@ -65,7 +80,6 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
             return dto;
         });
     }
-
 
     public Uni<UUID> add(ModuleDTO dto) {
         Module doc = new Module.Builder()

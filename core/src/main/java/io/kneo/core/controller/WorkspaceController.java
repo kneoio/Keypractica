@@ -1,7 +1,7 @@
 
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.Workspace;
+import io.kneo.core.dto.WorkspacePage;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.User;
@@ -43,9 +43,9 @@ public class WorkspaceController extends AbstractSecuredController {
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             IUser currentUser = new User.Builder().setLogin(user.getUserName()).build();
-            return Response.ok(new Workspace(currentUser, languageService, moduleService)).build();
+            return Response.ok(new WorkspacePage(currentUser, languageService, moduleService)).build();
         } else {
-            return Response.ok(new Workspace(AnonymousUser.build(), languageService)).build();
+            return Response.ok(new WorkspacePage(AnonymousUser.build(), languageService, moduleService)).build();
         }
     }
 }

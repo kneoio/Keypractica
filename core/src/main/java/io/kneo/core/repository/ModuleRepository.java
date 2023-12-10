@@ -1,8 +1,6 @@
 package io.kneo.core.repository;
 
 import io.kneo.core.model.Module;
-import io.kneo.core.model.cnst.ModuleType;
-import io.kneo.core.server.EnvConst;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -16,9 +14,11 @@ import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ModuleRepository extends AsyncRepository {
@@ -53,11 +53,30 @@ public class ModuleRepository extends AsyncRepository {
         return getAllCount(TABLE_NAME);
     }
 
-    public Uni<List<Module>> getModules(ModuleType[] defaultModules) {
-        return client.query(String.format("SELECT * FROM _modules LIMIT %d OFFSET 0", EnvConst.DEFAULT_PAGE_SIZE))
+    public Uni<List<Optional<Module>>> getModules(String[] defaultModules) {
+        String sql = "SELECT * FROM " + TABLE_NAME;
+        if (defaultModules != null && defaultModules.length > 0) {
+            String inClause = Arrays.stream(defaultModules)
+                    .map(identifier -> "'" + identifier + "'")
+                    .collect(Collectors.joining(", "));
+            sql += " WHERE identifier IN (" + inClause + ")";
+        }
+
+        return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new Module.Builder().setIdentifier(row.getString("identifier")).build())
+                .onItem().transform(row -> {
+                    Optional<Module> module = Optional.ofNullable(new Module.Builder()
+                            .setId(row.getUUID("id"))
+                            .setAuthor(row.getLong("author"))
+                            .setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()))
+                            .setOn(row.getBoolean("is_on"))
+                            .setLocalizedName(getLocalizedData(row.getJsonObject("loc_name")))
+                            .setLocalizedDescription(getLocalizedData(row.getJsonObject("loc_descr")))
+                            .setIdentifier(row.getString("identifier"))
+                            .build());
+                    return module;
+                })
                 .collect().asList();
     }
 
@@ -100,6 +119,8 @@ public class ModuleRepository extends AsyncRepository {
     public Uni<Void> delete(UUID uuid) {
         return delete(uuid, TABLE_NAME);
     }
+
+
 
 
 }

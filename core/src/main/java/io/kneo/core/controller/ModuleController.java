@@ -41,6 +41,12 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
     }
 
     @GET
+    @Path("/")
+    public Uni<Response> getAvailable(@Valid @Min(0) @QueryParam("page") int page,  @Context ContainerRequestContext requestContext)  {
+        return getAll(service, requestContext, page);
+    }
+
+    @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         return getDocument(service, id);
