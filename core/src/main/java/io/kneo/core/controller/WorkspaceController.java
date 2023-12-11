@@ -2,11 +2,13 @@
 package io.kneo.core.controller;
 
 import io.kneo.core.dto.WorkspacePage;
-import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.dto.document.LanguageDTO;
+import io.kneo.core.dto.document.ModuleDTO;
+import io.kneo.core.model.Module;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.model.user.User;
 import io.kneo.core.service.LanguageService;
-import io.kneo.core.service.ModuleService;
+import io.kneo.core.service.WorkspaceService;
+import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -17,35 +19,45 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.List;
 import java.util.Optional;
 
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@SuppressWarnings("rawtypes")
-public class WorkspaceController extends AbstractSecuredController {
+public class WorkspaceController extends AbstractSecuredController<Module, ModuleDTO> {
+    @Inject
+    private WorkspaceService workspaceService;
     @Inject
     private LanguageService languageService;
-    @Inject
-    private ModuleService moduleService;
 
     @GET
     @Path("/")
-    public Response getDefault(@Context ContainerRequestContext requestContext) {
+    public Uni<Response> getDefault(@Context ContainerRequestContext requestContext) {
         return get(requestContext);
     }
 
     @GET
     @Path("/workspace")
-    public Response get(@Context ContainerRequestContext requestContext) {
-        @SuppressWarnings("unchecked")
+    public Uni<Response> get(@Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
-            IUser currentUser = new User.Builder().setLogin(user.getUserName()).build();
-            return Response.ok(new WorkspacePage(currentUser, languageService, moduleService)).build();
+            Uni<List<ModuleDTO>> moduleUnis = workspaceService.getAvailableModules(user);
+            Uni<List<LanguageDTO>> languageUnis = languageService.getAll(0, 0);
+
+            return Uni.combine().all().unis(moduleUnis, languageUnis)
+                    .combinedWith((modules, languages) -> {
+                        WorkspacePage page = new WorkspacePage(user, languages, modules);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(
+                            throwable -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
         } else {
-            return Response.ok(new WorkspacePage(AnonymousUser.build(), languageService, moduleService)).build();
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
+
+
+
 }

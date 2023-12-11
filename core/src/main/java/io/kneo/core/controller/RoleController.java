@@ -1,9 +1,9 @@
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.RoleDTO;
 import io.kneo.core.dto.actions.ActionsFactory;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
+import io.kneo.core.dto.document.RoleDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;

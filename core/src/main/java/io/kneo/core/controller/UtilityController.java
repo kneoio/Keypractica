@@ -1,8 +1,6 @@
 
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.WorkspacePage;
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.ModuleService;
@@ -30,10 +28,6 @@ public class UtilityController {
     @Path("/translations")
     public Response get(@Context ContainerRequestContext requestContext) {
         IUser currentUser = (IUser) requestContext.getProperty("user");
-        if (currentUser.getId() == AnonymousUser.ID) {
-            return Response.ok(new WorkspacePage(currentUser, languageService)).build();
-        } else {
-            return Response.ok(new WorkspacePage(currentUser, languageService, moduleService)).build();
-        }
+      return Response.ok().build();
     }
 }
