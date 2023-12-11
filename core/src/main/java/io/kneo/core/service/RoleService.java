@@ -1,7 +1,7 @@
 package io.kneo.core.service;
 
 
-import io.kneo.core.dto.RoleDTO;
+import io.kneo.core.dto.document.RoleDTO;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.Role;
 import io.kneo.core.repository.RoleRepository;

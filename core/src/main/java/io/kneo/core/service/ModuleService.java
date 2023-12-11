@@ -45,6 +45,10 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return repository.getAllCount();
     }
 
+    public Uni<Integer> getAllCount(Long id) {
+        return repository.getAllCount();
+    }
+
     public Uni<List<ModuleDTO>> findAll(String[] defaultModules) {
         return repository.getModules(defaultModules)
                 .onItem().transformToUni(modules ->
