@@ -91,11 +91,12 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         );
     }
 
-    public String add(ProjectDTO dto) {
+    public Uni<ProjectDTO> add(ProjectDTO dto) {
         Project node = new Project.Builder()
                 .setName(dto.getName())
                 .build();
-        return repository.insert(node, AnonymousUser.ID).toString();
+                repository.insert(node, AnonymousUser.ID);
+        return Uni.createFrom().nullItem();
     }
 
     public Language update(LanguageDTO dto) {
