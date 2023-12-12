@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Map;
+import java.util.EnumMap;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Setter
@@ -18,7 +18,6 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonPropertyOrder({"identifier", "author", "regDate", "lastModifier", "lastModifiedDate"})
 public class RoleDTO extends AbstractReferenceDTO {
-    Map<LanguageCode, String> localizedName;
-    Map<LanguageCode, String> localizedDescription;
-
+    EnumMap<LanguageCode, String> localizedName;
+    EnumMap<LanguageCode, String> localizedDescription;
 }

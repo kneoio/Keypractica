@@ -14,7 +14,6 @@ import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -33,6 +32,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import javax.annotation.security.RolesAllowed;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -93,20 +93,21 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @POST
     @Path("/")
-    public Response create(ProjectDTO dto)  {
-        return Response.created(URI.create("/" + service.add(dto))).build();
+    public Response create(ProjectDTO dto) {
+        Uni<ProjectDTO> createdProject = service.add(dto);
+        return Response.ok(service.add(dto)).build();
     }
 
     @PUT
     @Path("/")
-    public Response update(LanguageDTO dto)  {
+    public Response update(LanguageDTO dto) {
         return Response.ok(URI.create("/" + service.update(dto).getId())).build();
     }
+
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
+        return Response.noContent().build();
     }
-
 }
