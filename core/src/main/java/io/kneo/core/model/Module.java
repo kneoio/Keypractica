@@ -7,8 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 @Setter
@@ -16,7 +15,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Module  extends SimpleReferenceEntity {
     protected ModuleType type;
-    private Map<LanguageCode, String> localizedDescription = new HashMap<>();
+    private EnumMap<LanguageCode, String> localizedDescription = new EnumMap<>(LanguageCode.class);
     private boolean isOn;
 
     public static class Builder {
@@ -25,8 +24,8 @@ public class Module  extends SimpleReferenceEntity {
         private ZonedDateTime regDate;
         protected String identifier;
         private boolean isOn;
-        private Map<LanguageCode, String> localizedName = new HashMap<>();
-        private Map<LanguageCode, String> localizedDescription = new HashMap<>();
+        private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
+        private EnumMap<LanguageCode, String> localizedDescription = new EnumMap<>(LanguageCode.class);
         protected ModuleType type = ModuleType.UNKNOWN;
 
         public Builder setId(UUID id) {
@@ -64,12 +63,12 @@ public class Module  extends SimpleReferenceEntity {
             return this;
         }
 
-        public Builder setLocalizedName(Map<LanguageCode, String> languageCodeStringMap) {
+        public Builder setLocalizedName(EnumMap<LanguageCode, String> languageCodeStringMap) {
             this.localizedName = languageCodeStringMap;
             return this;
         }
 
-        public Builder setLocalizedDescription(Map<LanguageCode, String> localizedDescription) {
+        public Builder setLocalizedDescription(EnumMap<LanguageCode, String> localizedDescription) {
             this.localizedDescription = localizedDescription;
             return this;
         }

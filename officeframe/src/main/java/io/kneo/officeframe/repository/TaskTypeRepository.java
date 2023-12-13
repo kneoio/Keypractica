@@ -19,8 +19,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,7 +68,7 @@ public class TaskTypeRepository extends AsyncRepository {
     }
 
     private TaskType from(Row row) {
-        Map<LanguageCode, String> map;
+        EnumMap<LanguageCode, String> map;
         try {
             map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {});
         } catch (JsonProcessingException e) {
