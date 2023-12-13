@@ -54,7 +54,7 @@ public class WorkspaceController extends AbstractSecuredController<Module, Modul
         Optional<IUser> userOptional = getUserId(requestContext);
         IUser user = userOptional.orElseGet(AnonymousUser::build);
         Uni<List<UserModuleDTO>> moduleUnis = workspaceService.getAvailableModules(user);
-        Uni<List<LanguageDTO>> languageUnis = languageService.getAll(0, 0);
+        Uni<List<LanguageDTO>> languageUnis = workspaceService.getAvailableLanguages();
 
         return Uni.combine().all().unis(moduleUnis, languageUnis)
                 .combinedWith((modules, languages) -> {

@@ -2,8 +2,10 @@ package io.kneo.core.service;
 
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.document.UserModuleDTO;
+import io.kneo.core.model.Language;
 import io.kneo.core.model.UserModule;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.LanguageRepository;
 import io.kneo.core.repository.ModuleRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,11 +17,10 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class WorkspaceService {
     @Inject
-    private LanguageService languageService;
+    private LanguageRepository languageRepository;
     @Inject
     private ModuleRepository repository;
-    @Inject
-    protected UserService userService;
+
     public Uni<List<UserModuleDTO>> getAvailableModules(IUser user) {
         Uni<List<UserModule>> listUni = repository.getAvailable(user);
         return listUni.onItem().transform(list -> list.stream()
@@ -34,8 +35,16 @@ public class WorkspaceService {
                 .collect(Collectors.toList()));
     }
 
-    public Uni<List<LanguageDTO>> getAvailableLanguages(IUser user) {
-        return languageService.getAll(0, 0);
+    public Uni<List<LanguageDTO>> getAvailableLanguages() {
+        Uni<List<Language>> listUni = languageRepository.getAvailable();
+        return listUni.onItem().transform(list -> list.stream()
+                .map(doc ->
+                        LanguageDTO.builder()
+                                .code(doc.getCode())
+                                .localizedNames(doc.getLocalizedName())
+                                .position(doc.getPosition())
+                                .build())
+                .collect(Collectors.toList()));
     }
 
 }
