@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.core.repository.cnst.Tables.LANGUAGES_TABLE_NAME;
+
 @ApplicationScoped
 public class LanguageRepository extends AsyncRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
 
-    private static final String TABLE_NAME = "_langs";
-    private static final String ENTITY_NAME = "language";
     @Inject
     PgPool client;
 
@@ -37,6 +37,15 @@ public class LanguageRepository extends AsyncRepository {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
 
+        return client.query(sql)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
+    public Uni<List<Language>> getAvailable() {
+        String sql = "SELECT * FROM " + LANGUAGES_TABLE_NAME + " WHERE is_on = 'true'";
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
@@ -101,4 +110,6 @@ public class LanguageRepository extends AsyncRepository {
     public Uni<Void> delete(UUID uuid) {
        return delete(uuid, "_langs");
     }
+
+
 }

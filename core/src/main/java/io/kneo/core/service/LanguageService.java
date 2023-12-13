@@ -35,6 +35,19 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
                 .collect(Collectors.toList()));
     }
 
+    public Uni<List<Language>> getAvailable() {
+        Uni<List<Language>> listUni = repository.getAvailable();
+        return listUni.onItem().transform(list -> list.stream()
+                .map(language -> {
+                        Language doc = new Language();
+                        doc.setPosition(doc.getPosition());
+                        doc.setCode(doc.getCode());
+                        doc.setLocalizedName(language.getLocalizedName());
+                        return doc;
+                })
+                .collect(Collectors.toList()));
+    }
+
     public Uni<LanguageDTO> findByCode(String code) {
         Uni<Optional<Language>> uni = repository.findByCode(LanguageCode.valueOf(code));
         return uni.onItem().transform(languageOpt -> {

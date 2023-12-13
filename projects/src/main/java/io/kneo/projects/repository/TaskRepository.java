@@ -24,7 +24,6 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
-
     private static final String TABLE_NAME = "prj__tasks";
     private static final String ACCESS_TABLE_NAME = "prj__task_readers";
     private static final String ENTITY_NAME = "task";
