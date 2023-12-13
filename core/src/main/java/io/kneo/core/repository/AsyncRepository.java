@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -83,8 +83,8 @@ public class AsyncRepository {
         entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
     }
 
-    protected Map<LanguageCode, String> extractLanguageMap(Row row) {
-        Map<LanguageCode, String> map;
+    protected EnumMap<LanguageCode, String> extractLanguageMap(Row row) {
+        EnumMap<LanguageCode, String> map;
         try {
             map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
             });
@@ -96,16 +96,20 @@ public class AsyncRepository {
         return map;
     }
 
-    protected static Map<LanguageCode, String> getLocalizedData(JsonObject json) {
+    protected static EnumMap<LanguageCode, String> getLocalizedData(JsonObject json) {
         if (json != null) {
-            return json.getMap().entrySet().stream()
+            Map<LanguageCode, String> map = json.getMap().entrySet().stream()
                     .collect(Collectors.toMap(
                             entry -> LanguageCode.valueOf(entry.getKey()),
-                            entry -> String.valueOf(entry.getValue())));
-        } else {
-            return Collections.emptyMap();
+                            entry -> String.valueOf(entry.getValue()),
+                            (existing, replacement) -> existing));
+            if (!map.isEmpty()) {
+                return new EnumMap<>(map);
+            }
         }
+        return new EnumMap<>(LanguageCode.class);
     }
+
 
     protected static String getBaseSelect(String baseRequest, final int limit, final int offset) {
         String sql = baseRequest;

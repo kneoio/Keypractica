@@ -1,6 +1,5 @@
 package io.kneo.core.model.user;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.SimpleReferenceEntity;
@@ -10,8 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -20,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class Role extends SimpleReferenceEntity implements IRole {
     private SystemRoleType roleType;
-    private Map<LanguageCode, String> localizedDescription;
+    private EnumMap<LanguageCode, String> localizedDescription = new EnumMap<>(LanguageCode.class);
 
     @Override
     public String getName() {
@@ -30,8 +28,8 @@ public class Role extends SimpleReferenceEntity implements IRole {
     public static class Builder {
         private UUID id;
         private String identifier;
-        private Map<LanguageCode, String> localizedDescription = new HashMap<>();
-        private final Map<LanguageCode, String> localizedName = new HashMap<>();
+        private EnumMap<LanguageCode, String> localizedDescription = new EnumMap<>(LanguageCode.class);
+        private final EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
         private long author;
         private ZonedDateTime regDate;
         private ZonedDateTime lastModifiedDate;
@@ -49,12 +47,12 @@ public class Role extends SimpleReferenceEntity implements IRole {
             return this;
         }
 
-        public Role.Builder setLocalizedName(Map<LanguageCode, String> locName) {
+        public Role.Builder setLocalizedName(EnumMap<LanguageCode, String> locName) {
             this.localizedDescription = locName;
             return this;
         }
 
-        public Builder setLocalizedDescription(Map<LanguageCode, String> localizedDescription) {
+        public Builder setLocalizedDescription(EnumMap<LanguageCode, String> localizedDescription) {
             this.localizedDescription = localizedDescription;
             return this;
         }

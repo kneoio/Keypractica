@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -22,7 +22,7 @@ public class Language extends SimpleReferenceEntity {
         private LanguageCode code = LanguageCode.ENG;
         private boolean isOn;
         private int position = 999;
-        private Map<LanguageCode, String> localizedName = Map.of(LanguageCode.ENG, LanguageCode.ENG.getLang());
+        private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
 
         public Builder setId(UUID id) {
             this.id = id;
@@ -39,7 +39,7 @@ public class Language extends SimpleReferenceEntity {
             return this;
         }
 
-        public Builder setLocalizedName(Map<LanguageCode, String> languageCodeStringMap) {
+        public Builder setLocalizedName(EnumMap<LanguageCode, String> languageCodeStringMap) {
             this.localizedName = languageCodeStringMap;
             return this;
         }

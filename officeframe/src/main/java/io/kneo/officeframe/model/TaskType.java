@@ -8,8 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -22,7 +21,7 @@ public class TaskType extends SimpleReferenceEntity {
     public static class Builder {
         private UUID id;
         protected String identifier;
-        private Map<LanguageCode, String> locName = new HashMap<>();
+        private EnumMap<LanguageCode, String> locName = new EnumMap<>(LanguageCode.class);
         private long author;
         private ZonedDateTime regDate;
         private ZonedDateTime lastModifiedDate;
@@ -38,7 +37,7 @@ public class TaskType extends SimpleReferenceEntity {
             return this;
         }
 
-        public Builder setLocName(Map<LanguageCode, String> locName) {
+        public Builder setLocName(EnumMap<LanguageCode, String> locName) {
             this.locName = locName;
             return this;
         }

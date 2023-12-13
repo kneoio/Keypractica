@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -28,8 +28,8 @@ public class LanguageControllerTest {
     public void testGetLanguages() {
         // Arrange
         List<LanguageDTO> languages = Arrays.asList(
-                new LanguageDTO(LanguageCode.BUL, new HashMap<>()),
-                new LanguageDTO(LanguageCode.SPA, new HashMap<>()));
+                new LanguageDTO(LanguageCode.BUL, new EnumMap<>(LanguageCode.class)),
+                new LanguageDTO(LanguageCode.SPA, new EnumMap<>(LanguageCode.class)));
         Mockito.when(languageService.getAll(0,0)).thenReturn(Uni.createFrom().item(languages));
 
         // Act

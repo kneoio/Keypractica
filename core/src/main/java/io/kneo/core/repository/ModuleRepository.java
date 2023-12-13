@@ -1,6 +1,10 @@
 package io.kneo.core.repository;
 
 import io.kneo.core.model.Module;
+import io.kneo.core.model.UserModule;
+import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.cnst.Tables;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -20,16 +24,17 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static io.kneo.core.repository.cnst.Tables.MODULES_TABLE_NAME;
+import static io.kneo.core.repository.cnst.Tables.USER_MODULES_TABLE_NAME;
+
 @ApplicationScoped
 public class ModuleRepository extends AsyncRepository {
-
-    private static final String TABLE_NAME = "_modules";
-    private static final String ENTITY_NAME = "module";
     @Inject
     PgPool client;
+
     public Uni<List<Module>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM " + TABLE_NAME;
-        if (limit > 0 ) {
+        String sql = "SELECT * FROM " + MODULES_TABLE_NAME;
+        if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
@@ -50,11 +55,43 @@ public class ModuleRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(TABLE_NAME);
+        return getAllCount(MODULES_TABLE_NAME);
+    }
+
+    public Uni<List<UserModule>> getAvailable(IUser user) {
+        String sql;
+        Tuple params;
+        if (user.getId() == AnonymousUser.ID) {
+            sql = String.format("SELECT 0 as position, 'classic' as theme, false as invisible, identifier, loc_name, loc_descr " +
+                    "FROM %s m WHERE m.is_on='true' AND m.is_public = $1" +
+                    "LIMIT 50 OFFSET 0", MODULES_TABLE_NAME);
+            params = Tuple.of(true);
+        } else {
+            sql = String.format("SELECT position, theme, invisible, identifier, loc_name, loc_descr " +
+                    "FROM %s um, %s m " +
+                    "WHERE um.module_id = m.id AND m.is_on='true' AND um.is_on = 'true' AND um.user_id = $1" +
+                    "LIMIT 50 OFFSET 0", USER_MODULES_TABLE_NAME, MODULES_TABLE_NAME);
+            params = Tuple.of(user.getId());
+        }
+
+        return client.preparedQuery(sql)
+                .execute(params)
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(row -> {
+                    UserModule doc = new UserModule();
+                    doc.setPosition(row.getInteger("position"));
+                    doc.setTheme(row.getString("theme"));
+                    doc.setInvisible(row.getBoolean("invisible"));
+                    doc.setIdentifier(row.getString("identifier"));
+                    doc.setLocalizedName(getLocalizedData(row.getJsonObject("loc_name")));
+                    doc.setLocalizedDescription(getLocalizedData(row.getJsonObject("loc_descr")));
+                    return doc;
+                })
+                .collect().asList();
     }
 
     public Uni<List<Optional<Module>>> getModules(String[] defaultModules) {
-        String sql = "SELECT * FROM " + TABLE_NAME;
+        String sql = "SELECT * FROM " + MODULES_TABLE_NAME;
         if (defaultModules != null && defaultModules.length > 0) {
             String inClause = Arrays.stream(defaultModules)
                     .map(identifier -> "'" + identifier + "'")
@@ -81,10 +118,10 @@ public class ModuleRepository extends AsyncRepository {
     }
 
     public Uni<Optional<Module>> findById(UUID uuid) {
-        return client.preparedQuery(String.format("SELECT * FROM %s WHERE id = $1", TABLE_NAME))
+        return client.preparedQuery(String.format("SELECT * FROM %s WHERE id = $1", MODULES_TABLE_NAME))
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ?  Optional.of(from(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
     private Module from(Row row) {
@@ -106,7 +143,7 @@ public class ModuleRepository extends AsyncRepository {
                 .onItem().transform(result -> result.iterator().next().getUUID("id"))
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", Tables.MODULES_ENTITY_NAME), throwable));
                 }));
     }
 
@@ -117,10 +154,8 @@ public class ModuleRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, TABLE_NAME);
+        return delete(uuid, MODULES_TABLE_NAME);
     }
-
-
 
 
 }

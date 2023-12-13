@@ -1,10 +1,14 @@
 
 package io.kneo.core.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.WorkspacePage;
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.document.ModuleDTO;
+import io.kneo.core.dto.document.UserModuleDTO;
 import io.kneo.core.model.Module;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.WorkspaceService;
@@ -16,10 +20,12 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Path("/")
@@ -39,23 +45,24 @@ public class WorkspaceController extends AbstractSecuredController<Module, Modul
 
     @GET
     @Path("/workspace")
+    @JsonView(Views.ListView.class)
     public Uni<Response> get(@Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            Uni<List<ModuleDTO>> moduleUnis = workspaceService.getAvailableModules(user);
-            Uni<List<LanguageDTO>> languageUnis = languageService.getAll(0, 0);
-
-            return Uni.combine().all().unis(moduleUnis, languageUnis)
-                    .combinedWith((modules, languages) -> {
-                        WorkspacePage page = new WorkspacePage(user, languages, modules);
-                        return Response.ok(page).build();
-                    })
-                    .onFailure().recoverWithItem(
-                            throwable -> Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        String acceptLanguage = requestContext.getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
+        if (acceptLanguage != null) {
+            Locale preferredLocale = Locale.forLanguageTag(acceptLanguage.split(",")[0].trim());
         }
+        Optional<IUser> userOptional = getUserId(requestContext);
+        IUser user = userOptional.orElseGet(AnonymousUser::build);
+        Uni<List<UserModuleDTO>> moduleUnis = workspaceService.getAvailableModules(user);
+        Uni<List<LanguageDTO>> languageUnis = languageService.getAll(0, 0);
+
+        return Uni.combine().all().unis(moduleUnis, languageUnis)
+                .combinedWith((modules, languages) -> {
+                    WorkspacePage page = new WorkspacePage(user, languages, modules);
+                    return Response.ok(page).build();
+                })
+                .onFailure().recoverWithItem(
+                        this::postError);
     }
 
 

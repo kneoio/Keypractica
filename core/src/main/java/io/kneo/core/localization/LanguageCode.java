@@ -1,9 +1,7 @@
 package io.kneo.core.localization;
 
-/**
- * https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes
- * https://tech.yandex.com/translate/doc/dg/concepts/api-overview-docpage/#languages
- */
+import lombok.Getter;
+
 public enum LanguageCode {
     UNKNOWN(0, "unknown", "???"), ENG(45, "english", "en"), RUS(570, "russian", "ru"), KAZ(255, "kazakh", "kk"), BUL(
             115, "bulgarian", "bg"), POR(545, "portuguese", "pt"), SPA(230, "spanish", "es"), CHI(315, "chinese",
@@ -14,9 +12,11 @@ public enum LanguageCode {
             "japanese", "ja"), HIN(327, "hindi", "hi"), ARA(328, "arabic", "ar"), LAV(329, "latvian", "lv");
     // @Deprecated CHN(3150, "chinese"), @Deprecated CHO(3151, "chinese");
 
-    private int code;
-    private String lang;
-    private String altCode;
+    @Getter
+    private final int code;
+    @Getter
+    private final String lang;
+    private final String altCode;
 
     LanguageCode(int code, String lang, String altCode) {
         this.code = code;
@@ -31,14 +31,6 @@ public enum LanguageCode {
             }
         }
         return UNKNOWN;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getLang() {
-        return lang;
     }
 
     public String getAlternateCode() {

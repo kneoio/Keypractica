@@ -90,13 +90,13 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         }
     }
 
-
     @POST
     @Path("/")
-    public Response create(ProjectDTO dto) {
-        Uni<ProjectDTO> createdProject = service.add(dto);
-        return Response.ok(service.add(dto)).build();
+    public Uni<Response> create(ProjectDTO dto) {
+        return service.add(dto)
+                .onItem().transform(createdProject -> Response.ok(createdProject).build());
     }
+
 
     @PUT
     @Path("/")

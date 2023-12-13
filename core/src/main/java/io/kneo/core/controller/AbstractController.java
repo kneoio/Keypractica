@@ -39,6 +39,7 @@ public abstract class AbstractController<T, V> {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
+            String languageHeader = requestContext.getHeaderString("Accept-Language");
             Uni<Integer> countUni = service.getAllCount();
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
             Uni<Integer> pageNumUni = Uni.createFrom().item(page);

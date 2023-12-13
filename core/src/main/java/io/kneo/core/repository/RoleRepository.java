@@ -20,9 +20,8 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,14 +67,14 @@ public class RoleRepository extends AsyncRepository {
     }
 
     private Role from(Row row) {
-        Map<LanguageCode, String> map;
+        EnumMap<LanguageCode, String> map;
         try {
             Object o =  row.getJsonObject("loc_name");
             if (o != null) {
                 map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
                 });
             } else {
-                map = new HashMap<>();
+                map = new EnumMap<>(LanguageCode.class);
             }
         } catch (JsonProcessingException e) {
             LOGGER.error(e.getMessage());

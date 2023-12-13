@@ -1,6 +1,9 @@
 
 package io.kneo.core.controller;
 
+
+import com.fasterxml.jackson.annotation.JsonView;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.model.Module;
 import io.kneo.core.service.ModuleService;
@@ -36,6 +39,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
 
     @GET
     @Path("/")
+    @JsonView(Views.ListView.class)
     public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page,  @Context ContainerRequestContext requestContext)  {
         return getAll(service, requestContext, page);
     }

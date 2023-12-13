@@ -4,8 +4,7 @@ import io.kneo.core.localization.LanguageCode;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 //@Indexed
@@ -13,7 +12,7 @@ import java.util.UUID;
 @Setter
 public class SimpleReferenceEntity extends DataEntity<UUID> {
     protected String identifier;
-    protected Map<LanguageCode, String> localizedName = new HashMap<>();
+    protected EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
 
     public String getLocName(LanguageCode lang) {
         try {
