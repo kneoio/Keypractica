@@ -16,10 +16,14 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class WorkspaceService {
+    private final LanguageRepository languageRepository;
+    private final ModuleRepository repository;
+
     @Inject
-    private LanguageRepository languageRepository;
-    @Inject
-    private ModuleRepository repository;
+    public WorkspaceService(LanguageRepository languageRepository, ModuleRepository repository) {
+        this.languageRepository = languageRepository;
+        this.repository = repository;
+    }
 
     public Uni<List<UserModuleDTO>> getAvailableModules(IUser user) {
         Uni<List<UserModule>> listUni = repository.getAvailable(user);
@@ -31,6 +35,7 @@ public class WorkspaceService {
                                 .localizedDescription(doc.getLocalizedDescription())
                                 .position(doc.getPosition())
                                 .theme(doc.getTheme())
+                                .localizedDescription(doc.getLocalizedDescription())
                                 .build())
                 .collect(Collectors.toList()));
     }

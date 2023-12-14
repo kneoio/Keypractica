@@ -135,9 +135,6 @@ public class Label extends DataEntity<UUID> {
 
         public Label build() {
             Label entity = new Label();
-            if (id != null) {
-                //entity.setId(UUID.fromString(id));
-            }
             entity.setName(name);
             entity.setRank(rank);
             entity.setActive(isActive);
