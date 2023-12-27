@@ -48,7 +48,7 @@ public class EmployeeRepository {
     }
 
     public Optional<Organization> findByValue(String base) {
-        return null;
+        return Optional.empty();
     }
 
     private Employee from(Row row) {

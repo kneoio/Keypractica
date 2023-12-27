@@ -63,13 +63,13 @@ public class ModuleRepository extends AsyncRepository {
         Tuple params;
         if (user.getId() == AnonymousUser.ID) {
             sql = String.format("SELECT 0 as position, 'classic' as theme, false as invisible, identifier, loc_name, loc_descr " +
-                    "FROM %s m WHERE m.is_on='true'  AND invisible = 'false' AND m.is_public = $1 " +
+                    "FROM %s m WHERE m.is_on='true' AND m.is_public = $1 " +
                     "LIMIT 50 OFFSET 0", MODULES_TABLE_NAME);
             params = Tuple.of(true);
         } else {
             sql = String.format("SELECT position, theme, invisible, identifier, loc_name, loc_descr " +
                     "FROM %s um, %s m " +
-                    "WHERE um.module_id = m.id AND m.is_on='true' AND um.is_on = 'true' AND invisible = 'false' AND um.user_id = $1 " +
+                    "WHERE um.module_id = m.id AND m.is_on='true' AND um.is_on = 'true' AND um.invisible = 'false' AND um.user_id = $1 " +
                     "LIMIT 50 OFFSET 0", USER_MODULES_TABLE_NAME, MODULES_TABLE_NAME);
             params = Tuple.of(user.getId());
         }
