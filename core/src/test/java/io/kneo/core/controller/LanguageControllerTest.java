@@ -28,8 +28,8 @@ public class LanguageControllerTest {
     public void testGetLanguages() {
         // Arrange
         List<LanguageDTO> languages = Arrays.asList(
-                new LanguageDTO(LanguageCode.BUL, new EnumMap<>(LanguageCode.class)),
-                new LanguageDTO(LanguageCode.SPA, new EnumMap<>(LanguageCode.class)));
+                new LanguageDTO(LanguageCode.BUL, new EnumMap<>(LanguageCode.class), 999),
+                new LanguageDTO(LanguageCode.SPA, new EnumMap<>(LanguageCode.class), 999));
         Mockito.when(languageService.getAll(0,0)).thenReturn(Uni.createFrom().item(languages));
 
         // Act
