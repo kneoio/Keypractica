@@ -4,7 +4,9 @@ import io.kneo.core.model.Language;
 import io.kneo.core.model.constants.ProjectStatusType;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.kneo.projects.model.Project;
+import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.sqlclient.Row;
@@ -18,13 +20,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
+
 @ApplicationScoped
 public class ProjectRepository extends AsyncRepository {
-    private static final String TABLE_NAME = "prj__projects";
-    private static final String ACCESS_TABLE_NAME = "prj__project_readers";
-    private static final String ENTITY_NAME = "project";
-    private static final String BASE_REQUEST = """
-            SELECT pt.*, ptr.*  FROM prj__projects pt JOIN prj__project_readers ptr ON pt.id = ptr.entity_id\s""";
+    private static final EntityData PROJECT_ENTITY_DATA = ProjectNameResolver.create().getEntityNames(PROJECT);
+
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
         if (limit > 0) {
@@ -38,7 +39,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, TABLE_NAME, ACCESS_TABLE_NAME);
+        return getAllCount(userID, PROJECT_ENTITY_DATA.mainName(), PROJECT_ENTITY_DATA.rlsName());
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
@@ -89,7 +90,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, TABLE_NAME);
+        return delete(uuid, PROJECT_ENTITY_DATA.mainName());
     }
 
 }

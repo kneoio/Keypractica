@@ -19,6 +19,7 @@ import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.TaskTypeDTO;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.repository.TaskRepository;
+import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,6 +33,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
+import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 
 @ApplicationScoped
 public class TaskService extends AbstractService<Task, TaskDTO> {
@@ -88,7 +92,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 taskTypeService.findById(item.get().getTaskType())
         );
 
-        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, taskUni, id);
+        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository,ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
    /*     List<Uni<Optional<Label>>> labelUnis = taskUni.onItem().transformToUni(item ->
                 item.get().getLabels().stream().map(v -> labelService.get(v))

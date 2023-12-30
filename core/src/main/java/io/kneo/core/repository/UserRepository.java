@@ -39,8 +39,7 @@ public class UserRepository extends AsyncRepository {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("UserRepository");
 
-    private static final String TABLE_NAME = "_users";
-    private static final String ENTITY_NAME = "user";
+
     @Inject
     PgPool client;
 
