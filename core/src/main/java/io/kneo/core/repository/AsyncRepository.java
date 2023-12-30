@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.embedded.RLS;
+import io.kneo.core.repository.table.EntityData;
+import io.kneo.core.repository.table.ITableResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -26,7 +28,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class AsyncRepository {
-    protected static final String ACCESS_ENTITY_NAME = "access";
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
@@ -49,8 +50,9 @@ public class AsyncRepository {
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
 
-    public Uni<List<RLS>> getAllReaders(UUID uuid) {
-        return client.preparedQuery("SELECT reader, reading_time, can_edit, can_delete FROM prj__tasks p, prj__task_readers ppr WHERE p.id = ppr.entity_id AND p.id = $1")
+    public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {
+        String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.mainName(), entityData.rlsName());
+        return client.preparedQuery(sql)
                 .execute(Tuple.of(uuid))
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(row -> new RLS(

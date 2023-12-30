@@ -6,6 +6,7 @@ import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.UserRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 
@@ -22,9 +23,9 @@ public abstract class AbstractService<T, V> {
 
     public abstract Uni<V> get(String id);
 
-    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, Uni<Optional<T>> secureDataEntityUni, UUID id) {
+    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->
-                asyncRepository.getAllReaders(id)
+                asyncRepository.getAllReaders(id, entityData)
         );
 
         return rlsEntires.onItem().transform(rlsList -> rlsList.stream()

@@ -5,7 +5,9 @@ import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.rls.RLSRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.kneo.projects.model.Task;
+import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.sqlclient.Row;
@@ -22,11 +24,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
+
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
-    private static final String TABLE_NAME = "prj__tasks";
-    private static final String ACCESS_TABLE_NAME = "prj__task_readers";
-    private static final String ENTITY_NAME = "task";
+    private static final EntityData ENTITY_DATA = ProjectNameResolver.create().getEntityNames(TASK);
     @Inject
     private RLSRepository rlsRepository;
     private static final String BASE_REQUEST = """
@@ -45,7 +47,7 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, TABLE_NAME, ACCESS_TABLE_NAME);
+        return getAllCount(userID, ENTITY_DATA.mainName(), ENTITY_DATA.rlsName());
     }
 
     public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
@@ -56,7 +58,7 @@ public class TaskRepository extends AsyncRepository {
                     if (iterator.hasNext()) {
                         return Optional.of(from(iterator.next()));
                     } else {
-                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_NAME));
+                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_DATA.mainName()));
                         return Optional.empty();
                     }
                 });
@@ -104,7 +106,7 @@ public class TaskRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", TABLE_NAME);
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", ENTITY_DATA.mainName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addLong(doc.getAssignee())
@@ -125,7 +127,7 @@ public class TaskRepository extends AsyncRepository {
                 .addString(doc.getRegNumber())
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addString(doc.getCancellationComment());
-        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ACCESS_TABLE_NAME);
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ENTITY_DATA.rlsName());
         String labelsSql = "INSERT INTO prj__task_labels(task_id, label_id) VALUES($1, $2)";
         Tuple finalAllParams = allParams;
         return client.withTransaction(tx -> {
@@ -134,7 +136,7 @@ public class TaskRepository extends AsyncRepository {
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(throwable -> {
                         LOGGER.error(throwable.getMessage(), throwable);
-                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s ", ENTITY_NAME), throwable));
+                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s ", TASK), throwable));
                     })
                     .onItem().transformToUni(id -> {
                         return tx.preparedQuery(readersSql)
@@ -142,7 +144,7 @@ public class TaskRepository extends AsyncRepository {
                                 .onItem().ignore().andContinueWithNull()
                                 .onFailure().recoverWithUni(throwable -> {
                                     LOGGER.error(throwable.getMessage());
-                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s ", ACCESS_ENTITY_NAME), throwable));
+                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s ", ENTITY_DATA.rlsName()), throwable));
                                 })
                                 .onItem().transform(unused -> id);
                     })
@@ -165,12 +167,12 @@ public class TaskRepository extends AsyncRepository {
     }
     public Uni<Integer> update(Task doc, Long user) throws DocumentModificationAccessException {
         UUID docId = doc.getId();
-        if (1 == rlsRepository.findById(TABLE_NAME, user, docId)[0]) {
+        if (1 == rlsRepository.findById(ENTITY_DATA.mainName(), user, docId)[0]) {
             LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
             String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
                     "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
                     "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
-                    "WHERE id=$16;", TABLE_NAME);
+                    "WHERE id=$16;", ENTITY_DATA.mainName());
             Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
             if (doc.getTargetDate() != null) {
                 params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
@@ -204,6 +206,6 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid, Long user) {
-        return delete(uuid, TABLE_NAME);
+        return delete(uuid, ENTITY_DATA.mainName());
     }
 }

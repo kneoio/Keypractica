@@ -11,6 +11,7 @@ import io.kneo.core.service.UserService;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.repository.ProjectRepository;
+import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 
 @ApplicationScoped
 public class ProjectService extends AbstractService<Project, ProjectDTO> {
@@ -62,21 +65,22 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID) {
-        return get(id, userID, false);
+        return get(id, userID, true);
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
+
         Uni<Optional<Project>> projectUni = repository.findById(id, userID);
 
         Uni<List<RLSDTO>> rlsDtoListUni;
 
         if (includeRLS) {
-            rlsDtoListUni = getRLSDTO(repository, projectUni, id);
+            rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(PROJECT), projectUni, id);
         } else {
             rlsDtoListUni = Uni.createFrom().optional(Optional.empty());
         }
 
-        return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rlsList) -> {
+        return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rls) -> {
                     Project project = projectOptional.get();
                     return ProjectDTO.builder()
                             .id(project.getId())
@@ -86,7 +90,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                             .manager(userService.getUserName(project.getManager()))
                             .coder(userService.getUserName(project.getCoder()))
                             .tester(userService.getUserName(project.getTester()))
-                            .build();
+                            .rls(rls).build();
                 }
         );
     }
