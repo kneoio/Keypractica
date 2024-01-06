@@ -9,4 +9,5 @@
 
 /**/application-dev.properties
 /qodana.yaml
-/runq.ps1
+/*.ps1
+

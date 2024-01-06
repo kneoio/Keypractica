@@ -7,6 +7,8 @@ import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
+import io.kneo.core.service.exception.DataValidationException;
+import io.kneo.core.service.exception.ServiceException;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
@@ -175,7 +177,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .filter(Optional::isPresent)
                             .map(o -> o.get().getId())
                             .collect(Collectors.toList()))
-                    .setTaskType(taskType.orElseThrow().getId())
+                    .setTaskType(taskType.orElseThrow(() -> new DataValidationException("Task type is not correct")).getId())
                     .setProject(project.getId())
                     .setStartDate(dto.getStartDate().atStartOfDay(ZoneId.systemDefault()))
                     .build();

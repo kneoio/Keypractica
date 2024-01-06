@@ -51,6 +51,10 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
+        if (uuid == null) {
+            LOGGER.warn("null Id provided to find by Id");
+            return Uni.createFrom().item(Optional.empty());
+        }
         return client.preparedQuery(BASE_REQUEST + "WHERE ptr.reader = $1 AND pt.id = $2")
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
@@ -149,6 +153,9 @@ public class TaskRepository extends AsyncRepository {
                                 .onItem().transform(unused -> id);
                     })
                     .onItem().transformToUni(id -> {
+                        if (doc.getLabels().isEmpty()) {
+                            return Uni.createFrom().item(id);
+                        }
                         List<Uni<UUID>> unis = new ArrayList<>();
                         for (UUID label : doc.getLabels()) {
                             Uni<UUID> uni = tx.preparedQuery(labelsSql)
@@ -165,6 +172,7 @@ public class TaskRepository extends AsyncRepository {
                     });
         });
     }
+
     public Uni<Integer> update(Task doc, Long user) throws DocumentModificationAccessException {
         UUID docId = doc.getId();
         if (1 == rlsRepository.findById(ENTITY_DATA.mainName(), user, docId)[0]) {

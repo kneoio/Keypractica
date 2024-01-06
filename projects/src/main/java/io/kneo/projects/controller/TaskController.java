@@ -10,6 +10,7 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
@@ -98,11 +99,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.add(dto, userOptional.get())
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage(), throwable);
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
+                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build());
         } else {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }

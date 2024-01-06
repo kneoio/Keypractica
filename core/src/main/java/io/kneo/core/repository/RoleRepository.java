@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.Role;
+import io.kneo.core.repository.table.EntityData;
+import io.kneo.core.repository.table.TableNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -25,11 +27,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.core.repository.table.TableNameResolver.ROLE_ENTITY_NAME;
+
 
 @ApplicationScoped
 public class RoleRepository extends AsyncRepository {
-    private static final String TABLE_NAME = "_roles";
-    private static final String ENTITY_NAME = "role";
+    private static final EntityData ENTITY_DATA = TableNameResolver.create().getEntityNames(ROLE_ENTITY_NAME);
     @Inject
     PgPool client;
     @Inject
@@ -49,7 +52,7 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(TABLE_NAME);
+        return getAllCount(ENTITY_DATA.mainName());
     }
 
     public Uni<Optional<Role>> findById(UUID uuid) {
@@ -93,7 +96,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<UUID> insert(Role doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", TABLE_NAME);
+        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", ENTITY_DATA.mainName());
         Tuple params = Tuple.of(user, doc.getIdentifier(), nowTime, nowTime, user);
         Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addJsonObject(JsonObject.mapFrom(doc.getLocalizedDescription()));
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -101,14 +104,14 @@ public class RoleRepository extends AsyncRepository {
                 .onItem().transform(result -> result.iterator().next().getUUID("id"))
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ROLE_ENTITY_NAME), throwable));
                 }));
     }
 
 
     public Uni<Integer> update(Role doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", TABLE_NAME);
+        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", ENTITY_DATA.mainName());
         Tuple params = Tuple.of(doc.getIdentifier(), nowTime, user, JsonObject.mapFrom(doc.getLocalizedName()), JsonObject.mapFrom(doc.getLocalizedDescription()));
         Tuple finalParams = params.addUUID(doc.getId());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -121,7 +124,7 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, TABLE_NAME);
+        return delete(uuid, ENTITY_DATA.mainName());
     }
 
 
