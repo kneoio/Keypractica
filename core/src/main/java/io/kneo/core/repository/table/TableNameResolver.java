@@ -1,10 +1,10 @@
 package io.kneo.core.repository.table;
 
 public class TableNameResolver implements ITableResolver{
-    private static final String USER_ENTITY_NAME = "user";
-    private static final String ROLE_ENTITY_NAME = "role";
-    private static final String LANGUAGE_ENTITY_NAME = "lang";
-    private static final String MODULE_ENTITY_NAME = "module";
+    public static final String USER_ENTITY_NAME = "user";
+    public static final String ROLE_ENTITY_NAME = "role";
+    public static final String LANGUAGE_ENTITY_NAME = "lang";
+    public static final String MODULE_ENTITY_NAME = "module";
     private static final String USER_TABLE_NAME = "_users";
     private static final String ROLE_TABLE_NAME = "_roles";
     private static final String LANGUAGES_TABLE_NAME = "_langs";
@@ -20,5 +20,8 @@ public class TableNameResolver implements ITableResolver{
         };
     }
 
+    public static TableNameResolver create() {
+        return new TableNameResolver();
+    }
 
 }
