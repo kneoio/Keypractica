@@ -67,7 +67,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                                         .regNumber(task.getRegNumber())
                                         .body(task.getBody())
                                         .startDate(LocalDate.from(task.getStartDate()))
-                                        .targetDate(LocalDate.from(task.getTargetDate()))
+                                        .targetDate(Optional.ofNullable(task.getTargetDate()).map((LocalDate::from)).orElse(null))
                                         .status(task.getStatus())
                                         .priority(task.getPriority())
                                         .build())

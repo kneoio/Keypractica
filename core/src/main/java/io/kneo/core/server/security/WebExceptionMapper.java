@@ -1,12 +1,15 @@
 package io.kneo.core.server.security;
 
 import io.kneo.core.service.exception.DataValidationException;
+import io.kneo.core.util.NumberUtil;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Random;
 
 @Provider
 public class WebExceptionMapper implements ExceptionMapper<Exception> {
@@ -23,8 +26,9 @@ public class WebExceptionMapper implements ExceptionMapper<Exception> {
             json = "{\"error\":\"Validation failed: " + dve.getMessage() + "\"}";
             status = Response.Status.BAD_REQUEST;
         } else {
-            LOGGER.error("Unexpected error occurred: {}", exception.getMessage());
-            json = "{\"error\":\"An unexpected error occurred, please try again later.\"}";
+            int errorNumber = NumberUtil.getRandomNumber(10000, 99000);
+            LOGGER.error("Unexpected error occurred: {}, code: {}", exception.getMessage(), errorNumber, exception);
+            json = "{\"error\":\"An unexpected error occurred, please try again later.\",\"code\":" + errorNumber + "}";
             status = Response.Status.INTERNAL_SERVER_ERROR;
         }
 
