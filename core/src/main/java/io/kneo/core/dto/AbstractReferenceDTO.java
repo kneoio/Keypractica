@@ -10,5 +10,5 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public abstract class AbstractReferenceDTO extends AbstractDTO {
-    String identifier;
+    protected String identifier;
 }

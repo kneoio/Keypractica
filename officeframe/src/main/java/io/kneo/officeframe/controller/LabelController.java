@@ -1,14 +1,11 @@
 package io.kneo.officeframe.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.actions.ActionsFactory;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
-import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewPage;
-import io.kneo.core.model.user.IUser;
-import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.service.LabelService;
@@ -18,25 +15,13 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Optional;
-
-import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @Path("/labels")
 @Produces(MediaType.APPLICATION_JSON)
@@ -48,26 +33,9 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
 
     @GET
     @Path("/")
+    @JsonView(Views.ListView.class)
     public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            Uni<Integer> countUni = service.getAllCount();
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
-            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-            Uni<List<LabelDTO>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
-            return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
-                ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
-                if (pageNum == 0) pageNum = 1;
-                View<LabelDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
-                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                return Response.ok(viewPage).build();
-            });
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
+        return getAll(service, requestContext, page);
     }
 
     @GET

@@ -47,7 +47,7 @@ public abstract class AbstractController<T, V> {
             Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
             return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
+                //viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
                 if (pageNum == 0) pageNum = 1;
                 View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);

@@ -1,6 +1,8 @@
 package io.kneo.officeframe.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
@@ -39,6 +41,7 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
 
     @GET
     @Path("/")
+    @JsonView(Views.ListView.class)
     public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         return getAll(service, requestContext, page);
     }

@@ -2,7 +2,9 @@ package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
+import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.LabelDTO;
+import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
 import io.smallrye.mutiny.Uni;
@@ -17,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class LabelService extends AbstractService<Label, LabelDTO> {
+public class LabelService extends AbstractService<Label, LabelDTO> implements IRESTService<LabelDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("LabelService");
     @Inject
     private LabelRepository repository;
@@ -40,6 +42,11 @@ public class LabelService extends AbstractService<Label, LabelDTO> {
                                         .hidden(e.isHidden())
                                         .build())
                         .collect(Collectors.toList()));
+    }
+
+    @Override
+    public Uni<Optional<LabelDTO>> getByIdentifier(String identifier) {
+        return null;
     }
 
     public Uni<Integer> getAllCount() {
