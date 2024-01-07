@@ -22,7 +22,7 @@ public class JWTCallerPrincipalFactory extends io.smallrye.jwt.auth.principal.JW
         try {
             String json = new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]), StandardCharsets.UTF_8);
             return new DefaultJWTCallerPrincipal(JwtClaims.parse(json));
-        } catch (InvalidJwtException ex) {
+        } catch (InvalidJwtException | ArrayIndexOutOfBoundsException ex) {
             throw new ParseException(ex.getMessage());
         }
     }

@@ -1,7 +1,9 @@
 package io.kneo.officeframe.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.dto.AbstractReferenceDTO;
+import io.kneo.core.dto.Views;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,10 +15,14 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 public class LabelDTO extends AbstractReferenceDTO {
+    @JsonView(Views.DetailView.class)
     private String color;
+    @JsonView(Views.DetailView.class)
     private LabelDTO parent;
+    @JsonView(Views.DetailView.class)
     private boolean hidden;
     private String identifier;
+    @JsonView(Views.DetailView.class)
     private String category;
 
     public LabelDTO(String identifier) {
