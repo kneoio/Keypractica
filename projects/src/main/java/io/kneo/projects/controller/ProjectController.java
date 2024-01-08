@@ -72,6 +72,16 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     }
 
     @GET
+    @Path("/search/{keyword}")
+    public Uni<Response> search(@PathParam("keyword") String keyword) {
+        ViewPage viewPage = new ViewPage();
+        return service.search(keyword).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
+    }
+
+    @GET
     @Path("/{id}")
     public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);

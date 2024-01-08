@@ -23,7 +23,6 @@ public class Employee extends SimpleReferenceEntity {
     private String phone;
     private Organization organization;
     private Department department;
-    private Employee boss;
     private Position position;
     private List<Role> roles;
     private int rank = 999;
@@ -36,7 +35,6 @@ public class Employee extends SimpleReferenceEntity {
         private String phone;
         private Organization organization;
         private Department department;
-        private Employee boss;
         private Position position;
         private List<Role> roles;
         private int rank = 999;
@@ -98,8 +96,7 @@ public class Employee extends SimpleReferenceEntity {
             newNode.setDepartment(department);
             newNode.setOrganization(organization);
             newNode.setPosition(position);
-            newNode.setBoss(boss);
-            newNode.setBirthDate(birthDate);
+               newNode.setBirthDate(birthDate);
             newNode.setRoles(roles);
             newNode.setPhone(phone);
             newNode.setRank(rank);

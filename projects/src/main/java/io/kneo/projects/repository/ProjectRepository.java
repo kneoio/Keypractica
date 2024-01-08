@@ -42,6 +42,20 @@ public class ProjectRepository extends AsyncRepository {
         return getAllCount(userID, PROJECT_ENTITY_DATA.mainName(), PROJECT_ENTITY_DATA.rlsName());
     }
 
+    public Uni<List<Project>> search(String keyword) {
+        String query = String.format(
+                "SELECT * FROM %s WHERE textsearch @@ to_tsquery('english', '%s')",
+                PROJECT_ENTITY_DATA.mainName(),
+                keyword
+        );
+        return client.query(query)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
+
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
         return client.preparedQuery("SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.reader = $2")
                 .execute(Tuple.of(uuid, userID))
@@ -92,5 +106,6 @@ public class ProjectRepository extends AsyncRepository {
     public Uni<Void> delete(UUID uuid) {
         return delete(uuid, PROJECT_ENTITY_DATA.mainName());
     }
+
 
 }

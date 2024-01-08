@@ -5,6 +5,7 @@ import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
+import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
@@ -37,6 +38,16 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     @PermitAll
     public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext)  {
         return getAll(service, requestContext, page);
+    }
+
+    @GET
+    @Path("/search/{keyword}")
+    public Uni<Response> search(@PathParam("keyword") String keyword) {
+        ViewPage viewPage = new ViewPage();
+        return service.search(keyword).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
     }
 
     @GET
