@@ -2,6 +2,8 @@ package io.kneo.officeframe.service;
 
 
 import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.service.AbstractService;
+import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Employee;
@@ -15,22 +17,31 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @ApplicationScoped
-public class EmployeeService {
+public class EmployeeService  extends AbstractService<Employee, EmployeeDTO> implements IRESTService<EmployeeDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("EmployeeService");
     @Inject
     private EmployeeRepository repository;
+
+    @Override
+    public Uni<Integer> getAllCount() {
+        return repository.getAllCount();
+    }
 
     public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
         return repository.getAll(limit, offset);
     }
 
-    public Uni<Optional<Employee>> get(String id) {
-        return repository.findById(UUID.fromString(id));
+    @Override
+    public Uni<Optional<EmployeeDTO>> getByIdentifier(String identifier) {
+        return null;
     }
 
+    @Override
+    public Uni<EmployeeDTO> get(String id) {
+        return null;
+    }
     public String  add(OrganizationDTO dto) {
         Organization node = new Organization.Builder()
                // .setName(dto.name())
@@ -44,4 +55,6 @@ public class EmployeeService {
                 .build();
         return repository.update(user);
     }
+
+
 }

@@ -9,13 +9,14 @@ public class TableNameResolver implements ITableResolver{
     private static final String ROLE_TABLE_NAME = "_roles";
     private static final String LANGUAGES_TABLE_NAME = "_langs";
     private static final String MODULES_TABLE_NAME = "_modules";
+    private static final String DEFAULT_SCHEMA = "public";
 
     public EntityData getEntityNames(String type) {
         return switch (type) {
-            case USER_ENTITY_NAME ->new EntityData(USER_TABLE_NAME, null);
-            case ROLE_ENTITY_NAME ->new EntityData(ROLE_TABLE_NAME, null);
-            case LANGUAGE_ENTITY_NAME -> new EntityData(LANGUAGES_TABLE_NAME, null);
-            case MODULE_ENTITY_NAME -> new EntityData(MODULES_TABLE_NAME, null);
+            case USER_ENTITY_NAME ->new EntityData(DEFAULT_SCHEMA + "." + USER_TABLE_NAME, null);
+            case ROLE_ENTITY_NAME ->new EntityData(DEFAULT_SCHEMA + "." + ROLE_TABLE_NAME, null);
+            case LANGUAGE_ENTITY_NAME -> new EntityData(DEFAULT_SCHEMA + "." + LANGUAGES_TABLE_NAME, null);
+            case MODULE_ENTITY_NAME -> new EntityData(DEFAULT_SCHEMA + "." + MODULES_TABLE_NAME, null);
             default -> throw new IllegalStateException("Unexpected value: " + type);
         };
     }

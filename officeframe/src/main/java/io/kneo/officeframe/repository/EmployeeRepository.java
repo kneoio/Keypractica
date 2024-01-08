@@ -1,8 +1,11 @@
 package io.kneo.officeframe.repository;
 
+import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.model.Organization;
+import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -16,9 +19,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@ApplicationScoped
-public class EmployeeRepository {
+import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLOYEE;
 
+@ApplicationScoped
+public class EmployeeRepository extends AsyncRepository {
+
+    private static final EntityData EMPLOYEE_ENTITY_DATA = OfficeFrameNameResolver.create().getEntityNames(EMPLOYEE);
     @Inject
     PgPool client;
 
@@ -31,6 +37,10 @@ public class EmployeeRepository {
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(row -> new EmployeeDTO(row.getUUID("id"), row.getString("name"))).collect().asList();
+    }
+
+    public Uni<Integer> getAllCount() {
+        return getAllCount(EMPLOYEE_ENTITY_DATA.mainName());
     }
 
     public Uni<Optional<Employee>> findById(UUID uuid) {
@@ -74,4 +84,6 @@ public class EmployeeRepository {
 
         return 1;
     }
+
+
 }

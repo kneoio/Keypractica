@@ -1,12 +1,14 @@
 package io.kneo.officeframe.controller;
 
 
+import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
-import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
+import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.service.EmployeeService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
@@ -14,15 +16,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -34,7 +28,7 @@ import java.net.URI;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class EmployeeController {
+public class EmployeeController extends AbstractSecuredController<Employee, EmployeeDTO> {
     @Inject
     EmployeeService service;
 
@@ -42,11 +36,7 @@ public class EmployeeController {
     @Path("/")
     @PermitAll
     public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext)  {
-        ViewPage viewPage = new ViewPage();
-        return service.getAll(100, 0).onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-            return Response.ok(viewPage).build();
-        });
+        return getAll(service, requestContext, page);
     }
 
     @GET

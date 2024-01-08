@@ -36,16 +36,11 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class UserRepository extends AsyncRepository {
-
     private static final Logger LOGGER = LoggerFactory.getLogger("UserRepository");
-
-
     @Inject
     PgPool client;
-
     private static Map<Long, IUser> userCache = new HashMap<>();
     private static final Map<String, IUser> userAltCache = new HashMap<>();
-
 
     void onStart(@Observes StartupEvent ev) {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
@@ -59,6 +54,18 @@ public class UserRepository extends AsyncRepository {
 
     public Uni<List<IUser>> getAll() {
         return client.query(String.format("SELECT * FROM _users LIMIT %d OFFSET 0", 100))
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
+    public Uni<List<IUser>> search(String keyword) {
+        String query = String.format(
+                "SELECT * FROM _users WHERE textsearch @@ to_tsquery('english', '%s')",
+                keyword
+        );
+        return client.query(query)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(this::from)
