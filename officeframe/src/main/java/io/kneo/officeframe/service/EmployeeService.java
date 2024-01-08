@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -24,15 +25,18 @@ public class EmployeeService  extends AbstractService<Employee, EmployeeDTO> imp
     @Inject
     private EmployeeRepository repository;
 
+    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
+        return repository.getAll(limit, offset);
+    }
+
     @Override
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
     }
 
-    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
-        return repository.getAll(limit, offset);
+    public Uni<List<Map<String, Object>>> search(String keyword) {
+        return repository.search(keyword);
     }
-
     @Override
     public Uni<Optional<EmployeeDTO>> getByIdentifier(String identifier) {
         return null;
@@ -55,6 +59,7 @@ public class EmployeeService  extends AbstractService<Employee, EmployeeDTO> imp
                 .build();
         return repository.update(user);
     }
+
 
 
 }

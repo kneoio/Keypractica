@@ -15,9 +15,7 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLOYEE;
 
@@ -30,7 +28,7 @@ public class EmployeeRepository extends AsyncRepository {
 
     public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM staff__employees ORDER BY rank";
-        if (limit > 0 ) {
+        if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
@@ -42,6 +40,22 @@ public class EmployeeRepository extends AsyncRepository {
     public Uni<Integer> getAllCount() {
         return getAllCount(EMPLOYEE_ENTITY_DATA.mainName());
     }
+
+
+    public Uni<List<Map<String, Object>>> search(String keyword) {
+        String query = String.format(
+                "(SELECT 0 as id, id as uuid, name, phone, NULL as email FROM %s WHERE textsearch @@ to_tsquery('english', '%s')) " +
+                        "UNION " +
+                        "(SELECT id, NULL, login as name, 'phone', email FROM %s WHERE textsearch @@ to_tsquery('english', '%s'))",
+                EMPLOYEE_ENTITY_DATA.mainName(), keyword, "_users", keyword
+        );
+        return client.query(query)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::rowToMap)
+                .collect().asList();
+    }
+
 
     public Uni<Optional<Employee>> findById(UUID uuid) {
         return client.preparedQuery("SELECT * FROM staff__employees se WHERE se.id = $1")
@@ -69,6 +83,29 @@ public class EmployeeRepository extends AsyncRepository {
                 .build();
     }
 
+    private Employee fromAny(Row row) {
+        UUID id = row.getUUID("id");
+        if (id != null) {
+            return from(row);
+        } else {
+            return new Employee.Builder()
+                    .setId(row.getUUID("id"))
+                    .setName(row.getString("name"))
+                    .setPhone(row.getString("phone"))
+                    .build();
+        }
+    }
+
+    public Map<String, Object> rowToMap(Row row) {
+        Map<String, Object> map = new HashMap<>();
+        for (int i = 0; i < row.size(); i++) {
+            String columnName = row.getColumnName(i);
+            Object value = row.getValue(i);
+            map.put(columnName, value);
+        }
+        return map;
+    }
+
     public UUID insert(Organization node, Long user) {
 
         return node.getId();
@@ -84,6 +121,5 @@ public class EmployeeRepository extends AsyncRepository {
 
         return 1;
     }
-
 
 }

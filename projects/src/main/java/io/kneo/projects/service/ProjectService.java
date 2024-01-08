@@ -53,6 +53,11 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     public Uni<Integer> getAllCount(final long userID) {
         return repository.getAllCount(userID);
     }
+
+    public Uni<List<Project>> search(String keyword) {
+        return repository.search(keyword);
+    }
+
     public Uni<ProjectDTO> get(String uuid, final long userID) {
         return get(UUID.fromString(uuid), userID);
     }
