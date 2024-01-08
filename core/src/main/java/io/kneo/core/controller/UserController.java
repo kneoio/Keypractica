@@ -46,6 +46,16 @@ public class UserController extends AbstractController<User, UserDTO> {
     }
 
     @GET
+    @Path("/search/{keyword}")
+    public Uni<Response> search(@PathParam("keyword") String keyword) {
+        ViewPage viewPage = new ViewPage();
+        return service.search(keyword).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
+    }
+
+    @GET
     @Path("/stream")
     @Consumes(MediaType.SERVER_SENT_EVENTS)
     @Produces(MediaType.SERVER_SENT_EVENTS)

@@ -40,6 +40,10 @@ public class UserService {
         return repository.getAll();
     }
 
+    public Uni<List<IUser>> search(String keyword) {
+        return repository.search(keyword);
+    }
+
     public Multi<IUser> getAllStream() {
         return repository.getAllStream();
     }
