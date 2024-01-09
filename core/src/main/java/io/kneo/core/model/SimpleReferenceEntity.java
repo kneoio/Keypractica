@@ -7,7 +7,6 @@ import lombok.Setter;
 import java.util.EnumMap;
 import java.util.UUID;
 
-//@Indexed
 @Getter
 @Setter
 public class SimpleReferenceEntity extends DataEntity<UUID> {

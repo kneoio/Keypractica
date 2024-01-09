@@ -8,7 +8,6 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.service.exception.DataValidationException;
-import io.kneo.core.service.exception.ServiceException;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
@@ -36,7 +35,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 
 @ApplicationScoped
@@ -78,7 +76,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return repository.getAllCount(userID);
     }
 
-    public Uni<TaskDTO> get(String uuid) {
+    public Uni<TaskDTO> getDTO(String uuid) {
         return get(uuid, SuperUser.ID);
     }
 
@@ -150,7 +148,6 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                                 .transform(item -> item)
                 )
                 .collect(Collectors.toList());
-
 
         Uni<List<Optional<Label>>> combinedLabelUnis;
         if (labelUnis.isEmpty()) {

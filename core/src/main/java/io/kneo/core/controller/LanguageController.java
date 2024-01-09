@@ -55,7 +55,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.get(id)
+        return service.getDTO(id)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();

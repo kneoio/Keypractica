@@ -4,7 +4,6 @@ import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.LabelDTO;
-import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
 import io.smallrye.mutiny.Uni;
@@ -53,7 +52,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         return repository.getAllCount();
     }
 
-    public Uni<LabelDTO> get(String uuid) {
+    public Uni<LabelDTO> getDTO(String uuid) {
         Uni<Label> labelUni = get(UUID.fromString(uuid));
         return labelUni.onItem().transform(label -> {
             return LabelDTO.builder()
@@ -72,10 +71,6 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
 
     public Uni<Label> get(UUID uuid) {
         return repository.findById(uuid);
-    }
-
-    public Uni<Object> add(LabelDTO dto) {
-        return null;
     }
 
     public IUser update(LabelDTO dto) {

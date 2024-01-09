@@ -9,7 +9,7 @@ public class TableNameResolver implements ITableResolver{
     private static final String ROLE_TABLE_NAME = "_roles";
     private static final String LANGUAGES_TABLE_NAME = "_langs";
     private static final String MODULES_TABLE_NAME = "_modules";
-    private static final String DEFAULT_SCHEMA = "public";
+    protected static final String DEFAULT_SCHEMA = "public";
 
     public EntityData getEntityNames(String type) {
         return switch (type) {

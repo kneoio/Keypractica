@@ -56,7 +56,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return repository.getAllCount();
     }
 
-    public Uni<TaskTypeDTO> get(String uuid) {
+    public Uni<TaskTypeDTO> getDTO(String uuid) {
         return get(UUID.fromString(uuid));
     }
 
