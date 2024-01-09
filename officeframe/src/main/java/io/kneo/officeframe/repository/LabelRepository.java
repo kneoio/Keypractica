@@ -17,7 +17,6 @@ import java.util.UUID;
 
 @ApplicationScoped
 public class LabelRepository extends AsyncRepository {
-
     private static final String TABLE_NAME = "ref__labels";
     private static final String ENTITY_NAME = "label";
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s", TABLE_NAME);

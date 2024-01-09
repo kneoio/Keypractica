@@ -65,7 +65,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return get(id, user.getId(), false);
     }
 
-    public Uni<ProjectDTO> get(String uuid) {
+    public Uni<ProjectDTO> getDTO(String uuid) {
         return get(uuid, SuperUser.ID);
     }
 

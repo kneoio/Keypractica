@@ -1,46 +1,42 @@
 package io.kneo.officeframe.controller;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
-import io.kneo.officeframe.dto.LabelDTO;
-import io.kneo.officeframe.model.Label;
-import io.kneo.officeframe.service.LabelService;
+import io.kneo.officeframe.dto.PositionDTO;
+import io.kneo.officeframe.model.Position;
+import io.kneo.officeframe.service.PositionService;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.net.URI;
-
-@Path("/labels")
+@Path("/positions")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class LabelController extends AbstractSecuredController<Label, LabelDTO> {
+public class PositionController extends AbstractSecuredController<Position, PositionDTO> {
     @Inject
-    LabelService service;
+    PositionService service;
 
     @GET
     @Path("/")
-    @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
+    @PermitAll
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext)  {
         return getAll(service, requestContext, page);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id) {
+    public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.getDTO(id)
@@ -48,21 +44,8 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();
                 })
-                .onFailure().recoverWithItem(this::postError);
+                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
     }
 
-
-    @PUT
-    @Path("/")
-    public Response update(@Valid LabelDTO dto) {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
-    }
-
-    @DELETE
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
-    }
 
 }

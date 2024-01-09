@@ -43,7 +43,7 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         return repository.getAllCount();
     }
 
-    public Uni<RoleDTO> get(String id) {
+    public Uni<RoleDTO> getDTO(String id) {
         Uni<Optional<Role>> uni = repository.findById(UUID.fromString(id));
         return uni.onItem().transform(optional -> {
             Role doc = optional.orElseThrow();

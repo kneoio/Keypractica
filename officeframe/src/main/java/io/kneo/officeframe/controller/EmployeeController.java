@@ -55,7 +55,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.get(id)
+        return service.getDTO(id)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();
@@ -65,8 +65,14 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
 
     @POST
     @Path("/")
-    public Response create(OrganizationDTO dto) {
-        return Response.created(URI.create("/" + service.add(dto))).build();
+    public Uni<Response> create(@Valid EmployeeDTO dto) {
+        return service.add(dto)
+                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                .onFailure().recoverWithItem(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                });
+
     }
 
     @PUT

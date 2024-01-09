@@ -21,7 +21,7 @@ public abstract class AbstractService<T, V> {
     @Inject
     protected UserService userService;
 
-    public abstract Uni<V> get(String id);
+    public abstract Uni<V> getDTO(String id);
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->

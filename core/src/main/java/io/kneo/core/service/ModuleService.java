@@ -63,7 +63,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
 
-    public Uni<ModuleDTO> get(String id) {
+    public Uni<ModuleDTO> getDTO(String id) {
         Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
         return mapToDTO( uni);
     }

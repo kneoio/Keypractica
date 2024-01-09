@@ -1,10 +1,31 @@
 package io.kneo.officeframe.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.kneo.core.dto.AbstractReferenceDTO;
+import io.kneo.core.localization.LanguageCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.EnumMap;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public record EmployeeDTO(UUID id, String name) {
+@Setter
+@Getter
+@SuperBuilder
+@NoArgsConstructor
+public class EmployeeDTO extends AbstractReferenceDTO {
+    String name;
+    long userId;
+    LocalDate birtDate;
+    OrganizationDTO org;
+    DepartmentDTO dep;
+    PositionDTO position;
+    boolean fired;
+    int rank;
+    String phone;
+    private EnumMap<LanguageCode, String> localizedName;
 
 }

@@ -1,8 +1,8 @@
 package io.kneo.officeframe.repository;
 
+import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
-import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
@@ -15,6 +15,8 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLOYEE;
@@ -26,23 +28,22 @@ public class EmployeeRepository extends AsyncRepository {
     @Inject
     PgPool client;
 
-    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM staff__employees ORDER BY rank";
+    public Uni<List<Employee>> getAll(final int limit, final int offset) {
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", EMPLOYEE_ENTITY_DATA.mainName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new EmployeeDTO(row.getUUID("id"), row.getString("name"))).collect().asList();
+                .onItem().transform(this::from).collect().asList();
     }
 
     public Uni<Integer> getAllCount() {
         return getAllCount(EMPLOYEE_ENTITY_DATA.mainName());
     }
 
-
-    public Uni<List<Map<String, Object>>> search(String keyword) {
+    public Uni<List<Employee>> search(String keyword) {
         String query = String.format(
                 "(SELECT 0 as id, id as uuid, name, phone, NULL as email FROM %s WHERE textsearch @@ to_tsquery('english', '%s')) " +
                         "UNION " +
@@ -52,7 +53,7 @@ public class EmployeeRepository extends AsyncRepository {
         return client.query(query)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(this::rowToMap)
+                .onItem().transformToUniAndMerge(this::fromAny)
                 .collect().asList();
     }
 
@@ -76,39 +77,57 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
     private Employee from(Row row) {
-        return new Employee.Builder()
-                .setId(row.getUUID("id"))
-                .setName(row.getString("name"))
-                .setPhone(row.getString("phone"))
-                .build();
+        Employee employee = new Employee();
+        employee.setId(row.getUUID("id"));
+        employee.setUser(row.getLong("user_id"));
+        employee.setOrganization(row.getUUID("organization_id"));
+        employee.setDepartment(row.getUUID("department_id"));
+        employee.setPosition(row.getUUID("position_id"));
+        employee.setName(row.getString("name"));
+        employee.setPhone(row.getString("phone"));
+        employee.setBirthDate(row.getLocalDate("birth_date"));
+        employee.setStatus(row.getInteger("status"));
+        employee.setFired(row.getBoolean("fired"));
+        return employee;
     }
 
-    private Employee fromAny(Row row) {
-        UUID id = row.getUUID("id");
-        if (id != null) {
-            return from(row);
+    private Uni<Employee> fromAny(Row row) {
+        Object value = row.getValue("id");
+        if (value instanceof UUID) {
+            return Uni.createFrom().item(from(row));
+        } else if (value instanceof Integer || value instanceof Long) {
+            Employee employee = new Employee();
+            employee.setName(row.getString("name"));
+            employee.setPhone(row.getString("phone"));
+            employee.setStatus(1);
+            return insert(employee, SuperUser.ID)
+                    .onItem().transform(uuid -> {
+                        employee.setId(uuid);
+                        return employee;
+                    });
         } else {
-            return new Employee.Builder()
-                    .setId(row.getUUID("id"))
-                    .setName(row.getString("name"))
-                    .setPhone(row.getString("phone"))
-                    .build();
+            return Uni.createFrom().failure(new IllegalArgumentException("Unsupported type for id: " + EMPLOYEE_ENTITY_DATA));
         }
     }
 
-    public Map<String, Object> rowToMap(Row row) {
-        Map<String, Object> map = new HashMap<>();
-        for (int i = 0; i < row.size(); i++) {
-            String columnName = row.getColumnName(i);
-            Object value = row.getValue(i);
-            map.put(columnName, value);
-        }
-        return map;
-    }
+    public Uni<UUID> insert(Employee doc, long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = String.format("INSERT INTO %s " +
+                "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, department_id, organization_id, position_id, user_id, fired, rank, loc_name, phone) " +
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id", EMPLOYEE_ENTITY_DATA.mainName());
+        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple allParams = params
+                .addInteger(doc.getStatus())
+                .addLocalDate(doc.getBirthDate())
+                .addString(doc.getName());
 
-    public UUID insert(Organization node, Long user) {
-
-        return node.getId();
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(allParams)
+                .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", EMPLOYEE), throwable));
+                }));
     }
 
 
