@@ -32,7 +32,7 @@ import static io.kneo.core.repository.table.TableNameResolver.ROLE_ENTITY_NAME;
 
 @ApplicationScoped
 public class RoleRepository extends AsyncRepository {
-    private static final EntityData ENTITY_DATA = TableNameResolver.create().getEntityNames(ROLE_ENTITY_NAME);
+    private static final EntityData entityData = TableNameResolver.create().getEntityNames(ROLE_ENTITY_NAME);
     @Inject
     PgPool client;
     @Inject
@@ -52,14 +52,11 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(ENTITY_DATA.mainName());
+        return getAllCount(entityData.tableName());
     }
 
     public Uni<Optional<Role>> findById(UUID uuid) {
-        return client.preparedQuery("SELECT * FROM _roles sr WHERE sr.id = $1")
-                .execute(Tuple.of(uuid))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+        return findById(uuid, entityData, this::from);
     }
 
     public Uni<Optional<Role>> findByUserId(long id) {
@@ -96,7 +93,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<UUID> insert(Role doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", ENTITY_DATA.mainName());
+        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", entityData.tableName());
         Tuple params = Tuple.of(user, doc.getIdentifier(), nowTime, nowTime, user);
         Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addJsonObject(JsonObject.mapFrom(doc.getLocalizedDescription()));
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -111,7 +108,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<Integer> update(Role doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", ENTITY_DATA.mainName());
+        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", entityData.tableName());
         Tuple params = Tuple.of(doc.getIdentifier(), nowTime, user, JsonObject.mapFrom(doc.getLocalizedName()), JsonObject.mapFrom(doc.getLocalizedDescription()));
         Tuple finalParams = params.addUUID(doc.getId());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -124,7 +121,7 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, ENTITY_DATA.mainName());
+        return delete(uuid, entityData.tableName());
     }
 
 

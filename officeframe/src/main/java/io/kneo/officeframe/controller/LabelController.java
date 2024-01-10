@@ -6,6 +6,7 @@ import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
+import io.kneo.core.model.user.IUser;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.service.LabelService;
@@ -22,6 +23,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.util.Optional;
 
 @Path("/labels")
 @Produces(MediaType.APPLICATION_JSON)
@@ -40,15 +42,21 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id) {
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.getDTO(id)
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().recoverWithItem(this::postError);
+    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.FORM_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
     }
 
 

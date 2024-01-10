@@ -3,6 +3,7 @@ package io.kneo.core.service;
 
 import io.kneo.core.dto.document.RoleDTO;
 import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
 import io.kneo.core.repository.RoleRepository;
 import io.smallrye.mutiny.Uni;
@@ -43,7 +44,7 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         return repository.getAllCount();
     }
 
-    public Uni<RoleDTO> getDTO(String id) {
+    public Uni<RoleDTO> getDTO(String id, IUser user) {
         Uni<Optional<Role>> uni = repository.findById(UUID.fromString(id));
         return uni.onItem().transform(optional -> {
             Role doc = optional.orElseThrow();

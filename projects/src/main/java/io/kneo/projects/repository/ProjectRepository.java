@@ -39,13 +39,13 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, PROJECT_ENTITY_DATA.mainName(), PROJECT_ENTITY_DATA.rlsName());
+        return getAllCount(userID, PROJECT_ENTITY_DATA.tableName(), PROJECT_ENTITY_DATA.rlsName());
     }
 
     public Uni<List<Project>> search(String keyword) {
         String query = String.format(
                 "SELECT * FROM %s WHERE textsearch @@ to_tsquery('english', '%s')",
-                PROJECT_ENTITY_DATA.mainName(),
+                PROJECT_ENTITY_DATA.tableName(),
                 keyword
         );
         return client.query(query)
@@ -104,7 +104,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, PROJECT_ENTITY_DATA.mainName());
+        return delete(uuid, PROJECT_ENTITY_DATA.tableName());
     }
 
 

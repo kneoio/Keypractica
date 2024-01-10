@@ -8,6 +8,7 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.Language;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.service.LanguageService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -55,7 +56,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.getDTO(id)
+        return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();

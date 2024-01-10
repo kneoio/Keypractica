@@ -29,7 +29,7 @@ public class EmployeeRepository extends AsyncRepository {
     PgPool client;
 
     public Uni<List<Employee>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", EMPLOYEE_ENTITY_DATA.mainName());
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", EMPLOYEE_ENTITY_DATA.tableName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -40,7 +40,7 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(EMPLOYEE_ENTITY_DATA.mainName());
+        return getAllCount(EMPLOYEE_ENTITY_DATA.tableName());
     }
 
     public Uni<List<Employee>> search(String keyword) {
@@ -48,7 +48,7 @@ public class EmployeeRepository extends AsyncRepository {
                 "(SELECT 0 as id, id as uuid, name, phone, NULL as email FROM %s WHERE textsearch @@ to_tsquery('english', '%s')) " +
                         "UNION " +
                         "(SELECT id, NULL, login as name, 'phone', email FROM %s WHERE textsearch @@ to_tsquery('english', '%s'))",
-                EMPLOYEE_ENTITY_DATA.mainName(), keyword, "_users", keyword
+                EMPLOYEE_ENTITY_DATA.tableName(), keyword, "_users", keyword
         );
         return client.query(query)
                 .execute()
@@ -56,7 +56,6 @@ public class EmployeeRepository extends AsyncRepository {
                 .onItem().transformToUniAndMerge(this::fromAny)
                 .collect().asList();
     }
-
 
     public Uni<Optional<Employee>> findById(UUID uuid) {
         return client.preparedQuery("SELECT * FROM staff__employees se WHERE se.id = $1")
@@ -114,7 +113,7 @@ public class EmployeeRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s " +
                 "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, department_id, organization_id, position_id, user_id, fired, rank, loc_name, phone) " +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id", EMPLOYEE_ENTITY_DATA.mainName());
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id", EMPLOYEE_ENTITY_DATA.tableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addInteger(doc.getStatus())
