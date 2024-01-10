@@ -10,8 +10,6 @@ import io.kneo.officeframe.repository.TaskTypeRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +18,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> implements IRESTService<TaskTypeDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("TaskTypeService");
     @Inject
     private TaskTypeRepository repository;
 
@@ -56,7 +53,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return repository.getAllCount();
     }
 
-    public Uni<TaskTypeDTO> getDTO(String uuid) {
+    public Uni<TaskTypeDTO> getDTO(String uuid, IUser user) {
         return get(UUID.fromString(uuid));
     }
 

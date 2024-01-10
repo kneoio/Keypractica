@@ -12,22 +12,20 @@ import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
-import io.vertx.mutiny.sqlclient.RowSet;
-import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
 
 import java.time.ZoneId;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.POSITION;
 
 @ApplicationScoped
 public class PositionRepository extends AsyncRepository {
-    private static final EntityData POSITION_ENTITY_DATA = OfficeFrameNameResolver.create().getEntityNames(POSITION);
+    private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(POSITION);
       @Inject
     PgPool client;
 
@@ -35,7 +33,7 @@ public class PositionRepository extends AsyncRepository {
     ObjectMapper mapper;
 
     public Uni<List<Position>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", POSITION_ENTITY_DATA.mainName());
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -46,21 +44,11 @@ public class PositionRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(POSITION_ENTITY_DATA.mainName());
+        return getAllCount(entityData.tableName());
     }
 
-    public Uni<Position> findById(UUID uuid) {
-        String sql = String.format("SELECT * FROM %s WHERE id = $1", POSITION_ENTITY_DATA.mainName());
-        return client.preparedQuery(sql)
-                .execute(Tuple.of(uuid))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> {
-                    if (iterator.hasNext()) {
-                        return from(iterator.next());
-                    } else {
-                        throw new NotFoundException("No item found with id: " + uuid);
-                    }
-                });
+    public Uni<Optional<Position>> findById(UUID uuid) {
+        return findById(uuid, entityData, this::from);
     }
 
     private Position from(Row row) {

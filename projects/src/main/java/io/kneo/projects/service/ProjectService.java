@@ -5,7 +5,6 @@ import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.projects.dto.ProjectDTO;
@@ -65,8 +64,8 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return get(id, user.getId(), false);
     }
 
-    public Uni<ProjectDTO> getDTO(String uuid) {
-        return get(uuid, SuperUser.ID);
+    public Uni<ProjectDTO> getDTO(String uuid, IUser user) {
+        return get(uuid, user.getId());
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID) {

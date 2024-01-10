@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.PositionDTO;
@@ -45,24 +46,25 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         return null;
     }
 
-    public Uni<PositionDTO> getDTO(String uuid) {
+    public Uni<PositionDTO> getDTO(String uuid, IUser user) {
         return getDTO(UUID.fromString(uuid));
     }
 
     public Uni<PositionDTO> getDTO(UUID uuid) {
-        Uni<Position> uni = get(uuid);
-        return uni.onItem().transform(doc ->
-                PositionDTO.builder()
-                        .author(userRepository.getUserName(doc.getAuthor()))
-                        .regDate(doc.getRegDate())
-                        .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                        .lastModifiedDate(doc.getLastModifiedDate())
-                        .identifier(doc.getIdentifier())
-                        .build()
-        );
+        Uni<Optional<Position>> uni = get(uuid);
+        return uni.onItem().transform(docOpt -> {
+            Position doc = docOpt.orElseThrow();
+            return PositionDTO.builder()
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .identifier(doc.getIdentifier())
+                    .build();
+        });
     }
 
-    public Uni<Position> get(UUID uuid) {
+    public Uni<Optional<Position>> get(UUID uuid) {
         return repository.findById(uuid);
     }
 

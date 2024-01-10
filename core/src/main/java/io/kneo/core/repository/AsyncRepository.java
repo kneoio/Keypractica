@@ -7,12 +7,12 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.table.EntityData;
-import io.kneo.core.repository.table.ITableResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
@@ -20,11 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class AsyncRepository {
@@ -49,9 +46,15 @@ public class AsyncRepository {
                 .execute()
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
+    public <T,R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
+        return client.preparedQuery("SELECT * FROM " + entityData.tableName() + " WHERE se.id = $1")
+                .execute(Tuple.of(uuid))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromFunc.apply(iterator.next())) : Optional.empty());
+    }
 
     public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {
-        String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.mainName(), entityData.rlsName());
+        String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.tableName(), entityData.rlsName());
         return client.preparedQuery(sql)
                 .execute(Tuple.of(uuid))
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))

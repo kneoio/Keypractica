@@ -1,6 +1,5 @@
 package io.kneo.officeframe.controller;
 
-
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
@@ -9,6 +8,7 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
+import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -23,6 +23,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.util.Optional;
 
 @Path("/orgs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -43,7 +44,7 @@ public class OrganizationController {
     @GET
     @Path("/{id}")
     public Response getById(@PathParam("id") String id)  {
-        Organization user = service.get(id);
+        Uni<Optional<Organization>> user = service.get(id);
         return Response.ok(user).build();
     }
 

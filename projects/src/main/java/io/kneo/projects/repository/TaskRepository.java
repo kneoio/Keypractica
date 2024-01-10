@@ -47,7 +47,7 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, ENTITY_DATA.mainName(), ENTITY_DATA.rlsName());
+        return getAllCount(userID, ENTITY_DATA.tableName(), ENTITY_DATA.rlsName());
     }
 
     public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
@@ -62,7 +62,7 @@ public class TaskRepository extends AsyncRepository {
                     if (iterator.hasNext()) {
                         return Optional.of(from(iterator.next()));
                     } else {
-                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_DATA.mainName()));
+                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_DATA.tableName()));
                         return Optional.empty();
                     }
                 });
@@ -110,7 +110,7 @@ public class TaskRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", ENTITY_DATA.mainName());
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", ENTITY_DATA.tableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addLong(doc.getAssignee())
@@ -175,12 +175,12 @@ public class TaskRepository extends AsyncRepository {
 
     public Uni<Integer> update(Task doc, Long user) throws DocumentModificationAccessException {
         UUID docId = doc.getId();
-        if (1 == rlsRepository.findById(ENTITY_DATA.mainName(), user, docId)[0]) {
+        if (1 == rlsRepository.findById(ENTITY_DATA.tableName(), user, docId)[0]) {
             LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
             String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
                     "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
                     "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
-                    "WHERE id=$16;", ENTITY_DATA.mainName());
+                    "WHERE id=$16;", ENTITY_DATA.tableName());
             Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
             if (doc.getTargetDate() != null) {
                 params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
@@ -214,6 +214,6 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid, Long user) {
-        return delete(uuid, ENTITY_DATA.mainName());
+        return delete(uuid, ENTITY_DATA.tableName());
     }
 }

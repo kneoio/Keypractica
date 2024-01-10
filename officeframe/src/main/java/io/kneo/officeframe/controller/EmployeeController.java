@@ -6,6 +6,7 @@ import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
@@ -24,6 +25,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.util.Optional;
 
 @Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
@@ -36,7 +38,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     @GET
     @Path("/")
     @PermitAll
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         return getAll(service, requestContext, page);
     }
 
@@ -52,26 +54,41 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id)  {
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.getDTO(id)
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.FORM_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(t -> {
+                        LOGGER.error(t.getMessage(), t);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
     }
 
     @POST
     @Path("/")
-    public Uni<Response> create(@Valid EmployeeDTO dto) {
-        return service.add(dto)
-                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
+    public Uni<Response> create(@Valid EmployeeDTO dto, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            return service.add(dto, user)
+                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                    .onFailure().recoverWithItem(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
 
     }
 

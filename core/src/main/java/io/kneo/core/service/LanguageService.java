@@ -4,6 +4,7 @@ import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.LanguageRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -64,7 +65,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
         });
     }
 
-    public Uni<LanguageDTO> getDTO(String id) {
+    public Uni<LanguageDTO> getDTO(String id, IUser user) {
         Uni<Optional<Language>> uni = repository.findById(UUID.fromString(id));
         return uni.onItem().transform(languageOpt -> {
             Language language = languageOpt.orElseThrow();

@@ -6,6 +6,7 @@ import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
@@ -60,7 +61,7 @@ public abstract class AbstractController<T, V> {
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        return service.getDTO(id)
+        return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.FORM_DATA, p);
                     return Response.ok(page).build();

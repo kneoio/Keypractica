@@ -3,7 +3,6 @@ package io.kneo.projects.service;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
@@ -76,8 +75,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return repository.getAllCount(userID);
     }
 
-    public Uni<TaskDTO> getDTO(String uuid) {
-        return get(uuid, SuperUser.ID);
+    public Uni<TaskDTO> getDTO(String uuid, IUser user) {
+        return get(uuid, user.getId());
     }
 
     public Uni<TaskDTO> get(String uuid, final long userID) {

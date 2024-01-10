@@ -52,7 +52,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         return repository.getAllCount();
     }
 
-    public Uni<LabelDTO> getDTO(String uuid) {
+    public Uni<LabelDTO> getDTO(String uuid, IUser user) {
         Uni<Label> labelUni = get(UUID.fromString(uuid));
         return labelUni.onItem().transform(label -> {
             return LabelDTO.builder()
