@@ -7,6 +7,7 @@ import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.UserRepository;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -23,6 +24,8 @@ public abstract class AbstractService<T, V> {
     protected UserService userService;
 
     public abstract Uni<V> getDTO(String id, IUser user);
+    public abstract Uni<UUID> add(V dto, IUser user);
+    public abstract Uni<Integer> update(V dto, IUser user) throws DocumentModificationAccessException;
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->

@@ -9,8 +9,6 @@ import io.kneo.officeframe.repository.LabelRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +17,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class LabelService extends AbstractService<Label, LabelDTO> implements IRESTService<LabelDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("LabelService");
     @Inject
     private LabelRepository repository;
 
@@ -53,27 +50,41 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     public Uni<LabelDTO> getDTO(String uuid, IUser user) {
-        Uni<Label> labelUni = get(UUID.fromString(uuid));
-        return labelUni.onItem().transform(label -> {
-            return LabelDTO.builder()
-                    .author(userRepository.getUserName(label.getAuthor()))
-                    .regDate(label.getRegDate())
-                    .lastModifier(userRepository.getUserName(label.getLastModifier()))
-                    .lastModifiedDate(label.getLastModifiedDate())
-                    .identifier(label.getIdentifier())
-                    .build();
-        });
+        Uni<Optional<Label>> labelUni = repository.findById(UUID.fromString(uuid));
+        return labelUni.onItem().transform(this::map);
+    }
+
+
+
+    public Uni<LabelDTO> getDTOByIdentifier(String identifier, IUser user) {
+        Uni<Optional<Label>> labelUni = repository.findByIdentifier(identifier);
+        return labelUni.onItem().transform(this::map);
+    }
+
+    private LabelDTO map(Optional<Label> labelOpt) {
+        Label label = labelOpt.get();
+        return LabelDTO.builder()
+                .author(userRepository.getUserName(label.getAuthor()))
+                .regDate(label.getRegDate())
+                .lastModifier(userRepository.getUserName(label.getLastModifier()))
+                .lastModifiedDate(label.getLastModifiedDate())
+                .identifier(label.getIdentifier())
+                .build();
     }
 
     public Uni<Optional<Label>> findByIdentifier(String identifier) {
         return repository.findByIdentifier(identifier);
     }
 
-    public Uni<Label> get(UUID uuid) {
-        return repository.findById(uuid);
-    }
-
-    public IUser update(LabelDTO dto) {
+    @Override
+    public Uni<UUID> add(LabelDTO dto, IUser user) {
         return null;
     }
+
+    @Override
+    public Uni<Integer> update(LabelDTO dto, IUser user) {
+        return null;
+    }
+
+
 }

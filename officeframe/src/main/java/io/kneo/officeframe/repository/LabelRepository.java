@@ -1,25 +1,29 @@
 package io.kneo.officeframe.repository;
 
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Label;
+import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.ws.rs.NotFoundException;
 
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.LABEL;
+
 @ApplicationScoped
 public class LabelRepository extends AsyncRepository {
     private static final String TABLE_NAME = "ref__labels";
     private static final String ENTITY_NAME = "label";
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s", TABLE_NAME);
+    private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(LABEL);
 
     public Uni<List<Label>> getAll(final int limit, final int offset) {
         String sql = BASE_REQUEST;
@@ -37,17 +41,8 @@ public class LabelRepository extends AsyncRepository {
         return getAllCount(TABLE_NAME);
     }
 
-    public Uni<Label> findById(UUID uuid) {
-        return client.preparedQuery(BASE_REQUEST + " WHERE id = $1")
-                .execute(Tuple.of(uuid))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> {
-                    if (iterator.hasNext()) {
-                        return from(iterator.next());
-                    } else {
-                        throw new NotFoundException("No item found with id: " + uuid);
-                    }
-                });
+    public Uni<Optional<Label>> findById(UUID uuid) {
+        return findById(uuid, entityData, this::from);
     }
 
     public Uni<Optional<Label>> findByIdentifier(String identifier) {

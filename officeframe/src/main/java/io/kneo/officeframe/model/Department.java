@@ -6,14 +6,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 
 @JsonInclude(JsonInclude.Include.NON_NULL)@Setter
 @Getter
 @NoArgsConstructor
 public class Department extends SimpleReferenceEntity {
-    private DepartmentType type;
-    private Organization organization;
-    private Department leadDepartment;
-    private Employee boss;
+    private UUID type;
+    private UUID organization;
+    private UUID leadDepartment;
     private int rank = 999;
 }
