@@ -2,7 +2,6 @@ package io.kneo.officeframe.repository;
 
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
-import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
@@ -24,15 +23,19 @@ public class OrganizationRepository extends AsyncRepository {
     @Inject
     PgPool client;
 
-    public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM staff__orgs ORDER BY rank";
+    public Uni<List<Organization>> getAll(final int limit, final int offset) {
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new OrganizationDTO(row.getString("name"), row.getString("biz_id"))).collect().asList();
+                .onItem().transform(this::from).collect().asList();
+    }
+
+    public Uni<Integer> getAllCount() {
+        return getAllCount(entityData.tableName());
     }
 
     public Uni<Optional<Organization>> findById(UUID uuid) {
@@ -41,7 +44,12 @@ public class OrganizationRepository extends AsyncRepository {
 
     private Organization from(Row row) {
         Organization doc = new Organization();
-        doc.setId(row.getUUID("id"));
+        setDefaultFields(doc, row);
+        doc.setIdentifier(row.getString("identifier"));
+        doc.setOrgCategory(row.getUUID("org_category_id"));
+        doc.setBizID(row.getString("biz_id"));
+       // doc.setPrimary(row.getBoolean("is_primary"));
+        doc.setRank(row.getInteger("rank"));
         return doc;
     }
     public UUID insert(Organization node, Long user) {

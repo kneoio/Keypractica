@@ -8,8 +8,8 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.officeframe.dto.EmployeeDTO;
-import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.service.EmployeeService;
 import io.smallrye.mutiny.Uni;
@@ -24,7 +24,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.net.URI;
 import java.util.Optional;
 
 @Path("/employees")
@@ -76,26 +75,14 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
 
     @POST
     @Path("/")
-    public Uni<Response> create(@Valid EmployeeDTO dto, @Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            return service.add(dto, user)
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage());
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-
+    public Uni<Response> create(@Valid EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
+        return create(service, dto, requestContext);
     }
 
     @PUT
     @Path("/")
-    public Response update(OrganizationDTO dto) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
+    public Uni<Response> update(EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+        return update(service, dto, requestContext);
     }
 
     @DELETE

@@ -68,6 +68,16 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return get(uuid, user.getId());
     }
 
+    @Override
+    public Uni<UUID> add(ProjectDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> update(ProjectDTO dto, IUser user) {
+        return null;
+    }
+
     public Uni<ProjectDTO> get(UUID id, final long userID) {
         return get(id, userID, true);
     }

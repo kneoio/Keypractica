@@ -57,6 +57,16 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         });
     }
 
+    @Override
+    public Uni<UUID> add(RoleDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> update(RoleDTO dto, IUser user) {
+        return null;
+    }
+
     public Uni<UUID> add(RoleDTO dto) {
         Role doc = new Role.Builder()
                 .setIdentifier(dto.getIdentifier())

@@ -1,24 +1,20 @@
 package io.kneo.officeframe.controller;
 
-import io.kneo.core.dto.cnst.PayloadType;
-import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.repository.exception.DocumentExistsException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -29,16 +25,14 @@ import java.util.Optional;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class OrganizationController {
+public class OrganizationController extends AbstractSecuredController<Organization, OrganizationDTO> {
     @Inject
     OrganizationService service;
     @GET
     @Path("/")
-    public Response get()  {
-        ViewPage viewPage = new ViewPage();
-        View<OrganizationDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
-        viewPage.addPayload(PayloadType.VIEW_DATA, view);
-        return Response.ok(viewPage).build();
+    @PermitAll
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
+        return getAll(service, requestContext, page);
     }
 
     @GET

@@ -3,6 +3,9 @@ package io.kneo.officeframe.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.core.dto.AbstractReferenceDTO;
 import io.kneo.core.localization.LanguageCode;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,15 +20,20 @@ import java.util.EnumMap;
 @SuperBuilder
 @NoArgsConstructor
 public class EmployeeDTO extends AbstractReferenceDTO {
+    @NotBlank(message = "{employee.name.invalid}")
     String name;
+    @Positive(message = "{employee.userId.invalid}")
     long userId;
-    LocalDate birtDate;
+    LocalDate birthDate;
+    @NotNull(message = "{employee.org.invalid}")
     OrganizationDTO org;
+    @NotNull(message = "{employee.dep.invalid}")
     DepartmentDTO dep;
+    @NotNull(message = "{employee.position.invalid}")
     PositionDTO position;
     boolean fired;
-    int rank;
+    @Positive(message = "{employee.rank.invalid}")
+    int rank = 999;
     String phone;
-    private EnumMap<LanguageCode, String> localizedName;
-
+    EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
 }

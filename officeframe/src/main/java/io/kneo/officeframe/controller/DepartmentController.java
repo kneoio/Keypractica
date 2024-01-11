@@ -1,23 +1,22 @@
 package io.kneo.officeframe.controller;
 
-import com.fasterxml.jackson.annotation.JsonView;
+
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
-import io.kneo.officeframe.dto.LabelDTO;
-import io.kneo.officeframe.model.Label;
-import io.kneo.officeframe.service.LabelService;
+import io.kneo.officeframe.dto.DepartmentDTO;
+import io.kneo.officeframe.model.Department;
+import io.kneo.officeframe.service.DepartmentService;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
@@ -26,24 +25,24 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.Optional;
 
-@Path("/labels")
+@Path("/departments")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class LabelController extends AbstractSecuredController<Label, LabelDTO> {
+public class DepartmentController extends AbstractSecuredController<Department, DepartmentDTO> {
     @Inject
-    LabelService service;
+    DepartmentService service;
 
     @GET
     @Path("/")
-    @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
+    @PermitAll
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         return getAll(service, requestContext, page);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -54,35 +53,24 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                         page.addPayload(PayloadType.FORM_DATA, p);
                         return Response.ok(page).build();
                     })
-                    .onFailure().recoverWithItem(this::postError);
+                    .onFailure().recoverWithItem(t -> {
+                        LOGGER.error(t.getMessage(), t);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
         } else {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
 
-    @GET
-    @Path("/identifier/{id}")
-    public Uni<Response> getByIdentifier(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-            return service.getDTOByIdentifier(id, user)
-                    .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
-                        return Response.ok(page).build();
-                    })
-                    .onFailure().recoverWithItem(this::postError);
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
+    @POST
+    @Path("/")
+    public Uni<Response> create(@Valid DepartmentDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
+        return create(service, dto, requestContext);
     }
-
 
     @PUT
     @Path("/")
-    public Uni<Response> update(@Valid LabelDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+    public Uni<Response> update(DepartmentDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         return update(service, dto, requestContext);
     }
 

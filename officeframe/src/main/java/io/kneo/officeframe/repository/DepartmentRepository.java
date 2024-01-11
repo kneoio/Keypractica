@@ -2,7 +2,6 @@ package io.kneo.officeframe.repository;
 
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
-import io.kneo.officeframe.dto.DepartmentDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
@@ -26,24 +25,30 @@ public class DepartmentRepository extends AsyncRepository {
     @Inject
     PgPool client;
 
-    public Uni<List<DepartmentDTO>> getAll(final int limit, final int offset) {
-        String sql = "SELECT * FROM staff__departments ORDER BY rank";
+    public Uni<List<Department>> getAll(final int limit, final int offset) {
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
-                .onItem().transform(row -> new DepartmentDTO(row.getString("name"))).collect().asList();
+                .onItem().transform(this::from).collect().asList();
     }
-
+    public Uni<Integer> getAllCount() {
+        return getAllCount(entityData.tableName());
+    }
     public Uni<Optional<Department>> findById(UUID uuid) {
-        return findById(uuid, entityData, DepartmentRepository::from);
+        return findById(uuid, entityData, this::from);
     }
 
-    private static Department from(Row row) {
+    private Department from(Row row) {
         Department doc = new Department();
-        doc.setId(row.getUUID("id"));
+        setDefaultFields(doc, row);
+        doc.setIdentifier(row.getString("identifier"));
+        doc.setType(row.getUUID("type_id"));
+        doc.setOrganization(row.getUUID("organization_id"));
+        doc.setLeadDepartment(row.getUUID("lead_department_id"));
         return doc;
     }
 

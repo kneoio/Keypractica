@@ -8,6 +8,8 @@ import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
@@ -80,6 +82,34 @@ public abstract class AbstractController<T, V> {
         } catch (Exception e) {
             LOGGER.error(String.format("msg: %s ", e.getMessage()), e);
             return Optional.empty();
+        }
+    }
+
+    protected Uni<Response> create(AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            return service.add(dto, user)
+                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                    .onFailure().recoverWithItem(throwable -> {
+                        LOGGER.error(throwable.getMessage());
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+    }
+    protected Uni<Response> update(AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.update(dto, userOptional.get())
+                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                    .onFailure().recoverWithItem(throwable -> {
+                        LOGGER.error(throwable.getMessage(), throwable);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            throw new UserNotFoundException(AnonymousUser.USER_NAME);
         }
     }
 

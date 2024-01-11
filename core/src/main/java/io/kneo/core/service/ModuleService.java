@@ -69,6 +69,16 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return mapToDTO( uni);
     }
 
+    @Override
+    public Uni<UUID> add(ModuleDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> update(ModuleDTO dto, IUser user) {
+        return null;
+    }
+
     private Uni<ModuleDTO> mapToDTO(Uni<Optional<Module>> uni) {
         return uni.onItem().transform(optional -> {
             Module doc = optional.orElseThrow();

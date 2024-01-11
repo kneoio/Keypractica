@@ -57,6 +57,16 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return get(UUID.fromString(uuid));
     }
 
+    @Override
+    public Uni<UUID> add(TaskTypeDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> update(TaskTypeDTO dto, IUser user) {
+        return null;
+    }
+
     public Uni<TaskTypeDTO> get(UUID uuid) {
        return null;
     }

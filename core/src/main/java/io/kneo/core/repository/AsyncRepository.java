@@ -46,8 +46,8 @@ public class AsyncRepository {
                 .execute()
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
-    public <T,R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
-        return client.preparedQuery("SELECT * FROM " + entityData.tableName() + " WHERE se.id = $1")
+    public <R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
+        return client.preparedQuery("SELECT * FROM " + entityData.tableName() + " se WHERE se.id = $1")
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromFunc.apply(iterator.next())) : Optional.empty());
@@ -80,7 +80,7 @@ public class AsyncRepository {
                 }));
     }
 
-    protected void setDefaultFields(DataEntity<UUID> entity, Row row) {
+    protected  static void setDefaultFields(DataEntity<UUID> entity, Row row) {
         entity.setId(row.getUUID("id"));
         entity.setAuthor(row.getLong("author"));
         entity.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));

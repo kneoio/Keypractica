@@ -9,6 +9,8 @@ import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.LanguageService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -21,6 +23,8 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
@@ -66,24 +70,14 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     }
 
     @POST
-    public Uni<Response> create(LanguageDTO dto) {
-        return service.add(dto)
-                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
+    public Uni<Response> create(LanguageDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
+        return create(service, dto, requestContext);
     }
 
     @PUT
     @Path("/{id}")
-    public Uni<Response> update(LanguageDTO dto, @PathParam("id") String id) {
-        return service.update(id, dto)
-                .onItem().transform(res -> Response.status(Response.Status.OK).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
+    public Uni<Response> update(LanguageDTO dto, @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+        return update(service, dto, requestContext);
     }
 
     @DELETE

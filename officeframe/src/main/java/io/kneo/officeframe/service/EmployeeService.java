@@ -5,7 +5,6 @@ import io.kneo.core.repository.RoleRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.EmployeeDTO;
-import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.model.Employee;
@@ -19,8 +18,6 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +26,6 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmployeeService extends AbstractService<Employee, EmployeeDTO> implements IRESTService<EmployeeDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("EmployeeService");
     @Inject
     private EmployeeRepository repository;
     @Inject
@@ -101,18 +97,19 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                 positionService.get(item.get().getPosition())
         );
         return Uni.combine().all().unis(uni, positionUni).combinedWith((docOpt, positionOpt) -> {
-            Employee emp = docOpt.orElseThrow();
+            Employee doc = docOpt.orElseThrow();
             EmployeeDTO dto = EmployeeDTO.builder()
-                    .id(emp.getId())
-                    .userId(emp.getUser())
-                    .author(userRepository.getUserName(emp.getAuthor()))
-                    .regDate(emp.getRegDate())
-                    .lastModifier(userRepository.getUserName(emp.getLastModifier()))
-                    .lastModifiedDate(emp.getLastModifiedDate())
-                    .name(emp.getName())
-                    .phone(emp.getPhone())
-                    .rank(emp.getRank())
-                    .identifier(emp.getIdentifier())
+                    .id(doc.getId())
+                    .userId(doc.getUser())
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .name(doc.getName())
+                    .localizedName(doc.getLocalizedName())
+                    .phone(doc.getPhone())
+                    .rank(doc.getRank())
+                    .identifier(doc.getIdentifier())
                     .build();
             if (positionOpt.isPresent()) {
                 Position position = positionOpt.get();
@@ -134,22 +131,19 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             Employee doc = new Employee();
             doc.setName(dto.getName());
             doc.setUser(dto.getUserId());
-            doc.setBirthDate(dto.getBirtDate());
+            doc.setBirthDate(dto.getBirthDate());
             doc.setPhone(dto.getPhone());
             doc.setRank(dto.getRank());
+            doc.setLocalizedName(dto.getLocalizedName());
             orgOpt.ifPresent(org -> doc.setOrganization(org.getId()));
             depOpt.ifPresent(dep -> doc.setDepartment(dep.getId()));
             posOpt.ifPresent(pos -> doc.setPosition(pos.getId()));
             return repository.insert(doc, user.getId());
         }).flatMap(uni -> uni);
     }
-
-    public Organization update(OrganizationDTO dto) {
-        Organization user = new Organization.Builder()
-                //    .setCode(dto.code())
-                .build();
-        return repository.update(user);
+    @Override
+    public Uni<Integer> update(EmployeeDTO dto, IUser user) {
+        return null;
     }
-
 
 }

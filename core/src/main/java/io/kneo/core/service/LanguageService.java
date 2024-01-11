@@ -3,7 +3,6 @@ package io.kneo.core.service;
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.LanguageRepository;
 import io.smallrye.mutiny.Uni;
@@ -81,23 +80,16 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
         });
     }
 
-    public Uni<UUID> add(LanguageDTO dto) {
-        Language node = new Language.Builder()
-                .setId(dto.getId())
-                .setCode(dto.getCode())
-                .setLocalizedName(dto.getLocalizedNames())
-                .build();
-        return repository.insert(node, AnonymousUser.ID);
+    @Override
+    public Uni<UUID> add(LanguageDTO dto, IUser user) {
+        return null;
     }
 
-    public Uni<Integer> update(String id, LanguageDTO dto) {
-        Language user = new Language.Builder()
-                .setId(UUID.fromString(id))
-                .setCode(dto.getCode())
-                .setLocalizedName(dto.getLocalizedNames())
-                .build();
-        return repository.update(user, AnonymousUser.ID);
+    @Override
+    public Uni<Integer> update(LanguageDTO dto, IUser user) {
+        return null;
     }
+
 
     public Uni<Void> delete(String id) {
         return repository.delete(UUID.fromString(id));
