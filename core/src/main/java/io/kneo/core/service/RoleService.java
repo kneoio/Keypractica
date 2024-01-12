@@ -63,7 +63,7 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
     }
 
     @Override
-    public Uni<Integer> update(RoleDTO dto, IUser user) {
+    public Uni<Integer> update(String id, RoleDTO dto, IUser user) {
         return null;
     }
 

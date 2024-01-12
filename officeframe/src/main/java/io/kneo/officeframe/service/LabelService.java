@@ -82,7 +82,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     @Override
-    public Uni<Integer> update(LabelDTO dto, IUser user) {
+    public Uni<Integer> update(String id, LabelDTO dto, IUser user) {
         return null;
     }
 

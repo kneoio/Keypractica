@@ -25,7 +25,7 @@ public abstract class AbstractService<T, V> {
 
     public abstract Uni<V> getDTO(String id, IUser user);
     public abstract Uni<UUID> add(V dto, IUser user);
-    public abstract Uni<Integer> update(V dto, IUser user) throws DocumentModificationAccessException;
+    public abstract Uni<Integer> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->

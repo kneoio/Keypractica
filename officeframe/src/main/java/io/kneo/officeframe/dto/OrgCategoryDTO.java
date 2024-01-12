@@ -15,8 +15,6 @@ import java.util.EnumMap;
 @Getter
 @SuperBuilder
 @NoArgsConstructor
-public class OrganizationDTO extends AbstractReferenceDTO {
-    private OrgCategoryDTO orgCategory;
+public class OrgCategoryDTO extends AbstractReferenceDTO {
     EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
-
 }

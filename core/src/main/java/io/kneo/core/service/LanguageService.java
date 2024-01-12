@@ -86,7 +86,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
     }
 
     @Override
-    public Uni<Integer> update(LanguageDTO dto, IUser user) {
+    public Uni<Integer> update(String id, LanguageDTO dto, IUser user) {
         return null;
     }
 

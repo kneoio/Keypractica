@@ -6,11 +6,9 @@ import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
-import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
@@ -22,15 +20,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -106,19 +96,9 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     }
 
     @PUT
-    @Path("/")
-    public Uni<Response> update(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.update(dto, userOptional.get())
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage(), throwable);
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
-        } else {
-            throw new UserNotFoundException(AnonymousUser.USER_NAME);
-        }
+    @Path("/{id}")
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+        return update(id, service, dto, requestContext);
     }
 
     @DELETE

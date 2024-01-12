@@ -16,8 +16,8 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
                 title="Keypractica",
                 version = "1.0.1",
                 contact = @Contact(
-                        name = "syspo",
-                        url = "http://keypractica.com",
+                        name = "kneo",
+                        url = "http://kneo.io",
                         email = "biosubj@gmail.com"),
                 license = @License(
                         name = "Apache 2.0",

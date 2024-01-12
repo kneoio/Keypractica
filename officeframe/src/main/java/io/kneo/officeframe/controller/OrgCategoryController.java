@@ -2,14 +2,12 @@ package io.kneo.officeframe.controller;
 
 
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.cnst.PayloadType;
-import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
-import io.kneo.officeframe.dto.EmployeeDTO;
-import io.kneo.officeframe.model.Employee;
-import io.kneo.officeframe.service.EmployeeService;
+import io.kneo.officeframe.dto.OrgCategoryDTO;
+import io.kneo.officeframe.model.OrgCategory;
+import io.kneo.officeframe.service.OrgCategoryService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,13 +23,13 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.Optional;
 
-@Path("/employees")
+@Path("/orgcategories")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class EmployeeController extends AbstractSecuredController<Employee, EmployeeDTO> {
+public class OrgCategoryController extends AbstractSecuredController<OrgCategory, OrgCategoryDTO> {
     @Inject
-    EmployeeService service;
+    OrgCategoryService service;
 
     @GET
     @Path("/")
@@ -41,15 +39,6 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     }
 
     @GET
-    @Path("/search/{keyword}")
-    public Uni<Response> search(@PathParam("keyword") String keyword) {
-        ViewPage viewPage = new ViewPage();
-        return service.search(keyword).onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-            return Response.ok(viewPage).build();
-        });
-    }
-    @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         return getById(service, id, requestContext);
@@ -57,13 +46,13 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
 
     @POST
     @Path("/")
-    public Uni<Response> create(@Valid EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
+    public Uni<Response> create(@Valid OrgCategoryDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return create(service, dto, requestContext);
     }
 
     @PUT
     @Path("/{id}")
-    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, OrgCategoryDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         return update(id, service, dto, requestContext);
     }
 

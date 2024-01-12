@@ -85,7 +85,6 @@ public class EmployeeRepository extends AsyncRepository {
         doc.setPhone(row.getString("phone"));
         doc.setBirthDate(row.getLocalDate("birth_date"));
         doc.setStatus(row.getInteger("status"));
-        doc.setFired(row.getBoolean("fired"));
         return doc;
     }
 
@@ -112,8 +111,8 @@ public class EmployeeRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s " +
                 "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, " +
-                "department_id, organization_id, position_id, user_id, fired, rank, loc_name, phone) " +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id", entityData.tableName());
+                "department_id, organization_id, position_id, user_id, rank, loc_name, phone) " +
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id", entityData.tableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addInteger(doc.getStatus())
@@ -123,7 +122,6 @@ public class EmployeeRepository extends AsyncRepository {
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())
                 .addLong(doc.getUser())
-                .addBoolean(doc.isFired())
                 .addInteger(doc.getRank())
                 .addJsonObject(getLocalizedName(doc.getLocalizedName()))
                 .addString(doc.getPhone());
@@ -172,12 +170,11 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
 
-    public Uni<Integer> update(Employee doc, long user) {
+    public Uni<Integer> update(UUID id, Employee doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        UUID docId = doc.getId();
         String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
                 "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
-                "user_id=$11, fired=$12, rank=$13, loc_name=$14, phone=$15 WHERE id=$16", entityData.tableName());
+                "user_id=$11, rank=$12, loc_name=$13, phone=$14 WHERE id=$15", entityData.tableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addInteger(doc.getStatus())
@@ -187,11 +184,10 @@ public class EmployeeRepository extends AsyncRepository {
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())
                 .addLong(doc.getUser())
-                .addBoolean(doc.isFired())
                 .addInteger(doc.getRank())
                 .addJsonObject(getLocalizedName(doc.getLocalizedName()))
                 .addString(doc.getPhone());
-        allParams.addUUID(docId);
+        allParams.addUUID(id);
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(allParams)
                 .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
@@ -199,7 +195,6 @@ public class EmployeeRepository extends AsyncRepository {
                     LOGGER.error(throwable.getMessage());
                     return Uni.createFrom().item(0);
                 }));
-
     }
     public Uni<Integer> delete(UUID id) {
         String sql = String.format("DELETE FROM %s WHERE  id=$1", entityData.tableName());

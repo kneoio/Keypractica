@@ -186,7 +186,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
 
-    public Uni<Integer> update(TaskDTO dto, IUser user) throws DocumentModificationAccessException {
+    public Uni<Integer> update(String id, TaskDTO dto, IUser user) throws DocumentModificationAccessException {
         Task doc = new Task.Builder()
                 .setId(dto.getId())
                 //  .setAssignee(Long.valueOf(dto.getAssignee()))

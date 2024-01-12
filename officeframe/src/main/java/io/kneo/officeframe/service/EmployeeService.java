@@ -142,10 +142,10 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         }).flatMap(uni -> uni);
     }
     @Override
-    public Uni<Integer> update(EmployeeDTO dto, IUser user) {
-        Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getId());
-        Uni<Optional<Department>> depUni = departmentRepository.findById(dto.getId());
-        Uni<Optional<Position>> positionUni = positionRepository.findById(dto.getId());
+    public Uni<Integer> update(String id, EmployeeDTO dto, IUser user) {
+        Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getOrg().getId());
+        Uni<Optional<Department>> depUni = departmentRepository.findById(dto.getDep().getId());
+        Uni<Optional<Position>> positionUni = positionRepository.findById(dto.getPosition().getId());
         //Uni<List<Role>> roleUni = Uni.createFrom().item(new ArrayList<>());
         return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {
             Employee doc = new Employee();
@@ -158,7 +158,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             orgOpt.ifPresent(org -> doc.setOrganization(org.getId()));
             depOpt.ifPresent(dep -> doc.setDepartment(dep.getId()));
             posOpt.ifPresent(pos -> doc.setPosition(pos.getId()));
-            return repository.update(doc, user.getId());
+            return repository.update(UUID.fromString(id), doc, user.getId());
         }).flatMap(uni -> uni);
     }
 

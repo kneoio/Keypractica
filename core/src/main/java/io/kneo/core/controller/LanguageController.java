@@ -15,6 +15,7 @@ import io.kneo.core.service.LanguageService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -76,8 +77,8 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
 
     @PUT
     @Path("/{id}")
-    public Uni<Response> update(LanguageDTO dto, @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
-        return update(service, dto, requestContext);
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, LanguageDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+        return update(id, service, dto, requestContext);
     }
 
     @DELETE

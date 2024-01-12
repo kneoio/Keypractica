@@ -2,11 +2,13 @@ package io.kneo.officeframe.model;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.SimpleReferenceEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.EnumMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +16,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class Organization extends SimpleReferenceEntity {
+    private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
     private UUID orgCategory;
     private List<UUID> labels;
     private String bizID = "";
