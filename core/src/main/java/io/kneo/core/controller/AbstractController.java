@@ -103,7 +103,7 @@ public abstract class AbstractController<T, V> {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.update(dto, userOptional.get())
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
+                    .onItem().transform(id -> Response.status(Response.Status.OK).build())
                     .onFailure().recoverWithItem(throwable -> {
                         LOGGER.error(throwable.getMessage(), throwable);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
