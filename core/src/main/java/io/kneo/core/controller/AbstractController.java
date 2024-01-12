@@ -60,6 +60,26 @@ public abstract class AbstractController<T, V> {
         }
 
     }
+    protected Uni<Response> getById (IRESTService<V> service, String id, ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.FORM_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(t -> {
+                        LOGGER.error(t.getMessage(), t);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+    }
+
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
@@ -99,11 +119,11 @@ public abstract class AbstractController<T, V> {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
-    protected Uni<Response> update(AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+    protected Uni<Response> update(String id, AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
-            return service.update(dto, userOptional.get())
-                    .onItem().transform(id -> Response.status(Response.Status.OK).build())
+            return service.update(id, dto, userOptional.get())
+                    .onItem().transform(v -> Response.status(Response.Status.OK).build())
                     .onFailure().recoverWithItem(throwable -> {
                         LOGGER.error(throwable.getMessage(), throwable);
                         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();

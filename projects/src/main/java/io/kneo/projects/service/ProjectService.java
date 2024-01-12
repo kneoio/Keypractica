@@ -74,7 +74,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<Integer> update(ProjectDTO dto, IUser user) {
+    public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
         return null;
     }
 

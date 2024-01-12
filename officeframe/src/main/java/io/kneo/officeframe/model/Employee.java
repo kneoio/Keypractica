@@ -28,7 +28,5 @@ public class Employee extends SimpleReferenceEntity {
     private List<String> roles;
     private int rank = 999;
     private int status;
-    private boolean fired;
-
 }
 

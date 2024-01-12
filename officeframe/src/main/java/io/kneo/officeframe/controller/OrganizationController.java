@@ -12,6 +12,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
@@ -19,7 +20,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
-import java.util.Optional;
 
 @Path("/orgs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -37,9 +37,8 @@ public class OrganizationController extends AbstractSecuredController<Organizati
 
     @GET
     @Path("/{id}")
-    public Response getById(@PathParam("id") String id)  {
-        Uni<Optional<Organization>> user = service.get(id);
-        return Response.ok(user).build();
+    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext)  {
+        return getById(service, id, requestContext);
     }
 
     @POST

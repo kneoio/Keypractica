@@ -56,7 +56,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
-    public Uni<Integer> update(PositionDTO dto, IUser user) {
+    public Uni<Integer> update(String id, PositionDTO dto, IUser user) {
         return null;
     }
 
@@ -77,8 +77,6 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
             }
         });
     }
-
-
     public Uni<Optional<Position>> get(UUID uuid) {
         return repository.findById(uuid);
     }

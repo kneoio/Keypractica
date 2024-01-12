@@ -61,7 +61,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<Integer> update(DepartmentDTO dto, IUser user) {
+    public Uni<Integer> update(String id, DepartmentDTO dto, IUser user) {
         return null;
     }
 

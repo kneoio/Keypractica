@@ -75,7 +75,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
     @Override
-    public Uni<Integer> update(ModuleDTO dto, IUser user) {
+    public Uni<Integer> update(String id, ModuleDTO dto, IUser user) {
         return null;
     }
 

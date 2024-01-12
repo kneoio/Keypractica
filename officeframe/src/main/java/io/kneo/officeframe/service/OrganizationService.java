@@ -5,8 +5,11 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
+import io.kneo.officeframe.model.OrgCategory;
 import io.kneo.officeframe.model.Organization;
+import io.kneo.officeframe.repository.OrgCategoryRepository;
 import io.kneo.officeframe.repository.OrganizationRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,6 +24,9 @@ import java.util.stream.Collectors;
 public class OrganizationService  extends AbstractService<Organization, OrganizationDTO> implements IRESTService<OrganizationDTO> {
     @Inject
     private OrganizationRepository repository;
+
+    @Inject
+    OrgCategoryRepository orgCategoryRepository;
 
     public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset) {
         Uni<List<Organization>> listUni = repository.getAll(limit, offset);
@@ -53,7 +59,32 @@ public class OrganizationService  extends AbstractService<Organization, Organiza
 
     @Override
     public Uni<OrganizationDTO> getDTO(String id, IUser user) {
-        return null;
+        Uni<Optional<Organization>> uni = repository.findById(UUID.fromString(id));
+
+        Uni<Optional<OrgCategory>> relatedUni = uni.onItem().transformToUni(item ->
+                orgCategoryRepository.findById(item.get().getOrgCategory())
+
+        );
+        return Uni.combine().all().unis(uni, relatedUni).combinedWith((docOpt, orgCategory) -> {
+            Organization doc = docOpt.orElseThrow();
+            OrganizationDTO dto = OrganizationDTO.builder()
+                    .id(doc.getId())
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .identifier(doc.getIdentifier())
+                    .localizedName(doc.getLocalizedName())
+                    .build();
+            if (orgCategory.isPresent()) {
+                OrgCategory category = orgCategory.get();
+                dto.setOrgCategory(OrgCategoryDTO.builder()
+                        .identifier(category.getIdentifier())
+                        .id(category.getId())
+                        .build());
+            }
+            return dto;
+        });
     }
 
     @Override
@@ -62,7 +93,7 @@ public class OrganizationService  extends AbstractService<Organization, Organiza
     }
 
     @Override
-    public Uni<Integer> update(OrganizationDTO dto, IUser user) {
+    public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
         return null;
     }
 

@@ -1,5 +1,6 @@
 package io.kneo.core.service;
 
+import io.kneo.core.model.user.IUser;
 import io.smallrye.mutiny.Uni;
 
 import java.util.List;
@@ -10,6 +11,8 @@ public interface IRESTService<V> {
     Uni<Integer> getAllCount();
 
     Uni<List<V>> getAll(int pageSize, int offset);
+
+    Uni<V> getDTO(String id, IUser user);
 
     Uni<Optional<V>> getByIdentifier(String  identifier);
 }

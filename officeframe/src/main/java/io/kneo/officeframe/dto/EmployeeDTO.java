@@ -31,7 +31,6 @@ public class EmployeeDTO extends AbstractReferenceDTO {
     DepartmentDTO dep;
     @NotNull(message = "{employee.position.invalid}")
     PositionDTO position;
-    boolean fired;
     @Positive(message = "{employee.rank.invalid}")
     int rank = 999;
     String phone;
