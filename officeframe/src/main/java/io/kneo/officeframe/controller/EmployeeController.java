@@ -88,8 +88,13 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
+    public Uni<Integer> delete(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            return service.delete(id, user);
+        }
+        return null;
     }
 
 }

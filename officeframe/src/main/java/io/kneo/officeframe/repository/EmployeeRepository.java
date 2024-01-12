@@ -7,7 +7,6 @@ import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Employee;
-import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -150,7 +149,7 @@ public class EmployeeRepository extends AsyncRepository {
         try {
             JsonObject localizedNameJson = row.getJsonObject("loc_name");
             Map i = localizedNameJson.getMap();
-            return  convertToEnumMap(i);
+            return convertToEnumMap(i);
         } catch (Exception e) {
             return new EnumMap<>(LanguageCode.class);
         }
@@ -173,14 +172,44 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
 
-    public Uni<Integer> update(Organization node) {
+    public Uni<Integer> update(Employee doc, long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        UUID docId = doc.getId();
+        String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
+                "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
+                "user_id=$11, fired=$12, rank=$13, loc_name=$14, phone=$15 WHERE id=$16", entityData.tableName());
+        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple allParams = params
+                .addInteger(doc.getStatus())
+                .addLocalDate(doc.getBirthDate())
+                .addString(doc.getName())
+                .addUUID(doc.getDepartment())
+                .addUUID(doc.getOrganization())
+                .addUUID(doc.getPosition())
+                .addLong(doc.getUser())
+                .addBoolean(doc.isFired())
+                .addInteger(doc.getRank())
+                .addJsonObject(getLocalizedName(doc.getLocalizedName()))
+                .addString(doc.getPhone());
+        allParams.addUUID(docId);
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(allParams)
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().item(0);
+                }));
 
-        return (Uni<Integer>) node;
     }
-
-    public int delete(Long id) {
-
-        return 1;
+    public Uni<Integer> delete(UUID id) {
+        String sql = String.format("DELETE FROM %s WHERE  id=$1", entityData.tableName());
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(Tuple.of(id))
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onFailure().recoverWithUni(throwable -> {
+                    LOGGER.error(throwable.getMessage());
+                    return Uni.createFrom().item(0);
+                }));
     }
 
 }

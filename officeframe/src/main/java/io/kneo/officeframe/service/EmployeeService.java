@@ -143,7 +143,27 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
     @Override
     public Uni<Integer> update(EmployeeDTO dto, IUser user) {
-        return null;
+        Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getId());
+        Uni<Optional<Department>> depUni = departmentRepository.findById(dto.getId());
+        Uni<Optional<Position>> positionUni = positionRepository.findById(dto.getId());
+        //Uni<List<Role>> roleUni = Uni.createFrom().item(new ArrayList<>());
+        return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {
+            Employee doc = new Employee();
+            doc.setName(dto.getName());
+            doc.setUser(dto.getUserId());
+            doc.setBirthDate(dto.getBirthDate());
+            doc.setPhone(dto.getPhone());
+            doc.setRank(dto.getRank());
+            doc.setLocalizedName(dto.getLocalizedName());
+            orgOpt.ifPresent(org -> doc.setOrganization(org.getId()));
+            depOpt.ifPresent(dep -> doc.setDepartment(dep.getId()));
+            posOpt.ifPresent(pos -> doc.setPosition(pos.getId()));
+            return repository.update(doc, user.getId());
+        }).flatMap(uni -> uni);
+    }
+
+    public Uni<Integer> delete(String id, IUser user) {
+        return repository.delete(UUID.fromString(id));
     }
 
 }
