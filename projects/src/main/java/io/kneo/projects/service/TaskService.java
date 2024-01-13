@@ -13,10 +13,7 @@ import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.LabelService;
 import io.kneo.officeframe.service.TaskTypeService;
-import io.kneo.projects.dto.AssigneeDTO;
-import io.kneo.projects.dto.ProjectDTO;
-import io.kneo.projects.dto.TaskDTO;
-import io.kneo.projects.dto.TaskTypeDTO;
+import io.kneo.projects.dto.*;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.repository.TaskRepository;
 import io.kneo.projects.repository.table.ProjectNameResolver;
@@ -123,6 +120,13 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     }
 
+    public Uni<TaskTemplateDTO> getTemplate(IUser user) {
+        TaskTemplateDTO template = TaskTemplateDTO.builder()
+                .targetDate(LocalDate.now().plusMonths(1))
+                .build();
+        return Uni.createFrom().item(template);
+    }
+
     private static AssigneeDTO getAssigneeDTO(Optional<IUser> assigneeOptional, Task task) {
         AssigneeDTO assigneeDTO = new AssigneeDTO();
         if (assigneeOptional.isPresent()) {
@@ -204,4 +208,6 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
             return Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Optional<Label>>) list);
         }
     }
+
+
 }

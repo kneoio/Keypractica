@@ -74,7 +74,26 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
             return service.get(id, user)
                     .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
+                        page.addPayload(PayloadType.DOC_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+    }
+
+    @GET
+    @Path("/template")
+    public Uni<Response> getTemplate(@Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.getTemplate(user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.TEMPLATE, p);
                         return Response.ok(page).build();
                     })
                     .onFailure().recoverWithItem(this::postError);

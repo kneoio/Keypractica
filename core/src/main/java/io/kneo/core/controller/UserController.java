@@ -69,8 +69,8 @@ public class UserController extends AbstractController<User, UserDTO> {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.get(id).onItem().transform(userOptional -> {
-            userOptional.ifPresentOrElse(user ->  page.addPayload(PayloadType.FORM_DATA, user),
-                    () ->  page.addPayload(PayloadType.FORM_DATA, "no_data"));
+            userOptional.ifPresentOrElse(user ->  page.addPayload(PayloadType.DOC_DATA, user),
+                    () ->  page.addPayload(PayloadType.DOC_DATA, "no_data"));
             return Response.ok(page).build();
         });
     }

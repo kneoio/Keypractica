@@ -4,7 +4,12 @@ import lombok.Getter;
 
 @Getter
 public enum PayloadType {
-    CONTEXT_ACTIONS("actions"), EXCEPTION("exception"), TEXT("text"), VIEW_DATA("view_data"), FORM_DATA("form_data");
+    CONTEXT_ACTIONS("actions"),
+    EXCEPTION("exception"),
+    TEXT("text"),
+    VIEW_DATA("view_data"),
+    DOC_DATA("doc_data"),
+    TEMPLATE("template");
 
     private final String alias;
 
