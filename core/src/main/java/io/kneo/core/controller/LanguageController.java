@@ -52,7 +52,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     public Response getByCode(@PathParam("code") String code)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-        page.addPayload(PayloadType.FORM_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
+        page.addPayload(PayloadType.DOC_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
         return Response.ok(page).build();
     }
 
@@ -63,7 +63,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
+                    page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();
                 })
                 .onFailure().invoke(failure -> LOGGER.error(failure.getMessage()))

@@ -47,7 +47,7 @@ public class PositionController extends AbstractSecuredController<Position, Posi
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.getDTO(id, user)
                 .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
+                    page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();
                 })
                 .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());

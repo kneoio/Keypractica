@@ -25,6 +25,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.annotation.security.RolesAllowed;
 import java.net.URI;
@@ -76,6 +77,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     }
 
     @GET
+    @Tag(name = "ai")
     @Path("/status/{status}")
     public Uni<Response> searchByStatus(@PathParam("status") ProjectStatusType status) {
         if (status == null || status == ProjectStatusType.UNKNOWN) {
@@ -98,7 +100,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
             return service.get(id, user.getId())
                     .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
+                        page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
                     .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());

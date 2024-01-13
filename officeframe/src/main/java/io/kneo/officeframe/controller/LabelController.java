@@ -51,7 +51,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
             return service.getDTO(id, user)
                     .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
+                        page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
                     .onFailure().recoverWithItem(this::postError);
@@ -70,7 +70,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
             return service.getDTOByIdentifier(id, user)
                     .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
+                        page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
                     .onFailure().recoverWithItem(this::postError);

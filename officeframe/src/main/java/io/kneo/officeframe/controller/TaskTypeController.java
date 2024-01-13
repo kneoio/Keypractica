@@ -53,7 +53,7 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.findByIdentifier(identifier)
                 .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
+                    page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();
                 })
                 .onFailure().recoverWithItem(this::postError);

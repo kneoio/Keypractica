@@ -1,11 +1,5 @@
 package io.kneo.projects.model.cnst;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.List;
-
-import static java.util.stream.Collectors.toList;
-
 /**
  * @author Kayra created 21-04-2016
  */
@@ -29,19 +23,5 @@ public enum ProjectStatusType {
             }
         }
         return UNKNOWN;
-    }
-
-    public static List<ProjectStatusType> getActualValues() {
-        return Arrays.stream(ProjectStatusType.values()).filter(type -> {
-            try {
-                Field field = ProjectStatusType.class.getField(type.name());
-                if (field.isAnnotationPresent(Deprecated.class)) {
-                    return false;
-                }
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
-            }
-            return type != ProjectStatusType.UNKNOWN;
-        }).collect(toList());
     }
 }

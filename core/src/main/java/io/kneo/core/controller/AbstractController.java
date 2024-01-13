@@ -69,7 +69,7 @@ public abstract class AbstractController<T, V> {
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
             return service.getDTO(id, user)
                     .onItem().transform(p -> {
-                        page.addPayload(PayloadType.FORM_DATA, p);
+                        page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
                     .onFailure().recoverWithItem(t -> {
@@ -86,7 +86,7 @@ public abstract class AbstractController<T, V> {
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
         return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
-                    page.addPayload(PayloadType.FORM_DATA, p);
+                    page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();
                 })
                 .onFailure().invoke(failure -> LOGGER.error(failure.getMessage()))
