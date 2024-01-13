@@ -9,7 +9,8 @@ import lombok.Setter;
 import java.util.UUID;
 
 
-@JsonInclude(JsonInclude.Include.NON_NULL)@Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Setter
 @Getter
 @NoArgsConstructor
 public class Department extends SimpleReferenceEntity {

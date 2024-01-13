@@ -6,6 +6,7 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
 import io.kneo.core.repository.RoleRepository;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -64,6 +65,11 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
 
     @Override
     public Uni<Integer> update(String id, RoleDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

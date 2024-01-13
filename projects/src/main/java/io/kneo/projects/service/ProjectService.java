@@ -5,10 +5,12 @@ import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.model.Project;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.repository.ProjectRepository;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
@@ -57,6 +59,10 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return repository.search(keyword);
     }
 
+    public Uni<List<Project>> searchByStatus(ProjectStatusType statusType) {
+        return repository.searchByCondition(String.format("status = '%s'", statusType));
+    }
+
     public Uni<ProjectDTO> get(String uuid, final long userID) {
         return get(UUID.fromString(uuid), userID);
     }
@@ -75,6 +81,11 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     @Override
     public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

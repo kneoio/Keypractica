@@ -3,6 +3,7 @@ package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
@@ -94,6 +95,11 @@ public class OrganizationService  extends AbstractService<Organization, Organiza
 
     @Override
     public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

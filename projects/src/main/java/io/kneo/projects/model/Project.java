@@ -3,7 +3,7 @@ package io.kneo.projects.model;
 import io.kneo.core.model.AbstractEntityBuilder;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.SecureDataEntity;
-import io.kneo.core.model.constants.ProjectStatusType;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
