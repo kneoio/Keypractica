@@ -1,6 +1,5 @@
 package io.kneo.projects.repository;
 
-import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -28,7 +27,7 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
-    private static final EntityData ENTITY_DATA = ProjectNameResolver.create().getEntityNames(TASK);
+    private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(TASK);
     @Inject
     private RLSRepository rlsRepository;
     private static final String BASE_REQUEST = """
@@ -47,22 +46,19 @@ public class TaskRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, ENTITY_DATA.tableName(), ENTITY_DATA.rlsName());
+        return getAllCount(userID, entityData.getTableName(), entityData.getRlsName());
     }
 
     public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
-        if (uuid == null) {
-            LOGGER.warn("null Id provided to find by Id");
-            return Uni.createFrom().item(Optional.empty());
-        }
-        return client.preparedQuery(BASE_REQUEST + "WHERE ptr.reader = $1 AND pt.id = $2")
+        return client.preparedQuery( String.format("SELECT pt.*, ptr.*  FROM %s pt JOIN %s ptr ON pt.id = ptr.entity_id " +
+                        "WHERE ptr.reader = $1 AND pt.id = $2", entityData.getTableName(), entityData.getRlsName()))
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
                         return Optional.of(from(iterator.next()));
                     } else {
-                        LOGGER.warn(String.format("No %s found with id: " + uuid, ENTITY_DATA.tableName()));
+                        LOGGER.warn(String.format("No %s found with id: " + uuid, entityData.getTableName()));
                         return Optional.empty();
                     }
                 });
@@ -78,6 +74,7 @@ public class TaskRepository extends AsyncRepository {
                 .setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()))
                 .setRegNumber(row.getString("reg_number"))
                 .setAssignee(row.getLong("assignee"))
+                .setTitle(row.getString("title"))
                 .setBody(row.getString("body"))
                 .setProject(row.getUUID("project_id"))
                 .setParent(row.getUUID("parent_id"))
@@ -92,25 +89,11 @@ public class TaskRepository extends AsyncRepository {
                 .build();
     }
 
-    private Uni<RuntimeException> clarifyException(UUID uuid) {
-        Uni<Optional<Task>> taskUni = findById(uuid, SuperUser.build().getId())
-                .onItem().ifNotNull().failWith(new DocumentHasNotFoundException("Task found"))
-                .onItem().ifNull().failWith(new DocumentHasNotFoundException("Task not found"));
-
-        return taskUni.onItem().transform(task -> {
-            if (task.isPresent()) {
-                return new RuntimeException("Task not found");
-            } else {
-                return new RuntimeException("Task found");
-            }
-        });
-    }
-
     public Uni<UUID> insert(Task doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", ENTITY_DATA.tableName());
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id;", entityData.getTableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addLong(doc.getAssignee())
@@ -131,25 +114,21 @@ public class TaskRepository extends AsyncRepository {
                 .addString(doc.getRegNumber())
                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                 .addString(doc.getCancellationComment());
-        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", ENTITY_DATA.rlsName());
-        String labelsSql = "INSERT INTO prj__task_labels(task_id, label_id) VALUES($1, $2)";
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", entityData.getRlsName());
+        String labelsSql = "INSERT INTO prj__task_labels(id, label_id) VALUES($1, $2)";
         Tuple finalAllParams = allParams;
         return client.withTransaction(tx -> {
             return tx.preparedQuery(sql)
                     .execute(finalAllParams)
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
-                    .onFailure().recoverWithUni(throwable -> {
-                        LOGGER.error(throwable.getMessage(), throwable);
-                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s ", TASK), throwable));
-                    })
+                    .onFailure().recoverWithUni(t ->
+                            Uni.createFrom().failure(t))
                     .onItem().transformToUni(id -> {
                         return tx.preparedQuery(readersSql)
                                 .execute(Tuple.of(user, id, 1, 1))
                                 .onItem().ignore().andContinueWithNull()
-                                .onFailure().recoverWithUni(throwable -> {
-                                    LOGGER.error(throwable.getMessage());
-                                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to add %s ", ENTITY_DATA.rlsName()), throwable));
-                                })
+                                .onFailure().recoverWithUni(t ->
+                                        Uni.createFrom().failure(t))
                                 .onItem().transform(unused -> id);
                     })
                     .onItem().transformToUni(id -> {
@@ -161,10 +140,8 @@ public class TaskRepository extends AsyncRepository {
                             Uni<UUID> uni = tx.preparedQuery(labelsSql)
                                     .execute(Tuple.of(id, label))
                                     .onItem().ignore().andContinueWithNull()
-                                    .onFailure().recoverWithUni(throwable -> {
-                                        LOGGER.error(throwable.getMessage());
-                                        return Uni.createFrom().failure(new RuntimeException("Failed to add Labels", throwable));
-                                    })
+                                    .onFailure().recoverWithUni(t ->
+                                            Uni.createFrom().failure(t))
                                     .onItem().transform(unused -> label);
                             unis.add(uni);
                         }
@@ -173,47 +150,95 @@ public class TaskRepository extends AsyncRepository {
         });
     }
 
-    public Uni<Integer> update(Task doc, Long user) throws DocumentModificationAccessException {
-        UUID docId = doc.getId();
-        if (1 == rlsRepository.findById(ENTITY_DATA.tableName(), user, docId)[0]) {
-            LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-            String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
-                    "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
-                    "reg_number=$11, status_date=$12, cancel_comment=$13, last_mod_date=$14, last_mod_user=$15" +
-                    "WHERE id=$16;", ENTITY_DATA.tableName());
-            Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
-            if (doc.getTargetDate() != null) {
-                params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
-            } else {
-                params.addLocalDateTime(null);
-            }
-            Tuple allParams = params
-                    .addInteger(doc.getPriority())
-                    .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                    .addInteger(doc.getStatus())
-                    .addString(doc.getTitle())
-                    .addUUID(doc.getParent())
-                    .addUUID(doc.getProject())
-                    .addUUID(doc.getTaskType())
-                    .addString(doc.getRegNumber())
-                    .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                    .addString(doc.getCancellationComment())
-                    .addLocalDateTime(nowTime)
-                    .addLong(user);
+    public Uni<Integer> update(UUID id, Task doc, Long user) {
+        return rlsRepository.findById(entityData.getRlsName(), user, id)
+                .onItem().transformToUni(permissions -> {
+                    if (permissions[0] == 1) {
+                        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+                        String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
+                                "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
+                                "status_date=$11, cancel_comment=$12, last_mod_date=$13, last_mod_user=$14" +
+                                "WHERE id=$15;", entityData.getTableName());
+                        Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
+                        if (doc.getTargetDate() != null) {
+                            params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+                        } else {
+                            params.addLocalDateTime(null);
+                        }
+                        Tuple allParams = params
+                                .addInteger(doc.getPriority())
+                                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                                .addInteger(doc.getStatus())
+                                .addString(doc.getTitle())
+                                .addUUID(doc.getParent())
+                                .addUUID(doc.getProject())
+                                .addUUID(doc.getTaskType())
+                                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                                .addString(doc.getCancellationComment())
+                                .addLocalDateTime(nowTime)
+                                .addLong(user);
+                        allParams.addUUID(id);
+                        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                                .execute(allParams)
+                                .onItem().transformToUni(rowSet -> {
+                                    int rowCount = rowSet.rowCount();
+                                    if (rowCount == 0) {
+                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                                    }
+                                    if (doc.getLabels() != null && !doc.getLabels().isEmpty()) {
+                                        String deleteLabelsSql = "DELETE FROM prj__task_labels WHERE id=$1";
+                                        Uni<Void> deleteLabelsUni = tx.preparedQuery(deleteLabelsSql)
+                                                .execute(Tuple.of(id))
+                                                .onItem().ignore().andContinueWithNull();
 
-            return client.withTransaction(tx -> tx.preparedQuery(sql)
-                    .execute(allParams)
-                    .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
-                    .onFailure().recoverWithUni(throwable -> {
-                        LOGGER.error(throwable.getMessage());
-                        return Uni.createFrom().item(0);
-                    }));
-        } else {
-            throw new DocumentModificationAccessException(docId);
-        }
+                                        List<Uni<Void>> labelInsertUnis = new ArrayList<>();
+                                        for (UUID label : doc.getLabels()) {
+                                            String labelsSql = "INSERT INTO prj__task_labels(id, label_id) VALUES($1, $2)";
+                                            Uni<Void> labelInsertUni = tx.preparedQuery(labelsSql)
+                                                    .execute(Tuple.of(id, label))
+                                                    .onItem().ignore().andContinueWithNull();
+                                            labelInsertUnis.add(labelInsertUni);
+                                        }
+
+                                        return deleteLabelsUni.flatMap(ignored ->
+                                                Uni.combine().all().unis(labelInsertUnis).discardItems()
+                                        ).map(ignored -> rowCount);
+                                    } else {
+                                        return Uni.createFrom().item(rowCount);
+                                    }
+                                })
+                                .onFailure().recoverWithUni(t ->
+                                        Uni.createFrom()
+                                                .failure(t)));
+                    } else {
+                        return Uni.createFrom()
+                                .failure(new DocumentModificationAccessException("User does not have delete permission", user, id));
+                    }
+                });
     }
 
-    public Uni<Void> delete(UUID uuid, Long user) {
-        return delete(uuid, ENTITY_DATA.tableName());
+    public Uni<Integer> delete(UUID id, long user) {
+        return rlsRepository.findById(entityData.getRlsName(), user, id)
+                .onItem().transformToUni(permissions -> {
+                    if (permissions[1] == 1) {
+                        String sql = String.format("DELETE FROM %s WHERE id=$1;", entityData.getTableName());
+                        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                                .execute(Tuple.of(id))
+                                .onItem().transformToUni(rowSet -> {
+                                    int rowCount = rowSet.rowCount();
+                                    if (rowCount == 0) {
+                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                                    }
+                                    return Uni.createFrom().item(rowCount);
+                                })
+                                .onFailure().recoverWithUni(t ->
+                                        Uni.createFrom().failure(t)));
+
+                    } else {
+                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have delete permission", user, id));
+                    }
+                });
     }
+
+
 }

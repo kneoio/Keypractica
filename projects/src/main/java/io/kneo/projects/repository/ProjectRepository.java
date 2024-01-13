@@ -24,7 +24,7 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 
 @ApplicationScoped
 public class ProjectRepository extends AsyncRepository {
-    private static final EntityData PROJECT_ENTITY_DATA = ProjectNameResolver.create().getEntityNames(PROJECT);
+    private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(PROJECT);
 
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
@@ -39,13 +39,13 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, PROJECT_ENTITY_DATA.tableName(), PROJECT_ENTITY_DATA.rlsName());
+        return getAllCount(userID, entityData.getTableName(), entityData.getRlsName());
     }
 
     public Uni<List<Project>> search(String keyword) {
         String query = String.format(
                 "SELECT * FROM %s WHERE textsearch @@ to_tsquery('english', '%s')",
-                PROJECT_ENTITY_DATA.tableName(),
+                entityData.getTableName(),
                 keyword
         );
         return client.query(query)
@@ -104,7 +104,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, PROJECT_ENTITY_DATA.tableName());
+        return delete(uuid, entityData.getTableName());
     }
 
 

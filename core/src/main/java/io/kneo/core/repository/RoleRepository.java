@@ -52,7 +52,7 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(entityData.tableName());
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<Optional<Role>> findById(UUID uuid) {
@@ -93,7 +93,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<UUID> insert(Role doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", entityData.tableName());
+        String sql = String.format("INSERT INTO %s (author, identifier, reg_date, last_mod_date, last_mod_user, loc_name, loc_descr) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id", entityData.getTableName());
         Tuple params = Tuple.of(user, doc.getIdentifier(), nowTime, nowTime, user);
         Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addJsonObject(JsonObject.mapFrom(doc.getLocalizedDescription()));
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -108,7 +108,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<Integer> update(Role doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", entityData.tableName());
+        String sql = String.format("UPDATE %s SET identifier=$1, last_mod_date=$2, last_mod_user=$3, loc_name=$4, localized_descr=$5 WHERE id=$6", entityData.getTableName());
         Tuple params = Tuple.of(doc.getIdentifier(), nowTime, user, JsonObject.mapFrom(doc.getLocalizedName()), JsonObject.mapFrom(doc.getLocalizedDescription()));
         Tuple finalParams = params.addUUID(doc.getId());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -121,7 +121,7 @@ public class RoleRepository extends AsyncRepository {
     }
 
     public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, entityData.tableName());
+        return delete(uuid, entityData.getTableName());
     }
 
 

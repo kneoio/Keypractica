@@ -1,17 +1,25 @@
 package io.kneo.core.repository.exception;
 
+import lombok.Getter;
+
 import java.util.UUID;
 
-
+@Getter
 public class DocumentModificationAccessException extends Exception {
-    private UUID docId;
+    private final long user;
+    private String docId;
 
-    public DocumentModificationAccessException(UUID id) {
-        super();
-        docId = id;
+    public DocumentModificationAccessException(String s, long user, UUID id) {
+        super(s);
+        this.user = user;
+        try {
+            this.docId = id.toString();
+        } catch (Exception e) {
+            docId = "null";
+        }
     }
 
     public String getDeveloperMessage() {
-        return "\"" + docId.toString() + "\" restricted to modify";
+        return String.format(" %s, id: %s ", getMessage(), docId);
     }
 }

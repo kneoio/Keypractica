@@ -19,12 +19,12 @@ public class OfficeFrameNameResolver extends TableNameResolver {
 
     public EntityData getEntityNames(String type) {
         return switch (type) {
-            case ORGANIZATION -> new EntityData(String.join(".",DEFAULT_SCHEMA, ORGANIZATION_TABLE_NAME), null);
-            case EMPLOYEE -> new EntityData(String.join(".",DEFAULT_SCHEMA, EMPLOYEE_TABLE_NAME), null);
-            case DEPARTMENT -> new EntityData(String.join(".",DEFAULT_SCHEMA, DEPARTMENT_TABLE_NAME), null);
-            case LABEL -> new EntityData(String.join(".",DEFAULT_SCHEMA, LABEL_TABLE_NAME), null);
-            case POSITION -> new EntityData(String.join(".",DEFAULT_SCHEMA, POSITION_TABLE_NAME), null);
-            case ORG_CATEGORY -> new EntityData(String.join(".",DEFAULT_SCHEMA, ORG_CATEGORY_TABLE_NAME), null);
+            case ORGANIZATION -> new EntityData(String.join(".",DEFAULT_SCHEMA, ORGANIZATION_TABLE_NAME));
+            case EMPLOYEE -> new EntityData(String.join(".",DEFAULT_SCHEMA, EMPLOYEE_TABLE_NAME) );
+            case DEPARTMENT -> new EntityData(String.join(".",DEFAULT_SCHEMA, DEPARTMENT_TABLE_NAME));
+            case LABEL -> new EntityData(String.join(".",DEFAULT_SCHEMA, LABEL_TABLE_NAME));
+            case POSITION -> new EntityData(String.join(".",DEFAULT_SCHEMA, POSITION_TABLE_NAME));
+            case ORG_CATEGORY -> new EntityData(String.join(".",DEFAULT_SCHEMA, ORG_CATEGORY_TABLE_NAME));
             default -> super.getEntityNames(type);
         };
     }

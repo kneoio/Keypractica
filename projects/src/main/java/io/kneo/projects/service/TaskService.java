@@ -3,10 +3,10 @@ package io.kneo.projects.service;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.service.exception.DataValidationException;
+import io.kneo.core.util.DateUtil;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
@@ -76,34 +76,32 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
     public Uni<TaskDTO> getDTO(String uuid, IUser user) {
-        return get(uuid, user.getId());
+        return get(uuid, user);
     }
 
-    public Uni<TaskDTO> get(String uuid, final long userID) {
+    public Uni<TaskDTO> get(String uuid, final IUser userID) {
         UUID id = UUID.fromString(uuid);
-        Uni<Optional<Task>> taskUni = repository.findById(id, userID);
+        Uni<Optional<Task>> taskUni = repository.findById(id, userID.getId());
 
         Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item ->
                 projectService.get(item.get().getProject(), userID)
         );
 
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeService.findById(item.get().getTaskType())
-        );
+                taskTypeService.findById(item.get().getTaskType())        );
+
+        Uni<List<LabelDTO>> labelsUni = labelService.getLabels(id, ProjectNameResolver.create().getEntityNames(TASK).getLabelsName());
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository,ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
-   /*     List<Uni<Optional<Label>>> labelUnis = taskUni.onItem().transformToUni(item ->
-                item.get().getLabels().stream().map(v -> labelService.get(v))
 
-        )*/
-
-        return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, rls) -> {
+        return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, labelsUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, labels, rls) -> {
                     Task task = taskOpt.orElseThrow();
                     return TaskDTO.builder()
                             .id(task.getId())
                             .author(userRepository.getUserName(task.getAuthor()))
                             .regDate(task.getRegDate())
+                            .title(task.getTitle())
                             .lastModifier(userRepository.getUserName(task.getLastModifier()))
                             .lastModifiedDate(task.getLastModifiedDate())
                             .regNumber(task.getRegNumber())
@@ -118,6 +116,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .targetDate(Optional.ofNullable(task.getTargetDate()).map(LocalDate::from).orElse(null))
                             .status(task.getStatus())
                             .priority(task.getPriority())
+                            .labels(labels)
                             .rls(rls).build();
                 }
         );
@@ -139,7 +138,57 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
     public Uni<UUID> add(TaskDTO dto, IUser user) {
-        List<LabelDTO> labelDTOs = dto.getLabels();
+        Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
+        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
+        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
+        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
+        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+            Task doc = buildEntity(dto, assignee, labels,  taskType, project, taskOpt);
+            return repository.insert(doc, user.getId());
+        }).flatMap(uni -> uni);
+    }
+
+    public Uni<Integer> update(String id, TaskDTO dto, IUser user) {
+        Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
+        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
+        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
+        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
+        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+            Task doc = buildEntity(dto, assignee, labels,  taskType, project, taskOpt);
+            return repository.update(UUID.fromString(id), doc, user.getId());
+        }).flatMap(uni -> uni);
+    }
+
+    public Uni<Integer> delete(String id, IUser user) {
+        return repository.delete(UUID.fromString(id), user.getId());
+    }
+
+    private Task buildEntity(TaskDTO dto, Optional<IUser> assignee, List<Optional<Label>> labels, Optional<TaskType> taskType, ProjectDTO project, Optional<Task> taskOpt) {
+        Task doc = new Task.Builder()
+                .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
+                .setBody(dto.getBody())
+                .setAssignee(assignee.orElseThrow().getId())
+                .setPriority(dto.getPriority())
+                .setCancellationComment(dto.getCancellationComment())
+                .setTitle(dto.getTitle())
+                .setLabels(labels.stream()
+                        .filter(Optional::isPresent)
+                        .map(o -> o.get().getId())
+                        .collect(Collectors.toList()))
+                .setTaskType(taskType.orElseThrow(() -> new DataValidationException("Task type is not correct")).getId())
+                .setProject(project.getId())
+                .setStartDate(DateUtil.getStartOfDayOrNow(dto.getStartDate()))
+                .build();
+        taskOpt.ifPresent(task -> doc.setParent(task.getParent()));
+        if (dto.getTargetDate() != null) {
+            doc.setTargetDate(dto.getTargetDate().atStartOfDay(ZoneId.systemDefault()));
+        }
+        return doc;
+    }
+
+    private Uni<List<Optional<Label>>> getLabelsUni(List<LabelDTO> labelDTOs) {
         List<Uni<Optional<Label>>> labelUnis = labelDTOs.stream()
                 .map(v ->
                         labelService.findByIdentifier(v.getIdentifier())
@@ -150,48 +199,9 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
         Uni<List<Optional<Label>>> combinedLabelUnis;
         if (labelUnis.isEmpty()) {
-            combinedLabelUnis = Uni.createFrom().item(Collections.emptyList());
+            return Uni.createFrom().item(Collections.emptyList());
         } else {
-            combinedLabelUnis = Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Optional<Label>>) list);
-
+            return Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Optional<Label>>) list);
         }
-
-        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
-        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
-        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
-        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
-
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
-            Task node = new Task.Builder()
-                    .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
-                    .setBody(dto.getBody())
-                    .setAssignee(assignee.orElseThrow().getId())
-                    .setPriority(dto.getPriority())
-                    .setCancellationComment(dto.getCancellationComment())
-                    .setTitle(dto.getTitle())
-                    .setLabels(labels.stream()
-                            .filter(Optional::isPresent)
-                            .map(o -> o.get().getId())
-                            .collect(Collectors.toList()))
-                    .setTaskType(taskType.orElseThrow(() -> new DataValidationException("Task type is not correct")).getId())
-                    .setProject(project.getId())
-                    .setStartDate(dto.getStartDate().atStartOfDay(ZoneId.systemDefault()))
-                    .build();
-            taskOpt.ifPresent(task -> node.setParent(task.getParent()));
-            if (dto.getTargetDate() != null) {
-                node.setTargetDate(dto.getTargetDate().atStartOfDay(ZoneId.systemDefault()));
-            }
-            return repository.insert(node, user.getId());
-        }).flatMap(uni -> uni);
-    }
-
-
-    public Uni<Integer> update(String id, TaskDTO dto, IUser user) throws DocumentModificationAccessException {
-        Task doc = new Task.Builder()
-                .setId(dto.getId())
-                //  .setAssignee(Long.valueOf(dto.getAssignee()))
-                .setBody(dto.getBody())
-                .build();
-        return repository.update(doc, user.getId());
     }
 }

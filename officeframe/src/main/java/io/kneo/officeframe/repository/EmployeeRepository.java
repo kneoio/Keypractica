@@ -34,7 +34,7 @@ public class EmployeeRepository extends AsyncRepository {
     ObjectMapper mapper;
 
     public Uni<List<Employee>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -45,7 +45,7 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(entityData.tableName());
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<List<Employee>> search(String keyword) {
@@ -53,7 +53,7 @@ public class EmployeeRepository extends AsyncRepository {
                 "(SELECT 0 as id, id as uuid, name, phone, NULL as email FROM %s WHERE textsearch @@ to_tsquery('english', '%s')) " +
                         "UNION " +
                         "(SELECT id, NULL, login as name, 'phone', email FROM %s WHERE textsearch @@ to_tsquery('english', '%s'))",
-                entityData.tableName(), keyword, "_users", keyword
+                entityData.getTableName(), keyword, "_users", keyword
         );
         return client.query(query)
                 .execute()
@@ -67,7 +67,7 @@ public class EmployeeRepository extends AsyncRepository {
     }
 
     public Uni<Optional<Employee>> findByUserId(long id) {
-        return client.preparedQuery("SELECT * FROM staff__employees se WHERE se.user_id = $1")
+        return client.preparedQuery(String.format("SELECT * FROM %s se WHERE se.user_id = $1", entityData.getTableName()))
                 .execute(Tuple.of(id))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
@@ -112,7 +112,7 @@ public class EmployeeRepository extends AsyncRepository {
         String sql = String.format("INSERT INTO %s " +
                 "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, " +
                 "department_id, organization_id, position_id, user_id, rank, loc_name, phone) " +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id", entityData.tableName());
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id", entityData.getTableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addInteger(doc.getStatus())
@@ -174,7 +174,7 @@ public class EmployeeRepository extends AsyncRepository {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
                 "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
-                "user_id=$11, rank=$12, loc_name=$13, phone=$14 WHERE id=$15", entityData.tableName());
+                "user_id=$11, rank=$12, loc_name=$13, phone=$14 WHERE id=$15", entityData.getTableName());
         Tuple params = Tuple.of(nowTime, user, nowTime, user);
         Tuple allParams = params
                 .addInteger(doc.getStatus())
@@ -197,7 +197,7 @@ public class EmployeeRepository extends AsyncRepository {
                 }));
     }
     public Uni<Integer> delete(UUID id) {
-        String sql = String.format("DELETE FROM %s WHERE  id=$1", entityData.tableName());
+        String sql = String.format("DELETE FROM %s WHERE  id=$1", entityData.getTableName());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(Tuple.of(id))
                 .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)

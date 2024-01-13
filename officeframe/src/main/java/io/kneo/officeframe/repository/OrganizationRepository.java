@@ -24,7 +24,7 @@ public class OrganizationRepository extends AsyncRepository {
     PgPool client;
 
     public Uni<List<Organization>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -35,7 +35,7 @@ public class OrganizationRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(entityData.tableName());
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<Optional<Organization>> findById(UUID uuid) {
@@ -48,7 +48,6 @@ public class OrganizationRepository extends AsyncRepository {
         doc.setIdentifier(row.getString("identifier"));
         doc.setOrgCategory(row.getUUID("org_category_id"));
         doc.setBizID(row.getString("biz_id"));
-       // doc.setPrimary(row.getBoolean("is_primary"));
         doc.setRank(row.getInteger("rank"));
         return doc;
     }
