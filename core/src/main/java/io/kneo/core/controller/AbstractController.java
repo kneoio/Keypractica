@@ -19,6 +19,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -123,15 +124,22 @@ public abstract class AbstractController<T, V> {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.update(id, dto, userOptional.get())
-                    .onItem().transform(v -> Response.status(Response.Status.OK).build())
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage(), throwable);
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
+                    .onItem().transform(count -> Response.ok(count).build());
         } else {
-            throw new UserNotFoundException(AnonymousUser.USER_NAME);
+            return Uni.createFrom().failure(new UserNotFoundException(AnonymousUser.USER_NAME));
         }
     }
+
+    public Uni<Response> delete(String uuid, AbstractService<T, V> service, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.delete(uuid, userOptional.get())
+                    .onItem().transform(count -> Response.ok(count).build());
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        }
+    }
+
 
     protected Response postError(Throwable e) {
         Random rand = new Random();

@@ -72,7 +72,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-            return service.get(id, user.getId())
+            return service.get(id, user)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.FORM_DATA, p);
                         return Response.ok(page).build();
@@ -104,8 +104,8 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
+    public Uni<Response> delete(@PathParam("id") String uuid, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
+        return delete(uuid, service, requestContext);
     }
 
 }

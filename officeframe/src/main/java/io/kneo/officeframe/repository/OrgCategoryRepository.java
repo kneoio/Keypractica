@@ -33,7 +33,7 @@ public class OrgCategoryRepository extends AsyncRepository {
     ObjectMapper mapper;
 
     public Uni<List<OrgCategory>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ", entityData.tableName());
+        String sql = String.format("SELECT * FROM %s ", entityData.getTableName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -44,7 +44,7 @@ public class OrgCategoryRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(entityData.tableName());
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<Optional<OrgCategory>> findById(UUID uuid) {

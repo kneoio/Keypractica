@@ -1,5 +1,6 @@
 package io.kneo.core.repository.rls;
 
+import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -18,8 +19,8 @@ public class RLSRepository {
     @Inject
     PgPool client;
 
-    public int[] findById(String accessTableName, Long userID, UUID uuid) {
-        return client.preparedQuery("SELECT can_edit, can_delete FROM " + accessTableName + " WHERE ptr.reader = $1 AND pt.entity_id = $2")
+    public Uni<int[]> findById(String accessTableName, Long userID, UUID uuid) {
+        return client.preparedQuery("SELECT can_edit, can_delete FROM " + accessTableName + " a WHERE a.reader = $1 AND a.entity_id = $2")
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
@@ -29,8 +30,7 @@ public class RLSRepository {
                         LOGGER.warn(String.format("No %s found with id: " + uuid, accessTableName));
                         return new int[2];
                     }
-                })
-                .await().indefinitely();
+                });
     }
 
 

@@ -10,11 +10,12 @@ public class ProjectNameResolver extends TableNameResolver {
     private static final String PROJECT_ACCESS_TABLE_NAME = "prj__project_readers";
     private static final String TASK_TABLE_NAME = "prj__tasks";
     private static final String TASK_ACCESS_TABLE_NAME = "prj__task_readers";
+    private static final String TASK_LABELS = "prj__task_labels";
 
     public EntityData getEntityNames(String type) {
         return switch (type) {
             case PROJECT -> new EntityData(PROJECT_TABLE_NAME, PROJECT_ACCESS_TABLE_NAME);
-            case TASK -> new EntityData(TASK_TABLE_NAME, TASK_ACCESS_TABLE_NAME);
+            case TASK -> new EntityData(TASK_TABLE_NAME, TASK_ACCESS_TABLE_NAME, TASK_LABELS);
             default -> super.getEntityNames(type);
         };
     }

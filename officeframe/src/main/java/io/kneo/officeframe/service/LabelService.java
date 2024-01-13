@@ -1,6 +1,7 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.LabelDTO;
@@ -49,12 +50,25 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         return repository.getAllCount();
     }
 
+    public Uni<List<LabelDTO>> getLabels(UUID id, String type) {
+        Uni<List<Label>> labelsUni = repository.findForDocument(id, type);
+        return labelsUni.onItem().transformToUni(labels ->
+                Uni.createFrom().item(
+                        labels.stream().map(e ->
+                                        LabelDTO.builder()
+                                                .identifier(e.getIdentifier())
+                                                .color(e.getColor())
+                                                .category(e.getCategory())
+                                                .hidden(e.isHidden())
+                                                .build())
+                                .collect(Collectors.toList())));
+    }
+
+
     public Uni<LabelDTO> getDTO(String uuid, IUser user) {
         Uni<Optional<Label>> labelUni = repository.findById(UUID.fromString(uuid));
         return labelUni.onItem().transform(this::map);
     }
-
-
 
     public Uni<LabelDTO> getDTOByIdentifier(String identifier, IUser user) {
         Uni<Optional<Label>> labelUni = repository.findByIdentifier(identifier);
@@ -83,6 +97,11 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
 
     @Override
     public Uni<Integer> update(String id, LabelDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

@@ -20,10 +20,9 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.LABEL
 
 @ApplicationScoped
 public class LabelRepository extends AsyncRepository {
-    private static final String TABLE_NAME = "ref__labels";
-    private static final String ENTITY_NAME = "label";
-    private static final String BASE_REQUEST = String.format("SELECT * FROM %s", TABLE_NAME);
+
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(LABEL);
+    private static final String BASE_REQUEST = String.format("SELECT * FROM %s", entityData.getTableName());
 
     public Uni<List<Label>> getAll(final int limit, final int offset) {
         String sql = BASE_REQUEST;
@@ -38,11 +37,21 @@ public class LabelRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(TABLE_NAME);
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<Optional<Label>> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
+    }
+
+    public Uni<List<Label>> findForDocument(UUID uuid, String labelTable ) {
+        String sql = String.format("SELECT rl.* FROM %s ptl, %s rl where ptl.id = $1 and ptl.label_id = rl.id",
+                labelTable, entityData.getTableName());
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(uuid))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
     }
 
     public Uni<Optional<Label>> findByIdentifier(String identifier) {
@@ -53,7 +62,7 @@ public class LabelRepository extends AsyncRepository {
                     if (iterator.hasNext()) {
                         return Optional.of(from(iterator.next()));
                     } else {
-                        LOGGER.warn(String.format("No %s found with identifier: " + identifier, ENTITY_NAME));
+                        LOGGER.warn(String.format("No %s found with identifier: " + identifier, entityData.getTableName()));
                         return Optional.empty();
                     }
                 });
@@ -74,46 +83,11 @@ public class LabelRepository extends AsyncRepository {
         return label;
     }
 
-  /*  public Uni<UUID> insert(Task doc, Long user) {
-        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-        String sql = String.format("INSERT INTO %s" +
-                "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
-                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17);", TABLE_NAME);
-        Tuple params = Tuple.of(nowTime, user, nowTime, user);
-        Tuple allParams = params
-                .addLong(doc.getAssignee())
-                .addString(doc.getBody())
-                .addLocalDateTime(doc.getTargetDate().toLocalDateTime())
-                .addInteger(doc.getPriority())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                .addInteger(doc.getStatus())
-                .addString(doc.getTitle())
-                .addUUID(doc.getParent())
-                .addUUID(doc.getProject())
-                .addUUID(doc.getTaskType())
-                .addString(doc.getRegNumber())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                .addString(doc.getCancellationComment());
-        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4, $5)", ACCESS_TABLE_NAME);
-        return client.withTransaction(tx -> {
-            return tx.preparedQuery(sql)
-                    .execute(allParams)
-                    .onItem().transform(result -> result.iterator().next().getUUID("id"))
-                    .onFailure().recoverWithUni(throwable -> {
-                        LOGGER.error(throwable.getMessage());
-                        return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", ENTITY_NAME), throwable));
-                    });
-        });
-    }*/
-
-
     public Label update(Label node) {
-
         return node;
     }
 
     public int delete(Long id) {
-
         return 1;
     }
 }

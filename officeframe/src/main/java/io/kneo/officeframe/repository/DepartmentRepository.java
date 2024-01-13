@@ -26,7 +26,7 @@ public class DepartmentRepository extends AsyncRepository {
     PgPool client;
 
     public Uni<List<Department>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.tableName());
+        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());
         if (limit > 0 ) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -36,7 +36,7 @@ public class DepartmentRepository extends AsyncRepository {
                 .onItem().transform(this::from).collect().asList();
     }
     public Uni<Integer> getAllCount() {
-        return getAllCount(entityData.tableName());
+        return getAllCount(entityData.getTableName());
     }
     public Uni<Optional<Department>> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);

@@ -47,14 +47,14 @@ public class AsyncRepository {
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
     public <R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
-        return client.preparedQuery("SELECT * FROM " + entityData.tableName() + " se WHERE se.id = $1")
+        return client.preparedQuery("SELECT * FROM " + entityData.getTableName() + " se WHERE se.id = $1")
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromFunc.apply(iterator.next())) : Optional.empty());
     }
 
     public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {
-        String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.tableName(), entityData.rlsName());
+        String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.getTableName(), entityData.getRlsName());
         return client.preparedQuery(sql)
                 .execute(Tuple.of(uuid))
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
