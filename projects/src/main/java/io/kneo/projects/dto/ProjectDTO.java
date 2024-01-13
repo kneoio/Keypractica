@@ -3,7 +3,7 @@ package io.kneo.projects.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.rls.RLSDTO;
-import io.kneo.core.model.constants.ProjectStatusType;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

@@ -1,7 +1,7 @@
 package io.kneo.projects.repository;
 
 import io.kneo.core.model.Language;
-import io.kneo.core.model.constants.ProjectStatusType;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
@@ -55,6 +55,14 @@ public class ProjectRepository extends AsyncRepository {
                 .collect().asList();
     }
 
+    public Uni<List<Project>> searchByCondition(String cond) {
+        String query = String.format("SELECT * FROM %s WHERE %s ", entityData.getTableName(), cond);
+        return client.query(query)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
         return client.preparedQuery("SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.reader = $2")

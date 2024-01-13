@@ -82,8 +82,8 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
 
     @PUT
     @Path("/")
-    public Uni<Response> update(@Valid LabelDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
-        return update(service, dto, requestContext);
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid LabelDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
+        return update(id, service, dto, requestContext);
     }
 
     @DELETE

@@ -5,6 +5,7 @@ import io.kneo.core.model.Module;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.ModuleRepository;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -76,6 +77,11 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
 
     @Override
     public Uni<Integer> update(String id, ModuleDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

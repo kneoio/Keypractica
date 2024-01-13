@@ -5,6 +5,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.LanguageRepository;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -87,6 +88,11 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
 
     @Override
     public Uni<Integer> update(String id, LanguageDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 

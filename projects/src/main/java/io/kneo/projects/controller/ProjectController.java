@@ -8,25 +8,19 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.model.Project;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
@@ -76,6 +70,19 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     public Uni<Response> search(@PathParam("keyword") String keyword) {
         ViewPage viewPage = new ViewPage();
         return service.search(keyword).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
+    }
+
+    @GET
+    @Path("/status/{status}")
+    public Uni<Response> searchByStatus(@PathParam("status") ProjectStatusType status) {
+        if (status == null || status == ProjectStatusType.UNKNOWN) {
+            throw new DataValidationException("Invalid status value.");
+        }
+        ViewPage viewPage = new ViewPage();
+        return service.searchByStatus(status).onItem().transform(userList -> {
             viewPage.addPayload(PayloadType.VIEW_DATA, userList);
             return Response.ok(viewPage).build();
         });

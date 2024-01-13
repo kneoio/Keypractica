@@ -17,6 +17,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
@@ -70,8 +71,8 @@ public class DepartmentController extends AbstractSecuredController<Department, 
 
     @PUT
     @Path("/")
-    public Uni<Response> update(DepartmentDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        return update(service, dto, requestContext);
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, DepartmentDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+        return update(id, service, dto, requestContext);
     }
 
     @DELETE

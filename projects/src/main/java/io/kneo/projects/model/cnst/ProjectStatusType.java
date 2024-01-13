@@ -1,4 +1,4 @@
-package io.kneo.core.model.constants;
+package io.kneo.projects.model.cnst;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;

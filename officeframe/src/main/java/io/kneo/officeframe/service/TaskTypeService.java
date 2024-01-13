@@ -1,6 +1,7 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.LabelDTO;
@@ -64,6 +65,11 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
 
     @Override
     public Uni<Integer> update(String id, TaskTypeDTO dto, IUser user) {
+        return null;
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 
