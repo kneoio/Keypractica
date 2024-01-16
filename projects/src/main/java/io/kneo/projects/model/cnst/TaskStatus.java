@@ -1,5 +1,7 @@
 package io.kneo.projects.model.cnst;
 
+import lombok.Getter;
+
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +11,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * @author Kayra created 21-04-2016
  */
+@Getter
 public enum TaskStatus {
     UNKNOWN(0),
     DRAFT(100),
@@ -18,14 +21,10 @@ public enum TaskStatus {
     MERGED(104),
     PAUSED(105);
 
-    private int code;
+    private final int code;
 
     TaskStatus(int code) {
         this.code = code;
-    }
-
-    public int getCode() {
-        return code;
     }
 
     public static TaskStatus getType(int code) {

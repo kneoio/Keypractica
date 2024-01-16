@@ -1,6 +1,8 @@
 package io.kneo.projects.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
@@ -13,6 +15,7 @@ import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
 import io.kneo.projects.model.Task;
+import io.kneo.projects.model.cnst.TaskStatus;
 import io.kneo.projects.service.TaskService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -25,6 +28,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +45,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @GET
     @Path("/")
+    @Operation(operationId = "getAllTasks")
     public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
@@ -65,7 +70,21 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     }
 
     @GET
+    @Path("/status/{status}")
+    @Operation(operationId = "searchTasksByStatus")
+    @JsonView(Views.ListView.class)
+    public Uni<Response> searchByStatus(@PathParam("status") TaskStatus status) {
+        ViewPage viewPage = new ViewPage();
+        return service.searchByStatus(status).onItem().transform(userList -> {
+            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+            return Response.ok(viewPage).build();
+        });
+    }
+
+
+    @GET
     @Path("/{id}")
+    @Operation(operationId = "getTaskById")
     public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
@@ -85,6 +104,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @GET
     @Path("/template")
+    @Operation(operationId = "getTaskTemplate")
     public Uni<Response> getTemplate(@Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
@@ -104,6 +124,7 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @POST
     @Path("/")
+    @Operation(operationId = "createTask", summary = "Create task")
     public Uni<Response> create(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
@@ -116,12 +137,14 @@ public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
 
     @PUT
     @Path("/{id}")
+    @Operation(operationId = "updateTask")
     public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         return update(id, service, dto, requestContext);
     }
 
     @DELETE
     @Path("/{id}")
+    @Operation(operationId = "deleteTaskById")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<Response> delete(@PathParam("id") String uuid, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
         return delete(uuid, service, requestContext);
