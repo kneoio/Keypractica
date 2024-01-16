@@ -49,6 +49,15 @@ public class TaskRepository extends AsyncRepository {
         return getAllCount(userID, entityData.getTableName(), entityData.getRlsName());
     }
 
+    public Uni<List<Task>> searchByCondition(String cond) {
+        String query = String.format("SELECT * FROM %s WHERE %s ", entityData.getTableName(), cond);
+        return client.query(query)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
     public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
         return client.preparedQuery( String.format("SELECT pt.*, ptr.*  FROM %s pt JOIN %s ptr ON pt.id = ptr.entity_id " +
                         "WHERE ptr.reader = $1 AND pt.id = $2", entityData.getTableName(), entityData.getRlsName()))

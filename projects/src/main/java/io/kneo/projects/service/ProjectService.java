@@ -35,20 +35,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
         return uni
                 .onItem().transform(projectList -> projectList.stream()
-                        .map(project ->
-                                ProjectDTO.builder()
-                                        .id(project.getId())
-                                        .author(userRepository.getUserName(project.getAuthor()))
-                                        .regDate(project.getRegDate())
-                                        .lastModifier(userRepository.getUserName(project.getLastModifier()))
-                                        .lastModifiedDate(project.getLastModifiedDate())
-                                        .name(project.getName())
-                                        .finishDate(project.getFinishDate())
-                                        .status(project.getStatus())
-                                        .manager(userService.getUserName(project.getManager()))
-                                        .coder(userService.getUserName(project.getCoder()))
-                                        .tester(userService.getUserName(project.getTester()))
-                                        .build())
+                        .map(this::map)
                         .collect(Collectors.toList()));
     }
     public Uni<Integer> getAllCount(final long userID) {
@@ -59,8 +46,12 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return repository.search(keyword);
     }
 
-    public Uni<List<Project>> searchByStatus(ProjectStatusType statusType) {
-        return repository.searchByCondition(String.format("status = '%s'", statusType));
+    public Uni<List<ProjectDTO>> searchByStatus(ProjectStatusType statusType) {
+        Uni<List<Project>> uni = repository.searchByCondition(String.format("status = '%s'", statusType));
+        return uni
+                .onItem().transform(projectList -> projectList.stream()
+                        .map(this::map)
+                        .collect(Collectors.toList()));
     }
 
     public Uni<ProjectDTO> get(String uuid, final long userID) {
@@ -72,6 +63,22 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     public Uni<ProjectDTO> getDTO(String uuid, IUser user) {
         return get(uuid, user.getId());
+    }
+
+    private ProjectDTO map(Project project) {
+        return ProjectDTO.builder()
+                .id(project.getId())
+                .author(userRepository.getUserName(project.getAuthor()))
+                .regDate(project.getRegDate())
+                .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                .lastModifiedDate(project.getLastModifiedDate())
+                .name(project.getName())
+                .finishDate(project.getFinishDate())
+                .status(project.getStatus())
+                .manager(userService.getUserName(project.getManager()))
+                .coder(userService.getUserName(project.getCoder()))
+                .tester(userService.getUserName(project.getTester()))
+                .build();
     }
 
     @Override

@@ -15,7 +15,6 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 public abstract class AbstractDTO implements IDTO {
-    @JsonView(Views.DetailView.class)
     protected UUID id;
     @JsonView(Views.DetailView.class)
     protected String author;

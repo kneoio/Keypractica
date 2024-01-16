@@ -15,6 +15,7 @@ import io.kneo.officeframe.service.LabelService;
 import io.kneo.officeframe.service.TaskTypeService;
 import io.kneo.projects.dto.*;
 import io.kneo.projects.model.Task;
+import io.kneo.projects.model.cnst.TaskStatus;
 import io.kneo.projects.repository.TaskRepository;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
@@ -51,25 +52,37 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, userID);
         return taskUni
                 .onItem().transform(taskList -> taskList.stream()
-                        .map(task ->
-                                TaskDTO.builder()
-                                        .id(task.getId())
-                                        .author(userRepository.getUserName(task.getAuthor()))
-                                        .regDate(task.getRegDate())
-                                        .lastModifier(userRepository.getUserName(task.getLastModifier()))
-                                        .lastModifiedDate(task.getLastModifiedDate())
-                                        .regNumber(task.getRegNumber())
-                                        .body(task.getBody())
-                                        .startDate(LocalDate.from(task.getStartDate()))
-                                        .targetDate(Optional.ofNullable(task.getTargetDate()).map((LocalDate::from)).orElse(null))
-                                        .status(task.getStatus())
-                                        .priority(task.getPriority())
-                                        .build())
+                        .map(this::map)
                         .collect(Collectors.toList()));
     }
 
     public Uni<Integer> getAllCount(final long userID) {
         return repository.getAllCount(userID);
+    }
+
+    public Uni<List<TaskDTO>> searchByStatus(TaskStatus statusType) {
+        Uni<List<Task>> uni = repository.searchByCondition(String.format("status = '%s'", statusType.getCode()));
+        return uni
+                .onItem().transform(projectList -> projectList.stream()
+                        .map(this::map)
+                        .collect(Collectors.toList()));
+    }
+
+    private TaskDTO map(Task doc) {
+        return TaskDTO.builder()
+                .id(doc.getId())
+                .author(userRepository.getUserName(doc.getAuthor()))
+                .regDate(doc.getRegDate())
+                .title(doc.getTitle())
+                .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                .lastModifiedDate(doc.getLastModifiedDate())
+                .regNumber(doc.getRegNumber())
+                .body(doc.getBody())
+                .startDate(LocalDate.from(doc.getStartDate()))
+                .targetDate(Optional.ofNullable(doc.getTargetDate()).map((LocalDate::from)).orElse(null))
+                .status(TaskStatus.getType(doc.getStatus()))
+                .priority(doc.getPriority())
+                .build();
     }
 
     public Uni<TaskDTO> getDTO(String uuid, IUser user) {
@@ -111,7 +124,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .project(project)
                             .startDate(LocalDate.from(task.getStartDate()))
                             .targetDate(Optional.ofNullable(task.getTargetDate()).map(LocalDate::from).orElse(null))
-                            .status(task.getStatus())
+                            .status(TaskStatus.getType(task.getStatus()))
                             .priority(task.getPriority())
                             .labels(labels)
                             .rls(rls).build();

@@ -1,6 +1,8 @@
 package io.kneo.projects.controller;
 
+import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.LanguageDTO;
@@ -25,7 +27,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.annotation.security.RolesAllowed;
 import java.net.URI;
@@ -77,8 +78,8 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     }
 
     @GET
-    @Tag(name = "ai")
     @Path("/status/{status}")
+    @JsonView(Views.ListView.class)
     public Uni<Response> searchByStatus(@PathParam("status") ProjectStatusType status) {
         if (status == null || status == ProjectStatusType.UNKNOWN) {
             throw new DataValidationException("Invalid status value.");
