@@ -11,3 +11,5 @@
 /qodana.yaml
 /*.ps1
 
+/publickey.crt
+/publickey.der
