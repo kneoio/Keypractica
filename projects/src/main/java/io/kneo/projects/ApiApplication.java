@@ -1,6 +1,6 @@
 package io.kneo.projects;
 
-import io.kneo.api.CustomOASFilter;
+/*import io.kneo.api.CustomOASFilter;
 import jakarta.ws.rs.core.Application;
 import org.eclipse.microprofile.openapi.annotations.OpenAPIDefinition;
 import org.eclipse.microprofile.openapi.annotations.info.Contact;
@@ -33,4 +33,4 @@ public class ApiApplication extends Application {
         public Set<Class<?>> getClasses() {
                 return Collections.singleton(CustomOASFilter.class);
         }
-}
+}*/
