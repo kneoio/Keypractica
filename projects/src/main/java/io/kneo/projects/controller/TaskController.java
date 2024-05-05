@@ -39,7 +39,7 @@ import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
-public class TaskController extends AbstractSecuredController<Task, TaskDTO> {
+public final class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     @Inject
     TaskService service;
 
