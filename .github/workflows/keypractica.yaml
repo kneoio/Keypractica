@@ -17,15 +17,21 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '17'
-
-      - name: Stop Keypractica Service
-        run: sudo systemctl stop keypractica
+          distribution: 'temurin'
 
       - name: Build Project with Maven
         run: mvn package -Dquarkus.package.type=uber-jar -DskipTests
 
-      - name: Start Keypractica Service
-        run: sudo systemctl start keypractica
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            sudo systemctl stop keypractica
+            # Assume the jar is transferred via an SCP step or similar
+            sudo systemctl start keypractica
 
       - name: Send Message to Telegram
         uses: appleboy/telegram-action@master
@@ -33,4 +39,3 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Hi! The Keypractica backend has been updated"
-
