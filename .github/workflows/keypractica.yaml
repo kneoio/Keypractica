@@ -1,0 +1,36 @@
+name: Deploy Keypractica Project
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+
+      - name: Stop Keypractica Service
+        run: sudo systemctl stop keypractica
+
+      - name: Build Project with Maven
+        run: mvn package -Dquarkus.package.type=uber-jar -DskipTests
+
+      - name: Start Keypractica Service
+        run: sudo systemctl start keypractica
+
+      - name: Send Message to Telegram
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: "Hi! The Keypractica backend has been updated"
+
