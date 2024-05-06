@@ -33,8 +33,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e  # Exit immediately if a command exits with a non-zero status.
-            echo "Starting deployment to server at ${secrets.SERVER_HOST}"
-            echo "Starting deployment to server at ${host}"
+            echo "Starting deployment to server at ${{secrets.SERVER_HOST}}"
             echo "Transfer the JAR file to the server"
             scp ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${username}@${host}:/home/keypractica/be_server/projects/target
             echo "Stopping the Keypractica service"
