@@ -1,23 +1,37 @@
 ---
-- name: Deploy Application
-  hosts: all
+- hosts: all
   become: yes
+  vars:
+    telegram_token: "{{ lookup('env','TELEGRAM_TOKEN') }}"
+    telegram_chat_id: "{{ lookup('env','TELEGRAM_CHAT_ID') }}"
 
   tasks:
-    - name: Stop Keypractica service
-      systemd:
+    - name: Stop the Keypractica service
+      ansible.builtin.systemd:
         name: keypractica
         state: stopped
 
-    - name: Transfer the JAR file to the server
-      copy:
-        src: "{{ github_workspace }}/target/quarkus-keypractica-runner.jar"
-        dest: "/home/keypractica/be_server/projects/target/quarkus-keypractica-runner.jar"
-        owner: keypractica
-        group: keypractica
-        mode: '0755'
+    - name: Update the Keypractica project from GitHub
+      ansible.builtin.git:
+        repo: 'https://github.com/Semantyca/Keypractica.git'
+        dest: '/home/keypractica/be_server'
+        version: master  # Ensure this points to the correct branch as necessary
+        force: yes  # Use force to discard any local changes
+
+    - name: Build the project using Maven
+      ansible.builtin.shell:
+        cmd: '/opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
+        chdir: '/home/keypractica/be_server'
 
     - name: Start Keypractica service
-      systemd:
+      ansible.builtin.systemd:
         name: keypractica
         state: started
+
+    - name: Send message to Telegram
+      community.general.telegram:
+        token: "{{ telegram_token }}"
+        api_args:
+          chat_id: "{{ telegram_chat_id }}"
+          parse_mode: "markdown"
+          text: "Hi! The Keypractica backend has been updated"
