@@ -44,6 +44,12 @@ jobs:
             echo "Starting the Keypractica service"
             sudo systemctl start keypractica
             echo "Deployment completed successfully"
+      - name: Diagnostic Log
+        run: |
+          echo "Deployment script completed."
+          echo "Reviewing system status and recent executions."
+          systemctl status keypractica
+          journalctl -u keypractica --since "10 minutes ago"
 
       - name: Send Message to Telegram
         uses: appleboy/telegram-action@master
