@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - master  # Trigger on pushes to the master branch.
+  pull_request:
+    branches:
+      - master  # Optionally, trigger on pull requests to the master branch.
 
 jobs:
   deploy:
@@ -33,8 +36,6 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             set -e  # Exit immediately if a command exits with a non-zero status.
-            echo "Checking SSH connectivity to ${{ secrets.SERVER_HOST }}"
-            ssh -o BatchMode=yes -o ConnectTimeout=10 -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }} "echo SSH connection successful"
             echo "Starting deployment to server at ${{ secrets.SERVER_HOST }}"
             echo "Transfer the JAR file to the server"
             scp -P ${{ secrets.SERVER_PORT }} ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/home/keypractica/be_server/projects/target
@@ -43,10 +44,10 @@ jobs:
             echo "Starting the Keypractica service"
             sudo systemctl start keypractica
             echo "Deployment completed successfully"
+
       - name: Send Message to Telegram
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Hi! The Keypractica backend has been updated"
-
