@@ -17,10 +17,13 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Ansible and dependencies
+      - name: Install Ansible
         run: |
           python -m pip install --upgrade pip
-          pip install ansible community.general
+          pip install ansible
+
+      - name: Install Ansible Community General Collection
+        run: ansible-galaxy collection install community.general
 
       - name: Run Ansible Playbook
         env:
