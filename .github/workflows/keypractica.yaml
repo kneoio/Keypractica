@@ -28,7 +28,6 @@ jobs:
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml --private-key ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml --private-key ${{ secrets.SERVER_SSH_KEY }}
         working-directory: ./ansible

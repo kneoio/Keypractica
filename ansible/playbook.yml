@@ -1,9 +1,6 @@
 ---
 - hosts: all
   become: yes
-  vars:
-    telegram_token: "{{ lookup('env','TELEGRAM_TOKEN') }}"
-    telegram_chat_id: "{{ lookup('env','TELEGRAM_CHAT_ID') }}"
 
   tasks:
     - name: Stop the Keypractica service
@@ -15,8 +12,8 @@
       ansible.builtin.git:
         repo: 'https://github.com/Semantyca/Keypractica.git'
         dest: '/home/keypractica/be_server'
-        version: master  # Ensure this points to the correct branch as necessary
-        force: yes  # Use force to discard any local changes
+        version: master
+        force: yes
 
     - name: Build the project using Maven
       ansible.builtin.shell:
@@ -27,11 +24,3 @@
       ansible.builtin.systemd:
         name: keypractica
         state: started
-
-    - name: Send message to Telegram
-      community.general.telegram:
-        token: "{{ telegram_token }}"
-        api_args:
-          chat_id: "{{ telegram_chat_id }}"
-          parse_mode: "markdown"
-          text: "Hi! The Keypractica backend has been updated"
