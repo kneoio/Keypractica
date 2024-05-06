@@ -1,32 +1,30 @@
-name: Deploy Application
+name: Deploy Keypractica Project
 
 on:
   push:
     branches:
-      - master
+      - master  # Trigger this action on push to the master branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Setup Python
+      - name: Setup Python for Ansible
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
 
-      - name: Install Ansible
+      - name: Install Ansible and dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ansible
+          pip install ansible community.general
 
       - name: Run Ansible Playbook
         env:
-          ANSIBLE_HOST_KEY_CHECKING: False
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          ansible-playbook -i ${{ secrets.HOST }}, playbook.yml --private-key ${{ secrets.SSH_PRIVATE_KEY_PATH }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml --private-key ${{ secrets.SSH_PRIVATE_KEY }}
         working-directory: ./ansible
