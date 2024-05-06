@@ -33,10 +33,8 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             # Transfer the JAR file to the server.
-            scp ${{ github.workspace }}/target/my-application-uber.jar ${username}@${host}:/path/to/deployment/directory
-            # Stop the current service.
+            scp ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${username}@${host}:/home/keypractica/be_server/projects/target
             sudo systemctl stop keypractica
-            # Start the service again, using the new JAR.
             sudo systemctl start keypractica
 
       - name: Send Message to Telegram
