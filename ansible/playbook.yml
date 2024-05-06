@@ -1,0 +1,23 @@
+---
+- name: Deploy Application
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Stop Keypractica service
+      systemd:
+        name: keypractica
+        state: stopped
+
+    - name: Transfer the JAR file to the server
+      copy:
+        src: "{{ github_workspace }}/target/quarkus-keypractica-runner.jar"
+        dest: "/home/keypractica/be_server/projects/target/quarkus-keypractica-runner.jar"
+        owner: keypractica
+        group: keypractica
+        mode: '0755'
+
+    - name: Start Keypractica service
+      systemd:
+        name: keypractica
+        state: started
