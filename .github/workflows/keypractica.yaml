@@ -35,16 +35,29 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            set -e  # Exit immediately if a command exits with a non-zero status.
+            function handle_error {
+            echo "ERROR: $1"
+            exit 1
+            }
+            trap 'handle_error "An error occurred on line $LINENO"' ERR
+            set -ex  # Print each command to the terminal as it is executed and exit on error
+            
             echo "Starting deployment to server at ${{ secrets.SERVER_HOST }}"
             echo "Transfer the JAR file to the server"
-            scp -P ${{ secrets.SERVER_PORT }} ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/home/keypractica/be_server/projects/target
+            if ! scp -P ${{ secrets.SERVER_PORT }} ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/home/keypractica/be_server/projects/target; then
+            handle_error "Failed to transfer JAR file"
+            fi
             echo "Stopping the Keypractica service"
-            sudo systemctl stop keypractica
+            if ! sudo systemctl stop keypractica; then
+            handle_error "Failed to stop the service"
+            fi
             echo "Starting the Keypractica service"
-            sudo systemctl start keypractica
+            if ! sudo systemctl start keypractica; then
+            handle_error "Failed to start the service"
+            fi
             echo "Deployment completed successfully"
-      - name: Diagnostic Log
+            
+            - name: Diagnostic Log
         run: |
           echo "Deployment script completed."
           echo "Reviewing system status and recent executions."
