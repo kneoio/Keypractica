@@ -57,7 +57,7 @@ jobs:
             fi
             echo "Deployment completed successfully"
             
-            - name: Diagnostic Log
+      - name: Diagnostic Log
         run: |
           echo "Deployment script completed."
           echo "Reviewing system status and recent executions."
