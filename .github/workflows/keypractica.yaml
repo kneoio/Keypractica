@@ -20,7 +20,9 @@ jobs:
           distribution: 'temurin'
 
       - name: Build Project with Maven
-        run: mvn package -Dquarkus.package.type=uber-jar -DskipTests
+        run: |
+          echo "Running Maven package command"
+          mvn package -Dquarkus.package.type=uber-jar -DskipTests
         env:
           MAVEN_CLI_OPTS: '-s /path/to/settings.xml -B'
 
@@ -32,10 +34,16 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
           script: |
-            # Transfer the JAR file to the server.
+            echo "Starting deployment to server at ${host}"
+            echo "Transfer the JAR file to the server"
             scp ${{ github.workspace }}/target/quarkus-keypractica-runner.jar ${username}@${host}:/home/keypractica/be_server/projects/target
+            echo "Stopping the Keypractica service"
             sudo systemctl stop keypractica
+            echo "Starting the Keypractica service"
             sudo systemctl start keypractica
+            echo "Deployment completed successfully"
+        env:
+          DEBUG: true
 
       - name: Send Message to Telegram
         uses: appleboy/telegram-action@master
@@ -43,4 +51,3 @@ jobs:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: "Hi! The Keypractica backend has been updated"
-
