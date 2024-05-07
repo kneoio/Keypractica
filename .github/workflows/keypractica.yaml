@@ -37,5 +37,5 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
-          ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml
+          ansible-playbook -i ${{ secrets.SERVER_HOST }}:55333, playbook.yml
         working-directory: ./ansible
