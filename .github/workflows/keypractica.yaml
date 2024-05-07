@@ -37,5 +37,6 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
-          ansible-playbook -i root@semantyca.com:55333, playbook.yml -vvv
+          ansible-playbook -i root@semantyca.com, playbook.yml -e 'ansible_port=55333' -vvv
         working-directory: ./ansible
+
