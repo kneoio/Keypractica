@@ -12,6 +12,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.1.4
 
+      - name: Setup SSH Agent
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
       - name: Setup Python
         uses: actions/setup-python@v5.1.0
         with:
@@ -29,5 +34,5 @@ jobs:
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
-          ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml --private-key ${{ secrets.SERVER_SSH_KEY }} -vvv
+          ansible-playbook -i ${{ secrets.SERVER_HOST }}, playbook.yml
         working-directory: ./ansible
