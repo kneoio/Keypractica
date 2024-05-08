@@ -21,7 +21,9 @@ public class LanguageDTO extends AbstractDTO {
     @JsonView(Views.ListView.class)
     LanguageCode code;
     @JsonView(Views.ListView.class)
-    EnumMap<LanguageCode, String> localizedNames;
+    EnumMap<LanguageCode, String> localizedName;
     @JsonView(Views.ListView.class)
     int position;
+
+
 }
