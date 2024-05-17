@@ -9,6 +9,7 @@ import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
@@ -63,7 +64,11 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
                 return Response.ok(viewPage).build();
             });
         } else {
-            return Uni.createFrom().item(Response.ok(String.format("user %s is not exists", "ddd")).build());
+            return Uni.createFrom()
+                    .item(Response.status(Response.Status.FORBIDDEN)
+                    .entity(String.format("%s is not allowed", AnonymousUser.USER_NAME))
+                    .build());
+
         }
     }
 
