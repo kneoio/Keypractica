@@ -1,5 +1,7 @@
 package io.kneo.core.dto.document;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.Views;
@@ -17,6 +19,8 @@ import java.util.EnumMap;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"code", "position", "localizedName"})
 public class LanguageDTO extends AbstractDTO {
     @JsonView(Views.ListView.class)
     LanguageCode code;
