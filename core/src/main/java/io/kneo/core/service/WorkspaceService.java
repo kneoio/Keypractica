@@ -46,7 +46,7 @@ public class WorkspaceService {
                 .map(doc ->
                         LanguageDTO.builder()
                                 .code(doc.getCode())
-                                .localizedNames(doc.getLocalizedName())
+                                .localizedName(doc.getLocalizedName())
                                 .position(doc.getPosition())
                                 .build())
                 .collect(Collectors.toList()));

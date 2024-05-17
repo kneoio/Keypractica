@@ -31,7 +31,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
                                 .lastModifier(userService.getUserName(language.getLastModifier()))
                                 .lastModifiedDate(language.getLastModifiedDate())
                                 .code(language.getCode())
-                                .localizedNames(language.getLocalizedName())
+                                .localizedName(language.getLocalizedName())
                                 .build())
                 .collect(Collectors.toList()));
     }
@@ -60,7 +60,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
                     .lastModifier(userService.getUserName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
-                    .localizedNames(language.getLocalizedName())
+                    .localizedName(language.getLocalizedName())
                     .build();
         });
     }
@@ -76,7 +76,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
                     .lastModifier(userService.getUserName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
-                    .localizedNames(language.getLocalizedName())
+                    .localizedName(language.getLocalizedName())
                     .build();
         });
     }
