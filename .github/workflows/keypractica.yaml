@@ -6,9 +6,8 @@ on:
       - master
 
 jobs:
-  analyze_and_deploy:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.1.4
@@ -22,78 +21,6 @@ jobs:
         run: ssh-add -l
 
       - name: Set up Python
-        uses: actions/setup-python@v5.1.0
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install openai
-
-      - name: Analyze commit message
-        id: analyze
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          PREV_COMMIT=$(git log -2 --pretty=%H | tail -n 1)
-          CURRENT_COMMIT=$(git log -1 --pretty=%H)
-      
-          PREV_CODE=$(git show $PREV_COMMIT)
-          CURRENT_CODE=$(git show $CURRENT_COMMIT)
-      
-          echo "PREV_CODE<<EOF" >> $GITHUB_ENV
-          echo "$PREV_CODE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-      
-          echo "CURRENT_CODE<<EOF" >> $GITHUB_ENV
-          echo "$CURRENT_CODE" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Run AI Analysis
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          PREV_CODE: ${{ env.PREV_CODE }}
-          CURRENT_CODE: ${{ env.CURRENT_CODE }}
-        run: |
-          python - <<EOF
-          import openai
-          import os
-
-          openai.api_key = os.getenv("OPENAI_API_KEY")
-
-          prev_code = os.getenv("PREV_CODE")
-          current_code = os.getenv("CURRENT_CODE")
-
-          response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"Analyze the following code changes and suggest a commit message:\n\nPrevious version:\n{prev_code}\n\nCurrent version:\n{current_code}\n\nSuggested commit message:",
-            max_tokens=100
-          )
-
-          suggested_message = response.choices[0].text.strip()
-
-          print(suggested_message)
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-            print(f"msg={suggested_message}", file=fh)
-          EOF
-
-      - name: Amend commit with AI-generated message
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git commit --amend -m "${{ steps.analyze.outputs.msg }}"
-          git push --force
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-      - name: Check if key is added
-        run: ssh-add -l
-
-      - name: Setup Python
         uses: actions/setup-python@v5.1.0
         with:
           python-version: '3.x'
