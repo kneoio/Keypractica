@@ -38,27 +38,41 @@ jobs:
         run: |
           PREV_COMMIT=$(git log -2 --pretty=%H | tail -n 1)
           CURRENT_COMMIT=$(git log -1 --pretty=%H)
-          
+      
           PREV_CODE=$(git show $PREV_COMMIT)
           CURRENT_CODE=$(git show $CURRENT_COMMIT)
-          
+      
+          echo "PREV_CODE<<EOF" >> $GITHUB_ENV
+          echo "$PREV_CODE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+      
+          echo "CURRENT_CODE<<EOF" >> $GITHUB_ENV
+          echo "$CURRENT_CODE" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Run AI Analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PREV_CODE: ${{ env.PREV_CODE }}
+          CURRENT_CODE: ${{ env.CURRENT_CODE }}
+        run: |
           python - <<EOF
           import openai
           import os
-  
+
           openai.api_key = os.getenv("OPENAI_API_KEY")
-  
-          prev_code = """$PREV_CODE"""
-          current_code = """$CURRENT_CODE"""
-  
+
+          prev_code = os.getenv("PREV_CODE")
+          current_code = os.getenv("CURRENT_CODE")
+
           response = openai.Completion.create(
             engine="text-davinci-003",
             prompt=f"Analyze the following code changes and suggest a commit message:\n\nPrevious version:\n{prev_code}\n\nCurrent version:\n{current_code}\n\nSuggested commit message:",
             max_tokens=100
           )
-  
+
           suggested_message = response.choices[0].text.strip()
-  
+
           print(suggested_message)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             print(f"msg={suggested_message}", file=fh)
