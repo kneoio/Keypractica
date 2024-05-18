@@ -20,7 +20,7 @@ jobs:
       - name: Check if key is added
         run: ssh-add -l
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5.1.0
         with:
           python-version: '3.x'
@@ -38,4 +38,4 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: False
         run: |
           ansible-playbook -i root@${{ secrets.HOST_NAME }}, playbook.yml -e ansible_port=${{ secrets.SSH_PORT }} -vvv
-          working-directory: ./ansible
+        working-directory: ./ansible
