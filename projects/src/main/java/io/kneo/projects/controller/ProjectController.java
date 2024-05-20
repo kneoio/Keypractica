@@ -29,7 +29,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import javax.annotation.security.RolesAllowed;
+import jakarta.annotation.security.RolesAllowed;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -57,7 +57,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
             return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ProjectActionsFactory.getViewActions());
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ProjectActionsFactory.getViewActions(user.getActivatedRoles()));
                 if (pageNum == 0) pageNum = 1;
                 View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);

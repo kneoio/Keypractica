@@ -88,9 +88,9 @@ public class UserController extends AbstractController<User, UserDTO> {
     }
 
     @PUT
-    @Path("/")
-    public Response update(@Valid UserDTO userDTO) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(userDTO))).build();
+    @Path("/{id}")
+    public Response update(@PathParam("id") String id, @Valid UserDTO userDTO) throws DocumentModificationAccessException {
+        return Response.ok(URI.create("/" + service.update(id, userDTO))).build();
     }
 
     @DELETE

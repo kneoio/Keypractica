@@ -91,7 +91,7 @@ public class UserService {
         });
     }
 
-    public Uni<Long> update(UserDTO userDTO) {
+    public Uni<Long> update(String id, UserDTO userDTO) {
         User user = new User.Builder()
                 .setLogin(userDTO.getLogin())
                 .setEmail(userDTO.getEmail())
