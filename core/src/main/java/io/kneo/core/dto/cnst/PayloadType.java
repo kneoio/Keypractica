@@ -7,8 +7,8 @@ public enum PayloadType {
     CONTEXT_ACTIONS("actions"),
     EXCEPTION("exception"),
     TEXT("text"),
-    VIEW_DATA("view_data"),
-    DOC_DATA("doc_data"),
+    VIEW_DATA("viewData"),
+    DOC_DATA("docData"),
     TEMPLATE("template");
 
     private final String alias;

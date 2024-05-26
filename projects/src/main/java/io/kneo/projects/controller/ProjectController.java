@@ -46,20 +46,20 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @GET
     @Path("/")
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Valid @Min(1) @QueryParam("page") int page, @Valid @Min(10) @QueryParam("size") int pageSize, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             Uni<Integer> countUni = service.getAllCount(user.getId());
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
+            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, pageSize));
             Uni<Integer> pageNumUni = Uni.createFrom().item(page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-            Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
+            Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(pageSize, offset, user.getId()));
             return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
                 viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ProjectActionsFactory.getViewActions(user.getActivatedRoles()));
                 if (pageNum == 0) pageNum = 1;
-                View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, user.getPageSize());
+                View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, pageSize);
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                 return Response.ok(viewPage).build();
             });
