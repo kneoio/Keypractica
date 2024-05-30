@@ -5,12 +5,13 @@ import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
-import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
@@ -19,6 +20,7 @@ import io.kneo.projects.model.Project;
 import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.service.ProjectService;
 import io.smallrye.mutiny.Uni;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -28,9 +30,8 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.openapi.annotations.Operation;
 
-import jakarta.annotation.security.RolesAllowed;
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -122,11 +123,11 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
                 .onItem().transform(createdProject -> Response.ok(createdProject).build());
     }
 
-
     @PUT
-    @Path("/")
-    public Response update(LanguageDTO dto) {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
+    @Path("/{id}")
+    @Operation(operationId = "updateProject")
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid ProjectDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+        return update(id, service, dto, requestContext);
     }
 
     @DELETE
