@@ -1,11 +1,14 @@
 package io.kneo.projects.repository;
 
-import io.kneo.core.model.Language;
-import io.kneo.projects.model.cnst.ProjectStatusType;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.rls.RLSRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.projects.model.Project;
+import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -13,7 +16,9 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -25,6 +30,8 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 @ApplicationScoped
 public class ProjectRepository extends AsyncRepository {
     private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(PROJECT);
+    @Inject
+    private RLSRepository rlsRepository;
 
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
@@ -91,11 +98,10 @@ public class ProjectRepository extends AsyncRepository {
                 .setName(row.getString("name"))
                 .setStatus(ProjectStatusType.valueOf(row.getString("status")))
                 .setFinishDate(row.getLocalDate("finish_date"))
-                .setPosition(999)
-                .setPrimaryLang(new Language.Builder().build())
-                .setManager(row.getInteger("manager"))
-                .setCoder(row.getInteger("programmer"))
-                .setTester(row.getInteger("tester"))
+                .setPrimaryLang(LanguageCode.valueOf(row.getString("primary_language")))
+                .setManager(row.getLong("manager"))
+                .setCoder(row.getLong("programmer"))
+                .setTester(row.getLong("tester"))
                 .build();
     }
 
@@ -105,11 +111,43 @@ public class ProjectRepository extends AsyncRepository {
         return null;
     }
 
+    public Uni<Integer> update(UUID id, Project doc, Long user) {
+        return rlsRepository.findById(entityData.getRlsName(), user, id)
+                .onItem().transformToUni(permissions -> {
+                    if (permissions[0] == 1) {  // Assuming index 0 is the edit permission
+                        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+                        String sql = String.format("UPDATE %s SET name=$1, status=$2, finish_date=$3, primary_language=$4, manager=$5, programmer=$6, tester=$7, last_mod_date=$8, last_mod_user=$9 WHERE id=$10;", entityData.getTableName());
 
-    public Language update(Language node) {
+                        Tuple baseParams = Tuple.of(nowTime, user, nowTime, user);
+                        Tuple allParams = baseParams
+                                .addString(doc.getName())
+                                .addString(doc.getStatus().toString())
+                                .addLocalDate(doc.getFinishDate())
+                                .addString(doc.getPrimaryLang().toString())
+                                .addLong(doc.getManager())
+                                .addLong(doc.getCoder())
+                                .addLong(doc.getTester())
+                                .addLocalDateTime(nowTime) // last_mod_date
+                                .addLong(user) // last_mod_user
+                                .addUUID(id);
 
-        return node;
+                        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                                .execute(allParams)
+                                .onItem().transformToUni(rowSet -> {
+                                    int rowCount = rowSet.rowCount();
+                                    if (rowCount == 0) {
+                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                                    }
+                                    return Uni.createFrom().item(rowCount);
+                                })
+                                .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t)));
+                    } else {
+                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have edit permission", user, id));
+                    }
+                });
     }
+
+
 
     public Uni<Void> delete(UUID uuid) {
         return delete(uuid, entityData.getTableName());

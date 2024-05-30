@@ -1,13 +1,13 @@
 package io.kneo.projects.service;
 
-import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.rls.RLSDTO;
-import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
+import io.kneo.core.service.exception.DataValidationException;
+import io.kneo.officeframe.dto.PlainUserDTO;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.model.cnst.ProjectStatusType;
@@ -75,9 +75,18 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 .name(project.getName())
                 .finishDate(project.getFinishDate())
                 .status(project.getStatus())
-                .manager(userService.getUserName(project.getManager()))
-                .coder(userService.getUserName(project.getCoder()))
-                .tester(userService.getUserName(project.getTester()))
+                .manager(PlainUserDTO.builder()
+                        .id(project.getManager())
+                        .name(userService.getUserName(project.getManager()))
+                        .build())
+                .coder(PlainUserDTO.builder()
+                        .id(project.getManager())
+                        .name(userService.getUserName(project.getCoder()))
+                        .build())
+                .tester(PlainUserDTO.builder()
+                        .id(project.getManager())
+                        .name(userService.getUserName(project.getCoder()))
+                        .build())
                 .build();
     }
 
@@ -88,20 +97,24 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     @Override
     public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
-        return null;
+        Uni<Optional<IUser>> managerUni = userService.get(dto.getManager().getId());
+        Uni<Optional<IUser>> coderUni = userService.get(dto.getCoder().getId());
+        Uni<Optional<IUser>> testerUni = userService.get(dto.getTester().getId());
+        return Uni.combine().all().unis(managerUni, coderUni, testerUni).combinedWith((manager, coder, tester) -> {
+            Project doc = buildEntity(dto, manager, coder, tester);
+            return repository.update(UUID.fromString(id), doc, user.getId());
+        }).flatMap(uni -> uni);
     }
 
     @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
-
     public Uni<ProjectDTO> get(UUID id, final long userID) {
         return get(id, userID, true);
     }
 
     public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
-
         Uni<Optional<Project>> projectUni = repository.findById(id, userID);
 
         Uni<List<RLSDTO>> rlsDtoListUni;
@@ -113,18 +126,29 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         }
 
         return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rls) -> {
-                    Project project = projectOptional.get();
-                    return ProjectDTO.builder()
-                            .id(project.getId())
-                            .name(project.getName())
-                            .status(project.getStatus())
-                            .finishDate(project.getFinishDate())
-                            .manager(userService.getUserName(project.getManager()))
-                            .coder(userService.getUserName(project.getCoder()))
-                            .tester(userService.getUserName(project.getTester()))
-                            .rls(rls).build();
-                }
-        );
+            Project project = projectOptional.get();
+            return ProjectDTO.builder()
+                    .id(project.getId())
+                    .name(project.getName())
+                    .description(project.getDescription())
+                    .status(project.getStatus())
+                    .finishDate(project.getFinishDate())
+                    .manager(PlainUserDTO.builder()
+                            .id(project.getManager())
+                            .name(userService.getUserName(project.getManager()))
+                            .build())
+                    .coder(PlainUserDTO.builder()
+                            .id(project.getCoder())
+                            .name(userService.getUserName(project.getCoder()))
+                            .build())
+                    .tester(PlainUserDTO.builder()
+                            .id(project.getTester())
+                            .name(userService.getUserName(project.getTester()))
+                            .build())
+                    .rls(rls)
+                    .primaryLang(project.getPrimaryLang())
+                    .build();
+        });
     }
 
     public Uni<ProjectDTO> add(ProjectDTO dto) {
@@ -135,11 +159,18 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return Uni.createFrom().nullItem();
     }
 
-    public Language update(LanguageDTO dto) {
-        Language user = new Language.Builder()
-                .setCode(dto.getCode())
+    private Project buildEntity(ProjectDTO dto, Optional<IUser> manager, Optional<IUser> coder, Optional<IUser> tester) {
+        Project project = new Project.Builder()
+                .setName(dto.getName())
+                .setManager(manager.orElseThrow(() -> new DataValidationException("Manager not found")).getId())
+                .setCoder(coder.orElseThrow(() -> new DataValidationException("Coder not found")).getId())
+                .setTester(tester.orElseThrow(() -> new DataValidationException("Tester not found")).getId())
+                .setFinishDate(dto.getFinishDate())
+                .setStatus(dto.getStatus())
+               // .setPrimaryLang(dto.getPrimaryLang())
+                .setDescription(dto.getDescription())
                 .build();
-        return repository.update(user);
+        return project;
     }
 
 

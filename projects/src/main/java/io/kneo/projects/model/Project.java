@@ -1,7 +1,7 @@
 package io.kneo.projects.model;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.AbstractEntityBuilder;
-import io.kneo.core.model.Language;
 import io.kneo.core.model.SecureDataEntity;
 import io.kneo.projects.model.cnst.ProjectStatusType;
 import lombok.Getter;
@@ -20,21 +20,20 @@ public class Project extends SecureDataEntity<UUID> {
     private long coder;
     private long tester;
     private ProjectStatusType status;
-    private Language primaryLang;
+    private LanguageCode primaryLang;
     private int position;
     private LocalDate finishDate;
-    private String comment;
+    private String description;
 
     public static class Builder extends AbstractEntityBuilder {
         private String name;
-        private int manager;
-        private int coder;
-        private int tester;
-        private Language primaryLang = new Language.Builder().build();
+        private long manager;
+        private long coder;
+        private long tester;
+        private LanguageCode primaryLang = LanguageCode.ENG;
         private LocalDate finishDate;
         private ProjectStatusType status = ProjectStatusType.DRAFT;
-        private int position = 999;
-        private String comment;
+        private String descr;
 
         public Builder setId(UUID id) {
             this.id = id;
@@ -45,17 +44,17 @@ public class Project extends SecureDataEntity<UUID> {
             return this;
         }
 
-        public Builder setManager(int manager) {
+        public Builder setManager(long manager) {
             this.manager = manager;
             return this;
         }
 
-        public Builder setCoder(int coder) {
+        public Builder setCoder(long coder) {
             this.coder = coder;
             return this;
         }
 
-        public Builder setTester(int tester) {
+        public Builder setTester(long tester) {
             this.tester = tester;
             return this;
         }
@@ -65,7 +64,7 @@ public class Project extends SecureDataEntity<UUID> {
             return this;
         }
 
-        public Builder setPrimaryLang(Language primaryLang) {
+        public Builder setPrimaryLang(LanguageCode primaryLang) {
             this.primaryLang = primaryLang;
             return this;
         }
@@ -75,13 +74,8 @@ public class Project extends SecureDataEntity<UUID> {
             return this;
         }
 
-        public Builder setPosition(int position) {
-            this.position = position;
-            return this;
-        }
-
-        public Builder setComment(String comment) {
-            this.comment = comment;
+        public Builder setDescription(String descr) {
+            this.descr = descr;
             return this;
         }
 
@@ -94,9 +88,8 @@ public class Project extends SecureDataEntity<UUID> {
             doc.setTester(tester);
             doc.setFinishDate(finishDate);
             doc.setStatus(status);
-            doc.setPosition(position);
             doc.setPrimaryLang(primaryLang);
-            doc.setComment(comment);
+            doc.setDescription(descr);
             return doc;
         }
 
