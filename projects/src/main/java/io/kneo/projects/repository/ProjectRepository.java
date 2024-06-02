@@ -98,7 +98,7 @@ public class ProjectRepository extends AsyncRepository {
                 .setName(row.getString("name"))
                 .setStatus(ProjectStatusType.valueOf(row.getString("status")))
                 .setFinishDate(row.getLocalDate("finish_date"))
-                .setPrimaryLang(LanguageCode.valueOf(row.getString("primary_language")))
+                .setPrimaryLang(LanguageCode.getType(row.getInteger("primary_lang")))
                 .setManager(row.getLong("manager"))
                 .setCoder(row.getLong("programmer"))
                 .setTester(row.getLong("tester"))
@@ -114,21 +114,21 @@ public class ProjectRepository extends AsyncRepository {
     public Uni<Integer> update(UUID id, Project doc, Long user) {
         return rlsRepository.findById(entityData.getRlsName(), user, id)
                 .onItem().transformToUni(permissions -> {
-                    if (permissions[0] == 1) {  // Assuming index 0 is the edit permission
+                    if (permissions[0] == 1) {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
-                        String sql = String.format("UPDATE %s SET name=$1, status=$2, finish_date=$3, primary_language=$4, manager=$5, programmer=$6, tester=$7, last_mod_date=$8, last_mod_user=$9 WHERE id=$10;", entityData.getTableName());
-
-                        Tuple baseParams = Tuple.of(nowTime, user, nowTime, user);
+                        String sql = String.format("UPDATE %s " +
+                                "SET last_mod_date=$1, last_mod_user=$2, name=$3, status=$4, finish_date=$5, " +
+                                "primary_lang=$6, manager=$7, programmer=$8, " +
+                                "tester=$9 WHERE id=$10;", entityData.getTableName());
+                        Tuple baseParams = Tuple.of(nowTime, user);
                         Tuple allParams = baseParams
                                 .addString(doc.getName())
                                 .addString(doc.getStatus().toString())
-                                .addLocalDate(doc.getFinishDate())
-                                .addString(doc.getPrimaryLang().toString())
+                                .addLocalDateTime(doc.getFinishDate().atStartOfDay())
+                                .addInteger(doc.getPrimaryLang().getCode())
                                 .addLong(doc.getManager())
                                 .addLong(doc.getCoder())
                                 .addLong(doc.getTester())
-                                .addLocalDateTime(nowTime) // last_mod_date
-                                .addLong(user) // last_mod_user
                                 .addUUID(id);
 
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
