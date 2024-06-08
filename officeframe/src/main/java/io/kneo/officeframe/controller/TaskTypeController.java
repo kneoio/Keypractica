@@ -42,8 +42,8 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
     @GET
     @Path("/")
     @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
-        return getAll(service, requestContext, page);
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
+        return getAll(service, requestContext, page, size);
     }
 
     @GET

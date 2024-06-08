@@ -105,22 +105,31 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
-            return service.get(id, user.getId())
+            return service.getDTO(id, user)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
-                    .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure().recoverWithItem(this::postError);
         } else {
-            return Uni.createFrom().item(Response.ok(String.format("user %s is not exists", getUserOIDCName(requestContext))).build());
+            return Uni.createFrom().item(
+                    Response.ok(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
         }
     }
 
+
+
     @POST
     @Path("/")
-    public Uni<Response> create(ProjectDTO dto) {
-        return service.add(dto)
-                .onItem().transform(createdProject -> Response.ok(createdProject).build());
+    public Uni<Response> create(ProjectDTO dto, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.add(dto, userOptional.get())
+                    .onItem().transform(createdProject -> Response.ok(createdProject).build());
+        } else {
+            return Uni.createFrom().item(Response.ok(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+        }
     }
 
     @PUT

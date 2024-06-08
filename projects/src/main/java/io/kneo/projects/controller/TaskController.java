@@ -96,6 +96,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
+                    .onFailure().recoverWithItem(this::postNotFoundError)
                     .onFailure().recoverWithItem(this::postError);
         } else {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());

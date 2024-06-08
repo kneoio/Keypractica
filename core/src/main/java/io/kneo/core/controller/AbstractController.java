@@ -38,13 +38,13 @@ public abstract class AbstractController<T, V> {
     @Inject
     UserService userService;
 
-    protected Uni<Response> getAll(IRESTService<V> service, ContainerRequestContext requestContext, int page) {
+    protected Uni<Response> getAll(IRESTService<V> service, ContainerRequestContext requestContext, int page, int size) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             String languageHeader = requestContext.getHeaderString("Accept-Language");
             Uni<Integer> countUni = service.getAllCount();
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
+            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, size));
             Uni<Integer> pageNumUni = Uni.createFrom().item(page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
             Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
@@ -52,7 +52,7 @@ public abstract class AbstractController<T, V> {
                 ViewPage viewPage = new ViewPage();
                 //viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
                 if (pageNum == 0) pageNum = 1;
-                View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
+                View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                 return Response.ok(viewPage).build();
             });
@@ -140,12 +140,19 @@ public abstract class AbstractController<T, V> {
         }
     }
 
-
     protected Response postError(Throwable e) {
         Random rand = new Random();
         int randomNum = rand.nextInt(900000) + 100000;
         LOGGER.error(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
+    }
+
+
+    protected Response postNotFoundError(Throwable e) {
+        Random rand = new Random();
+        int randomNum = rand.nextInt(900000) + 100000;
+        LOGGER.warn(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
+        return Response.status(Response.Status.NOT_FOUND).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }
 
     public static class Parameters {
