@@ -62,7 +62,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                                                                         .phone(emp.getPhone())
                                                                         .rank(emp.getRank())
                                                                         .position(position)
-                                                                        .identifier(emp.getIdentifier())
+                                                                        //TODO temporary
+                                                                        .identifier(getIdentifier(emp))
                                                                         .build()
                                                         )
                                                 )
@@ -166,4 +167,12 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return repository.delete(UUID.fromString(id));
     }
 
+    protected String getIdentifier(Employee employee) {
+        String i = employee.getIdentifier();
+        if (i != null) {
+            return i;
+        } else {
+            return employee.getName().toLowerCase().replace(" ", "_");
+        }
+    }
 }

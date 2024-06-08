@@ -72,11 +72,21 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
-        return client.preparedQuery("SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id  AND p.id = $1 AND ppr.reader = $2")
-                .execute(Tuple.of(uuid, userID))
+        return client.preparedQuery(String.format("SELECT theTable.*, rls.* FROM %s theTable JOIN %s rls ON theTable.id = rls.entity_id " +
+                        "WHERE rls.reader = $1 AND theTable.id = $2", entityData.getTableName(), entityData.getRlsName()))
+                .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> {
+                    if (iterator.hasNext()) {
+                        return Optional.of(from(iterator.next()));
+                    } else {
+                        LOGGER.warn(String.format("No %s found with id: " + uuid, entityData.getTableName()));
+                        return Optional.empty();
+                    }
+                });
     }
+
+
 
     public Uni<List<RLS>> getAllReaders(UUID uuid) {
         return client.preparedQuery("SELECT reader, reading_time, can_edit, can_delete FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND p.id = $1")

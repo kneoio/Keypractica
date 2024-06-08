@@ -3,6 +3,7 @@ package io.kneo.projects.service;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
@@ -38,6 +39,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .map(this::map)
                         .collect(Collectors.toList()));
     }
+
     public Uni<Integer> getAllCount(final long userID) {
         return repository.getAllCount(userID);
     }
@@ -54,15 +56,80 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .collect(Collectors.toList()));
     }
 
-    public Uni<ProjectDTO> get(String uuid, final long userID) {
-        return get(UUID.fromString(uuid), userID);
-    }
     public Uni<ProjectDTO> get(UUID id, IUser user) {
         return get(id, user.getId(), false);
     }
 
+    public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
+        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
+
+        Uni<List<RLSDTO>> rlsDtoListUni;
+
+        if (includeRLS) {
+            rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(PROJECT), projectUni, id);
+        } else {
+            rlsDtoListUni = Uni.createFrom().optional(Optional.empty());
+        }
+
+        return projectUni.flatMap(projectOptional -> {
+            if (projectOptional.isEmpty()) {
+                return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+            }
+
+            Project project = projectOptional.get();
+
+            return Uni.combine().all().unis(Uni.createFrom().item(project), rlsDtoListUni)
+                    .combinedWith((proj, rls) -> ProjectDTO.builder()
+                            .id(proj.getId())
+                            .name(proj.getName())
+                            .description(proj.getDescription())
+                            .status(proj.getStatus())
+                            .finishDate(proj.getFinishDate())
+                            .manager(PlainUserDTO.builder()
+                                    .id(proj.getManager())
+                                    .name(userService.getUserName(proj.getManager()))
+                                    .build())
+                            .coder(PlainUserDTO.builder()
+                                    .id(proj.getCoder())
+                                    .name(userService.getUserName(proj.getCoder()))
+                                    .build())
+                            .tester(PlainUserDTO.builder()
+                                    .id(proj.getTester())
+                                    .name(userService.getUserName(proj.getTester()))
+                                    .build())
+                            .rls(rls)
+                            .primaryLang(proj.getPrimaryLang())
+                            .build());
+        });
+    }
+
     public Uni<ProjectDTO> getDTO(String uuid, IUser user) {
-        return get(uuid, user.getId());
+        return get(UUID.fromString(uuid), user.getId(), true);
+    }
+
+    @Override
+    public Uni<UUID> add(ProjectDTO dto, IUser user) {
+        Project node = new Project.Builder()
+                .setName(dto.getName())
+                .build();
+        repository.insert(node, AnonymousUser.ID);
+        return Uni.createFrom().nullItem();
+    }
+
+    @Override
+    public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
+        Uni<Optional<IUser>> managerUni = userService.get(dto.getManager().getId());
+        Uni<Optional<IUser>> coderUni = userService.get(dto.getCoder().getId());
+        Uni<Optional<IUser>> testerUni = userService.get(dto.getTester().getId());
+        return Uni.combine().all().unis(managerUni, coderUni, testerUni).combinedWith((manager, coder, tester) -> {
+            Project doc = buildEntity(dto, manager, coder, tester);
+            return repository.update(UUID.fromString(id), doc, user.getId());
+        }).flatMap(uni -> uni);
+    }
+
+    @Override
+    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
+        return null;
     }
 
     private ProjectDTO map(Project project) {
@@ -88,75 +155,6 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .name(userService.getUserName(project.getCoder()))
                         .build())
                 .build();
-    }
-
-    @Override
-    public Uni<UUID> add(ProjectDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
-        Uni<Optional<IUser>> managerUni = userService.get(dto.getManager().getId());
-        Uni<Optional<IUser>> coderUni = userService.get(dto.getCoder().getId());
-        Uni<Optional<IUser>> testerUni = userService.get(dto.getTester().getId());
-        return Uni.combine().all().unis(managerUni, coderUni, testerUni).combinedWith((manager, coder, tester) -> {
-            Project doc = buildEntity(dto, manager, coder, tester);
-            return repository.update(UUID.fromString(id), doc, user.getId());
-        }).flatMap(uni -> uni);
-    }
-
-    @Override
-    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
-        return null;
-    }
-    public Uni<ProjectDTO> get(UUID id, final long userID) {
-        return get(id, userID, true);
-    }
-
-    public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
-        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
-
-        Uni<List<RLSDTO>> rlsDtoListUni;
-
-        if (includeRLS) {
-            rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(PROJECT), projectUni, id);
-        } else {
-            rlsDtoListUni = Uni.createFrom().optional(Optional.empty());
-        }
-
-        return Uni.combine().all().unis(projectUni, rlsDtoListUni).combinedWith((projectOptional, rls) -> {
-            Project project = projectOptional.get();
-            return ProjectDTO.builder()
-                    .id(project.getId())
-                    .name(project.getName())
-                    .description(project.getDescription())
-                    .status(project.getStatus())
-                    .finishDate(project.getFinishDate())
-                    .manager(PlainUserDTO.builder()
-                            .id(project.getManager())
-                            .name(userService.getUserName(project.getManager()))
-                            .build())
-                    .coder(PlainUserDTO.builder()
-                            .id(project.getCoder())
-                            .name(userService.getUserName(project.getCoder()))
-                            .build())
-                    .tester(PlainUserDTO.builder()
-                            .id(project.getTester())
-                            .name(userService.getUserName(project.getTester()))
-                            .build())
-                    .rls(rls)
-                    .primaryLang(project.getPrimaryLang())
-                    .build();
-        });
-    }
-
-    public Uni<ProjectDTO> add(ProjectDTO dto) {
-        Project node = new Project.Builder()
-                .setName(dto.getName())
-                .build();
-                repository.insert(node, AnonymousUser.ID);
-        return Uni.createFrom().nullItem();
     }
 
     private Project buildEntity(ProjectDTO dto, Optional<IUser> manager, Optional<IUser> coder, Optional<IUser> tester) {

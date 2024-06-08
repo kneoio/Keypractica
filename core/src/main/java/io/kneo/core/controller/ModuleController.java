@@ -40,8 +40,8 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
     @GET
     @Path("/")
     @JsonView(Views.ListView.class)
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page,  @Context ContainerRequestContext requestContext)  {
-        return getAll(service, requestContext, page);
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext)  {
+        return getAll(service, requestContext, page, size);
     }
 
     @GET
