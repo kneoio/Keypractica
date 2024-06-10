@@ -17,11 +17,10 @@ import io.kneo.officeframe.repository.PositionRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
 import jakarta.ws.rs.NotFoundException;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -131,6 +130,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {
             Employee doc = new Employee();
             doc.setName(dto.getName());
+            doc.setIdentifier(constructIdentifier(dto.getName()));
             doc.setUser(dto.getUserId());
             doc.setBirthDate(dto.getBirthDate());
             doc.setPhone(dto.getPhone());
@@ -142,6 +142,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             return repository.insert(doc, user.getId());
         }).flatMap(uni -> uni);
     }
+
     @Override
     public Uni<Integer> update(String id, EmployeeDTO dto, IUser user) {
         Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getOrg().getId());
@@ -151,6 +152,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {
             Employee doc = new Employee();
             doc.setName(dto.getName());
+            doc.setIdentifier(constructIdentifier(dto.getName()));
             doc.setUser(dto.getUserId());
             doc.setBirthDate(dto.getBirthDate());
             doc.setPhone(dto.getPhone());
@@ -163,6 +165,33 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         }).flatMap(uni -> uni);
     }
 
+    public Uni<Integer> patch(String id, JsonObject updates, IUser user) {
+        Map<String, Object> changes = new HashMap<>();
+
+        if (updates.containsKey("name")) {
+            changes.put("name", updates.getString("name"));
+            changes.put("identifier", constructIdentifier(updates.getString("name")));
+        }
+        if (updates.containsKey("birthDate")) {
+            changes.put("birthDate", updates.getString("birthDate"));
+        }
+        if (updates.containsKey("phone")) {
+            changes.put("phone", updates.getString("phone"));
+        }
+        if (updates.containsKey("localizedName")) {
+            changes.put("localizedName", updates.getString("localizedName"));
+        }
+        if (updates.containsKey("rank")) {
+            changes.put("rank", updates.getString("rank"));
+        }
+
+        return repository.patch(UUID.fromString(id), changes, user.getId());
+    }
+
+
+
+
+
     public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id));
     }
@@ -174,5 +203,9 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         } else {
             return employee.getName().toLowerCase().replace(" ", "_");
         }
+    }
+
+    protected static String constructIdentifier(String name) {
+        return name.toLowerCase().replace(" ", "_");
     }
 }

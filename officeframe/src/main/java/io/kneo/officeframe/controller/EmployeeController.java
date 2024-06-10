@@ -1,8 +1,9 @@
 package io.kneo.officeframe.controller;
 
-
 import io.kneo.core.controller.AbstractSecuredController;
+import io.kneo.core.dto.actions.ContextAction;
 import io.kneo.core.dto.cnst.PayloadType;
+import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -14,6 +15,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.json.JsonObject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
@@ -49,34 +51,84 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
             return Response.ok(viewPage).build();
         });
     }
+
     @GET
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
-        return getById(service, id, requestContext);
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            IUser user = userOptional.get();
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.DOC_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.FORBIDDEN).entity(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+        }
     }
 
     @POST
     @Path("/")
     public Uni<Response> create(@Valid EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        return create(service, dto, requestContext);
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.add(dto, userOptional.get())
+                    .onItem().transform(createdEmployee -> Response.ok(createdEmployee).build())
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.FORBIDDEN).entity(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+        }
     }
 
     @PUT
     @Path("/{id}")
     public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, EmployeeDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        return update(id, service, dto, requestContext);
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.update(id, dto, userOptional.get())
+                    .onItem().transform(updatedCount -> Response.ok(updatedCount).build())
+                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.FORBIDDEN).entity(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+        }
+    }
+
+    @PATCH
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Response> patch(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id,
+                               JsonObject updates,
+                               @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.patch(id, updates, userOptional.get())
+                    .onItem().transform(count -> Response.ok(count).build())
+                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.FORBIDDEN)
+                    .entity(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+        }
     }
 
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Integer> delete(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> delete(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            return service.delete(id, user);
+            return service.delete(id, userOptional.get())
+                    .onItem().transform(count -> Response.ok(count).build())
+                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure().recoverWithItem(this::postError);
+        } else {
+            return Uni.createFrom().item(Response.status(Response.Status.FORBIDDEN).entity(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
         }
-        return null;
     }
-
 }

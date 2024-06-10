@@ -21,6 +21,7 @@ import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLOYEE;
 
@@ -196,6 +197,37 @@ public class EmployeeRepository extends AsyncRepository {
                     return Uni.createFrom().item(0);
                 }));
     }
+
+    public Uni<Integer> patch(UUID id, Map<String, Object> changes, long user) {
+        if (changes.isEmpty()) {
+            return Uni.createFrom().item(0);
+        }
+
+        List<Object> params = new ArrayList<>();
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        params.add(nowTime);
+        params.add(user);
+
+        String setClauses = changes.entrySet().stream()
+                .map(entry -> {
+                    params.add(entry.getValue());
+                    return entry.getKey() + " = ?";
+                })
+                .collect(Collectors.joining(", "));
+
+        String sql = String.format("UPDATE %s SET last_mod_date = ?, last_mod_user = ?, %s WHERE id = ?",
+                entityData.getTableName(), setClauses);
+
+        params.add(id);
+
+        Tuple allParams = Tuple.from(params.toArray());
+
+        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                .execute(allParams)
+                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0));  // removed .onFailure().recoverWithUni()
+    }
+
+
     public Uni<Integer> delete(UUID id) {
         String sql = String.format("DELETE FROM %s WHERE  id=$1", entityData.getTableName());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
