@@ -10,6 +10,7 @@ import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.exception.DataValidationException;
@@ -110,7 +111,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
                     })
-                    .onFailure().recoverWithItem(this::postNotFoundError)
+                    .onFailure(DocumentHasNotFoundException.class).recoverWithItem(this::postNotFoundError)
                     .onFailure().recoverWithItem(this::postError);
         } else {
             return Uni.createFrom().item(

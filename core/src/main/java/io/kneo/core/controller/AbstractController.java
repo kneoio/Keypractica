@@ -143,6 +143,7 @@ public abstract class AbstractController<T, V> {
     protected Response postError(Throwable e) {
         Random rand = new Random();
         int randomNum = rand.nextInt(900000) + 100000;
+        e.printStackTrace();
         LOGGER.error(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }
