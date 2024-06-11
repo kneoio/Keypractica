@@ -1,7 +1,7 @@
 
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
@@ -41,7 +41,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     @Path("/")
     public Response get()  {
         ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         View<LanguageDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
         viewPage.addPayload(PayloadType.VIEW_DATA, view);
         return Response.ok(viewPage).build();
@@ -51,7 +51,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     @Path("/code/{code}")
     public Response getByCode(@PathParam("code") String code)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         page.addPayload(PayloadType.DOC_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
         return Response.ok(page).build();
     }
@@ -60,7 +60,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);

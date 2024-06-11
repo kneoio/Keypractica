@@ -1,7 +1,7 @@
 package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.ViewPage;
@@ -59,7 +59,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
             return service.getDTO(id, user)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);

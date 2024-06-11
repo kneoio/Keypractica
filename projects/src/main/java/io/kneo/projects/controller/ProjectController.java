@@ -3,8 +3,11 @@ package io.kneo.projects.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.Views;
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.Action;
+import io.kneo.core.dto.actions.ActionBox;
+import io.kneo.core.dto.actions.cnst.ActionType;
 import io.kneo.core.dto.cnst.PayloadType;
+import io.kneo.core.dto.cnst.RunMode;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
@@ -59,7 +62,11 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(pageSize, offset, user.getId()));
             return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ProjectActionsFactory.getViewActions(user.getActivatedRoles()));
+                ActionBox actions = ProjectActionsFactory.getViewActions(user.getActivatedRoles());
+                Action action = new Action();
+                action.setIsOn(RunMode.ON);
+                action.setCaption(ActionType.CLOSE.getAlias());
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, List.of(action));
                 if (pageNum == 0) pageNum = 1;
                 View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, pageSize);
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
@@ -105,7 +112,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
             return service.getDTO(id, user)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);

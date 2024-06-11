@@ -3,7 +3,7 @@ package io.kneo.officeframe.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.dto.Views;
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.officeframe.dto.LabelDTO;
@@ -50,7 +50,7 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
     @Path("/{identifier}")
     public Uni<Response> get(String identifier) {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         return service.findByIdentifier(identifier)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);

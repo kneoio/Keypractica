@@ -1,11 +1,13 @@
 
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
+import io.kneo.core.dto.actions.ActionsFactory;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -50,7 +52,7 @@ public abstract class AbstractController<T, V> {
             Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
             return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                //viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
                 if (pageNum == 0) pageNum = 1;
                 View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
@@ -66,7 +68,7 @@ public abstract class AbstractController<T, V> {
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
             return service.getDTO(id, user)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);
@@ -83,7 +85,7 @@ public abstract class AbstractController<T, V> {
 
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);
@@ -148,6 +150,12 @@ public abstract class AbstractController<T, V> {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }
 
+    protected Response postForbidden(String userOIDCName) {
+        LOGGER.warn(String.format("%s is not allowed", userOIDCName));
+        return Response.status(Response.Status.FORBIDDEN)
+                .entity(String.format("%s is not allowed", userOIDCName))
+                .build();
+    }
 
     protected Response postNotFoundError(Throwable e) {
         Random rand = new Random();
