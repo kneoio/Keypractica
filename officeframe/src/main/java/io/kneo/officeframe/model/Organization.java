@@ -12,7 +12,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.UUID;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)@Setter
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@Setter
 @Getter
 @NoArgsConstructor
 public class Organization extends SimpleReferenceEntity {

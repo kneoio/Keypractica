@@ -13,6 +13,10 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Action {
     @JsonIgnore
-    private RunMode isOn = RunMode.HIDE;
+    private RunMode isOn = RunMode.ON;
     private String caption;
+
+    public Action(String alias) {
+        this.caption = alias;
+    }
 }

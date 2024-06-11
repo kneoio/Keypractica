@@ -1,7 +1,7 @@
 package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.repository.exception.DocumentExistsException;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
@@ -20,6 +20,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
 import java.net.URI;
+import java.util.Optional;
 
 @Path("/orgs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -28,6 +29,7 @@ import java.net.URI;
 public class OrganizationController extends AbstractSecuredController<Organization, OrganizationDTO> {
     @Inject
     OrganizationService service;
+
     @GET
     @Path("/")
     @PermitAll
@@ -37,27 +39,49 @@ public class OrganizationController extends AbstractSecuredController<Organizati
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         return getById(service, id, requestContext);
     }
 
     @POST
     @Path("/")
-    public Response create(OrganizationDTO dto) throws DocumentExistsException {
-        return Response.created(URI.create("/" + service.add(dto))).build();
+    public Uni<Response> create(OrganizationDTO dto, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.add(dto, userOptional.get())
+                    .onItem().transform(id -> Response.created(URI.create("/orgs/" + id)).build());
+        } else {
+            return Uni.createFrom()
+                    .item(postForbidden(getUserOIDCName(requestContext)));
+
+        }
     }
 
     @PUT
-    @Path("/")
-    public Response update(OrganizationDTO dto) throws DocumentModificationAccessException {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
+    @Path("/{id}")
+    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, OrganizationDTO dto, @Context ContainerRequestContext requestContext) {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.update(id, dto, userOptional.get())
+                    .onItem().transform(count -> count > 0 ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build());
+        } else {
+            return Uni.createFrom()
+                    .item(postForbidden(getUserOIDCName(requestContext)));
+
+        }
     }
 
     @DELETE
     @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
-    }
+    public Uni<Response> delete(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+        if (userOptional.isPresent()) {
+            return service.delete(id, userOptional.get())
+                    .onItem().transform(count -> count > 0 ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build());
+        } else {
+            return Uni.createFrom()
+                    .item(postForbidden(getUserOIDCName(requestContext)));
 
+        }
+    }
 }

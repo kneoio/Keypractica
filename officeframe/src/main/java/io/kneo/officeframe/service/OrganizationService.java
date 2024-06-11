@@ -1,7 +1,5 @@
 package io.kneo.officeframe.service;
 
-
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
@@ -22,7 +20,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
-public class OrganizationService  extends AbstractService<Organization, OrganizationDTO> implements IRESTService<OrganizationDTO> {
+public class OrganizationService extends AbstractService<Organization, OrganizationDTO> implements IRESTService<OrganizationDTO> {
     @Inject
     private OrganizationRepository repository;
 
@@ -40,10 +38,12 @@ public class OrganizationService  extends AbstractService<Organization, Organiza
                                         .regDate(e.getRegDate())
                                         .lastModifier(userRepository.getUserName(e.getLastModifier()))
                                         .lastModifiedDate(e.getLastModifiedDate())
+                                        .localizedName(e.getLocalizedName())
                                         .identifier(e.getIdentifier())
                                         .build())
                         .collect(Collectors.toList()));
     }
+
     @Override
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
@@ -90,30 +90,29 @@ public class OrganizationService  extends AbstractService<Organization, Organiza
 
     @Override
     public Uni<UUID> add(OrganizationDTO dto, IUser user) {
-        return null;
+        Organization doc = new Organization();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setOrgCategory(dto.getOrgCategory().getId());
+        doc.setBizID(dto.getBizID());
+        doc.setRank(dto.getRank());
+        return repository.insert(doc);
     }
 
     @Override
     public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
-        return null;
+        Organization node = new Organization();
+        node.setId(UUID.fromString(id));
+        node.setIdentifier(dto.getIdentifier());
+        node.setOrgCategory(dto.getOrgCategory().getId());
+        node.setBizID(dto.getBizID());
+        node.setRank(dto.getRank());
+        return repository.update(UUID.fromString(id), node)
+                .onItem().transform(count -> count > 0 ? count : null);
     }
 
     @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
-        return null;
+        return repository.delete(UUID.fromString(id))
+                .onItem().transform(count -> count);
     }
-
-    public String  add(OrganizationDTO dto) {
-        Organization node = new Organization();
-
-        return repository.insert(node, AnonymousUser.ID).toString();
-    }
-
-    public Organization update(OrganizationDTO dto) {
-        Organization user = new Organization();
-
-        return repository.update(user);
-    }
-
-
 }

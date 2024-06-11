@@ -1,12 +1,13 @@
 package io.kneo.core.controller;
 
 import io.kneo.core.dto.actions.ActionsFactory;
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.RoleDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
@@ -53,7 +54,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
             Uni<List<RoleDTO>> listUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
             return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefault());
+                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
                 if (pageNum == 0) pageNum = 1;
                 View<RoleDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, user.getPageSize());
                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
@@ -68,7 +69,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         return service.getDTO(id, AnonymousUser.build())
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);

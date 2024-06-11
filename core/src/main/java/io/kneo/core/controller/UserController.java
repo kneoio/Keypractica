@@ -1,6 +1,6 @@
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.actions.ContextAction;
+import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.UserDTO;
 import io.kneo.core.dto.form.FormPage;
@@ -67,7 +67,7 @@ public class UserController extends AbstractController<User, UserDTO> {
     @Path("/{id}")
     public Uni<Response> getById(@PathParam("id") String id) {
         FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ContextAction());
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         return service.get(id).onItem().transform(userOptional -> {
             userOptional.ifPresentOrElse(user ->  page.addPayload(PayloadType.DOC_DATA, user),
                     () ->  page.addPayload(PayloadType.DOC_DATA, "no_data"));
