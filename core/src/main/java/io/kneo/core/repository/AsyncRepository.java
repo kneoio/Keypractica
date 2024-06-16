@@ -27,6 +27,13 @@ import java.util.stream.Collectors;
 public class AsyncRepository {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
+    protected static final String COLUMN_AUTHOR = "author";
+    protected static final String COLUMN_REG_DATE = "reg_date";
+    protected static final String COLUMN_LAST_MOD_DATE = "last_mod_date";
+    protected static final String COLUMN_LAST_MOD_USER = "last_mod_user";
+    protected static final String COLUMN_IDENTIFIER = "identifier";
+    protected static final String COLUMN_RANK = "rank";
+    protected static final String COLUMN_LOCALIZED_NAME = "loc_name";
 
     @Inject
     public PgPool client;
@@ -88,6 +95,7 @@ public class AsyncRepository {
         entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
     }
 
+    @Deprecated
     protected EnumMap<LanguageCode, String> extractLanguageMap(Row row) {
         EnumMap<LanguageCode, String> map;
         try {
