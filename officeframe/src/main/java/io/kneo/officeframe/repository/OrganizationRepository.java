@@ -1,5 +1,7 @@
 package io.kneo.officeframe.repository;
 
+import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.table.EntityData;
@@ -7,6 +9,7 @@ import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
@@ -14,6 +17,8 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,6 +28,10 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.ORGAN
 @ApplicationScoped
 public class OrganizationRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(ORGANIZATION);
+
+    private static final String COLUMN_ORG_CATEGORY_ID = "org_category_id";
+    private static final String COLUMN_BIZ_ID = "biz_id";
+
     @Inject
     PgPool client;
 
@@ -76,18 +85,56 @@ public class OrganizationRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<UUID> insert(Organization doc) {
-        String sql = String.format("INSERT INTO %s (id, identifier, org_category_id, biz_id, rank) VALUES ($1, $2, $3, $4, $5) RETURNING id", entityData.getTableName());
-        Tuple params = Tuple.of(doc.getId(), doc.getIdentifier(), doc.getOrgCategory(), doc.getBizID(), doc.getRank());
+    public Uni<UUID> insert(Organization doc, IUser user) {
+        String sql = String.format("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
+                entityData.getTableName(),
+                COLUMN_AUTHOR,
+                COLUMN_REG_DATE,
+                COLUMN_LAST_MOD_USER,
+                COLUMN_LAST_MOD_DATE,
+                COLUMN_IDENTIFIER,
+                COLUMN_ORG_CATEGORY_ID,
+                COLUMN_BIZ_ID,
+                COLUMN_RANK,
+                COLUMN_LOCALIZED_NAME);
+
+        JsonObject localizedNameJson = JsonObject.mapFrom(doc.getLocalizedName());
+        LocalDateTime now = LocalDateTime.now();
+
+        Tuple params = Tuple.of(user.getId(), now, user.getId(), now)
+                .addString(doc.getIdentifier())
+                .addUUID(doc.getOrgCategory())
+                .addString(doc.getBizID())
+                .addInteger(doc.getRank())
+                .addJsonObject(localizedNameJson);
 
         return client.preparedQuery(sql)
                 .execute(params)
                 .onItem().transform(result -> result.iterator().next().getUUID("id"));
     }
 
-    public Uni<Integer> update(UUID id, Organization doc) {
-        String sql = String.format("UPDATE %s SET identifier=$1, org_category_id=$2, biz_id=$3, rank=$4 WHERE id=$5", entityData.getTableName());
-        Tuple params = Tuple.of(doc.getIdentifier(), doc.getOrgCategory(), doc.getBizID(), doc.getRank(), id);
+
+    public Uni<Integer> update(UUID id, Organization doc, IUser user) {
+        String sql = String.format("UPDATE %s SET %s=$1, %s=$2, %s=$3, %s=$4, %s=$5, %s=$6, %s=$7 WHERE id=$8",
+                entityData.getTableName(),
+                COLUMN_LAST_MOD_USER,
+                COLUMN_LAST_MOD_DATE,
+                COLUMN_IDENTIFIER,
+                COLUMN_ORG_CATEGORY_ID,
+                COLUMN_BIZ_ID,
+                COLUMN_RANK,
+                COLUMN_LOCALIZED_NAME);
+
+        JsonObject localizedNameJson = JsonObject.mapFrom(doc.getLocalizedName());
+        LocalDateTime now = LocalDateTime.now();
+
+        Tuple params = Tuple.of(user.getId(), now)
+                .addString(doc.getIdentifier())
+                .addUUID(doc.getOrgCategory())
+                .addString(doc.getBizID())
+                .addInteger(doc.getRank())
+                .addJsonObject(localizedNameJson)
+                .addUUID(id);
 
         return client.preparedQuery(sql)
                 .execute(params)
@@ -115,10 +162,18 @@ public class OrganizationRepository extends AsyncRepository {
     private Organization from(Row row) {
         Organization doc = new Organization();
         setDefaultFields(doc, row);
-        doc.setIdentifier(row.getString("identifier"));
-        doc.setOrgCategory(row.getUUID("org_category_id"));
-        doc.setBizID(row.getString("biz_id"));
-        doc.setRank(row.getInteger("rank"));
+        doc.setIdentifier(row.getString(COLUMN_IDENTIFIER));
+        doc.setOrgCategory(row.getUUID(COLUMN_ORG_CATEGORY_ID));
+        doc.setBizID(row.getString(COLUMN_BIZ_ID));
+        doc.setRank(row.getInteger(COLUMN_RANK));
+
+        JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
+        if (localizedNameJson != null) {
+            EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
+            localizedNameJson.getMap().forEach((key, value) -> localizedName.put(LanguageCode.valueOf(key), (String) value));
+            doc.setLocalizedName(localizedName);
+        }
+
         return doc;
     }
 }

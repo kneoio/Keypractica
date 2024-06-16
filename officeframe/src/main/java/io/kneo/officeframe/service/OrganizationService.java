@@ -1,7 +1,7 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
@@ -76,6 +76,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                     .lastModifiedDate(doc.getLastModifiedDate())
                     .identifier(doc.getIdentifier())
                     .localizedName(doc.getLocalizedName())
+                    .bizID(doc.getBizID())
                     .build();
             if (orgCategory.isPresent()) {
                 OrgCategory category = orgCategory.get();
@@ -95,23 +96,23 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
-        return repository.insert(doc);
+        return repository.insert(doc, AnonymousUser.build());
     }
 
     @Override
     public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
-        Organization node = new Organization();
-        node.setId(UUID.fromString(id));
-        node.setIdentifier(dto.getIdentifier());
-        node.setOrgCategory(dto.getOrgCategory().getId());
-        node.setBizID(dto.getBizID());
-        node.setRank(dto.getRank());
-        return repository.update(UUID.fromString(id), node)
+        Organization doc = new Organization();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setOrgCategory(dto.getOrgCategory().getId());
+        doc.setBizID(dto.getBizID());
+        doc.setRank(dto.getRank());
+        doc.setLocalizedName(dto.getLocalizedName());
+        return repository.update(UUID.fromString(id), doc, user)
                 .onItem().transform(count -> count > 0 ? count : null);
     }
 
     @Override
-    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
+    public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id))
                 .onItem().transform(count -> count);
     }
