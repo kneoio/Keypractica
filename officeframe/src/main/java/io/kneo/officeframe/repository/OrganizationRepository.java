@@ -141,7 +141,7 @@ public class OrganizationRepository extends AsyncRepository {
                 .onItem().transformToUni(rowSet -> {
                     int rowCount = rowSet.rowCount();
                     if (rowCount == 0) {
-                        return Uni.createFrom().failure(new Exception("Update failed: document not found"));
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                     }
                     return Uni.createFrom().item(rowCount);
                 });

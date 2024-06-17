@@ -36,6 +36,7 @@ public class WebExceptionMapper implements ExceptionMapper<Exception> {
         } else if (exception instanceof PgException pgException) {
             int errorNumber = NumberUtil.getRandomNumber(100000, 199000);
             LOGGER.error("SQL exception: {}, code: {}", pgException.getMessage(), errorNumber, pgException);
+            pgException.printStackTrace();
             json = "{\"error\":\"System exception\", \"code\": " + errorNumber + " }";
             status = Response.Status.INTERNAL_SERVER_ERROR;
         } else {
