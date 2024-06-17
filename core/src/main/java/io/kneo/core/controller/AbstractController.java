@@ -49,7 +49,7 @@ public abstract class AbstractController<T, V> {
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, size));
             Uni<Integer> pageNumUni = Uni.createFrom().item(page);
             Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-            Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
+            Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(size, offset));
             return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
                 viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
@@ -145,7 +145,6 @@ public abstract class AbstractController<T, V> {
     protected Response postError(Throwable e) {
         Random rand = new Random();
         int randomNum = rand.nextInt(900000) + 100000;
-        e.printStackTrace();
         LOGGER.error(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }
@@ -159,7 +158,7 @@ public abstract class AbstractController<T, V> {
 
     protected Response postNotFoundError(Throwable e) {
         Random rand = new Random();
-        int randomNum = rand.nextInt(900000) + 100000;
+        int randomNum = rand.nextInt(800000) + 100000;
         LOGGER.warn(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
         return Response.status(Response.Status.NOT_FOUND).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }

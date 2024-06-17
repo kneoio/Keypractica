@@ -1,6 +1,5 @@
 package io.kneo.officeframe.service;
 
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
@@ -96,7 +95,8 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
-        return repository.insert(doc, AnonymousUser.build());
+        doc.setLocalizedName(dto.getLocalizedName());
+        return repository.insert(doc, user);
     }
 
     @Override
