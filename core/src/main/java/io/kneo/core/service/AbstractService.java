@@ -18,10 +18,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public abstract class AbstractService<T, V> {
+    protected final UserRepository userRepository;
+    protected final UserService userService;
+
     @Inject
-    protected UserRepository userRepository;
-    @Inject
-    protected UserService userService;
+    public AbstractService(UserRepository userRepository, UserService userService) {
+        this.userRepository = userRepository;
+        this.userService = userService;
+    }
 
     public abstract Uni<V> getDTO(String id, IUser user);
     public abstract Uni<UUID> add(V dto, IUser user);
@@ -49,6 +53,4 @@ public abstract class AbstractService<T, V> {
         dto.setLastModifier(userService.getUserName(doc.getLastModifier()));
         dto.setLastModifiedDate(doc.getLastModifiedDate());
     }
-
-
 }

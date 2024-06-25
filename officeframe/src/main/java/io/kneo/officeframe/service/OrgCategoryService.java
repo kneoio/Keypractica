@@ -1,8 +1,10 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.model.OrgCategory;
 import io.kneo.officeframe.repository.OrgCategoryRepository;
@@ -17,9 +19,20 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategoryDTO> implements IRESTService<OrgCategoryDTO> {
-    @Inject
-    private OrgCategoryRepository repository;
+    private final OrgCategoryRepository repository;
 
+    protected OrgCategoryService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    @Inject
+    public OrgCategoryService(UserRepository userRepository, UserService userService, OrgCategoryRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
+
+    @SuppressWarnings("ConstantConditions")
     public Uni<List<OrgCategoryDTO>> getAll(final int limit, final int offset) {
         Uni<List<OrgCategory>> uni = repository.getAll(limit, offset);
         return uni
@@ -37,41 +50,45 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
     }
 
     @Override
     public Uni<Optional<OrgCategoryDTO>> getByIdentifier(String identifier) {
-        return null;
+        return Uni.createFrom().item(Optional.empty());
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<OrgCategoryDTO> getDTO(String uuid, IUser user) {
-        Uni<Optional<OrgCategory>> labelUni = repository.findById(UUID.fromString(uuid));
-        return labelUni.onItem().transform(this::map);
+        Uni<Optional<OrgCategory>> categoryUni = repository.findById(UUID.fromString(uuid));
+        return categoryUni.onItem().transform(this::map);
     }
 
-    private OrgCategoryDTO map(Optional<OrgCategory> labelOpt) {
-        OrgCategory label = labelOpt.get();
-        return OrgCategoryDTO.builder()
-                .author(userRepository.getUserName(label.getAuthor()))
-                .regDate(label.getRegDate())
-                .lastModifier(userRepository.getUserName(label.getLastModifier()))
-                .lastModifiedDate(label.getLastModifiedDate())
-                .identifier(label.getIdentifier())
-                .build();
+    private OrgCategoryDTO map(Optional<OrgCategory> categoryOpt) {
+        return categoryOpt.map(category -> OrgCategoryDTO.builder()
+                .author(userRepository.getUserName(category.getAuthor()))
+                .regDate(category.getRegDate())
+                .lastModifier(userRepository.getUserName(category.getLastModifier()))
+                .lastModifiedDate(category.getLastModifiedDate())
+                .identifier(category.getIdentifier())
+                .build()).orElse(null);
     }
 
+    @Override
     public Uni<UUID> add(OrgCategoryDTO dto, IUser user) {
-        return null;
+        return Uni.createFrom().nullItem();
     }
+
     @Override
     public Uni<Integer> update(String id, OrgCategoryDTO dto, IUser user) {
-      return null;
+        return Uni.createFrom().item(0);
     }
 
+    @Override
     public Uni<Integer> delete(String id, IUser user) {
-        return null;
+        return Uni.createFrom().item(0);
     }
 }

@@ -1,8 +1,10 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.OrgCategory;
@@ -11,7 +13,6 @@ import io.kneo.officeframe.repository.OrgCategoryRepository;
 import io.kneo.officeframe.repository.OrganizationRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,12 +21,26 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class OrganizationService extends AbstractService<Organization, OrganizationDTO> implements IRESTService<OrganizationDTO> {
-    @Inject
-    private OrganizationRepository repository;
+    private final OrganizationRepository repository;
 
-    @Inject
-    OrgCategoryRepository orgCategoryRepository;
+    private final OrgCategoryRepository orgCategoryRepository;
 
+    protected OrganizationService() {
+        super(null, null);
+        this.repository = null;
+        this.orgCategoryRepository = null;
+    }
+
+    public OrganizationService(UserRepository userRepository,
+                               UserService userService,
+                               OrganizationRepository repository,
+                               OrgCategoryRepository orgCategoryRepository) {
+        super(userRepository, userService);
+        this.repository = repository;
+        this.orgCategoryRepository = orgCategoryRepository;
+    }
+
+    @SuppressWarnings("ConstantConditions")
     public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset) {
         Uni<List<Organization>> listUni = repository.getAll(limit, offset);
         return listUni
@@ -44,6 +59,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
     }
@@ -53,11 +69,13 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         return null;
     }
 
+    @SuppressWarnings("ConstantConditions")
     public Uni<Optional<Organization>> get(String id) {
         return repository.findById(UUID.fromString(id));
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<OrganizationDTO> getDTO(String id, IUser user) {
         Uni<Optional<Organization>> uni = repository.findById(UUID.fromString(id));
 
@@ -80,8 +98,8 @@ public class OrganizationService extends AbstractService<Organization, Organizat
             if (orgCategory.isPresent()) {
                 OrgCategory category = orgCategory.get();
                 dto.setOrgCategory(OrgCategoryDTO.builder()
-                        .identifier(category.getIdentifier())
-                        .id(category.getId())
+                       // .identifier(category.getIdentifier())
+                       // .id(category.getId())
                         .build());
             }
             return dto;
@@ -89,6 +107,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<UUID> add(OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
@@ -100,6 +119,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
@@ -112,6 +132,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
+    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id))
                 .onItem().transform(count -> count);

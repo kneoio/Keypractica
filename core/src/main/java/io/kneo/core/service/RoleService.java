@@ -6,6 +6,7 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
 import io.kneo.core.repository.RoleRepository;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,10 +22,18 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RoleService extends AbstractService<Role, RoleDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger("RoleService");
+    private final RoleRepository repository;
+
+    protected RoleService() {
+        super(null, null);
+        this.repository = null;
+    }
+
     @Inject
-    private RoleRepository repository;
-    @Inject
-    private UserService userService;
+    public RoleService(UserRepository userRepository, UserService userService, RoleRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<RoleDTO>> getAll(final int limit, final int offset) {
         Uni<List<Role>> roleListUni = repository.getAll(limit, offset);

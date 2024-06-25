@@ -1,6 +1,6 @@
 package io.kneo.core.repository;
 
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
 import io.smallrye.mutiny.Multi;
@@ -11,7 +11,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,11 +24,15 @@ import static io.kneo.core.repository.cnst.Tables.LANGUAGES_TABLE_NAME;
 
 @ApplicationScoped
 public class LanguageRepository extends AsyncRepository {
-
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
 
-    @Inject
-    PgPool client;
+    protected LanguageRepository() {
+        super(null, null);
+    }
+
+    public LanguageRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Language>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM _langs";

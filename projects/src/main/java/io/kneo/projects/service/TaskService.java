@@ -3,6 +3,7 @@ package io.kneo.projects.service;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.service.exception.DataValidationException;
@@ -21,8 +22,6 @@ import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -36,17 +35,32 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 
 @ApplicationScoped
 public class TaskService extends AbstractService<Task, TaskDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("TaskService");
+    private final TaskRepository repository;
+    private final LabelService labelService;
+    private final ProjectService projectService;
+    private final TaskTypeService taskTypeService;
+
+    protected TaskService() {
+        super(null, null);
+        this.repository = null;
+        this.labelService = null;
+        this.projectService = null;
+        this.taskTypeService = null;
+    }
+
     @Inject
-    private TaskRepository repository;
-    @Inject
-    private UserService userService;
-    @Inject
-    private LabelService labelService;
-    @Inject
-    private ProjectService projectService;
-    @Inject
-    private TaskTypeService taskTypeService;
+    public TaskService(UserRepository userRepository,
+                       UserService userService,
+                       TaskRepository repository,
+                       LabelService labelService,
+                       ProjectService projectService,
+                       TaskTypeService taskTypeService) {
+        super(userRepository, userService);
+        this.repository = repository;
+        this.labelService = labelService;
+        this.projectService = projectService;
+        this.taskTypeService = taskTypeService;
+    }
 
     public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final long userID) {
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, userID);

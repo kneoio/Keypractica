@@ -1,15 +1,16 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,8 +19,17 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class LabelService extends AbstractService<Label, LabelDTO> implements IRESTService<LabelDTO> {
-    @Inject
-    private LabelRepository repository;
+    private final LabelRepository repository;
+
+    protected LabelService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    public LabelService(UserRepository userRepository, UserService userService, LabelRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<LabelDTO>> getAll(final int limit, final int offset) {
         Uni<List<Label>> taskUni = repository.getAll(limit, offset);

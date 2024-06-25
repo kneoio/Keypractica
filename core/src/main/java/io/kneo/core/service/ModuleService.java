@@ -5,6 +5,7 @@ import io.kneo.core.model.Module;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.ModuleRepository;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -18,8 +19,18 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class ModuleService extends AbstractService<Module, ModuleDTO>  implements IRESTService<ModuleDTO> {
+    private final ModuleRepository repository;
+
+    protected ModuleService() {
+        super(null, null);
+        this.repository = null;
+    }
+
     @Inject
-    private ModuleRepository repository;
+    public ModuleService(UserRepository userRepository, UserService userService, ModuleRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<ModuleDTO>> getAll(final int limit, final int offset) {
         Uni<List<Module>> listUni = repository.getAll(limit, offset);

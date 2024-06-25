@@ -1,9 +1,11 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
@@ -19,8 +21,18 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> implements IRESTService<TaskTypeDTO> {
+    private final TaskTypeRepository repository;
+
+    public TaskTypeService() {
+        super(null, null);
+        this.repository = null;
+    }
+
     @Inject
-    private TaskTypeRepository repository;
+    public TaskTypeService(UserRepository userRepository, UserService userService, TaskTypeRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<TaskTypeDTO>> getAll(final int limit, final int offset) {
         Uni<List<TaskType>> taskUni = repository.getAll(limit, offset);

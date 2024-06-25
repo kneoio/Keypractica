@@ -1,5 +1,6 @@
 package io.kneo.officeframe.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Department;
@@ -10,7 +11,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +22,14 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.DEPAR
 public class DepartmentRepository extends AsyncRepository {
 
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(DEPARTMENT);
-    @Inject
-    PgPool client;
+
+    protected DepartmentRepository() {
+        super(null, null);
+    }
+
+    public DepartmentRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Department>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());

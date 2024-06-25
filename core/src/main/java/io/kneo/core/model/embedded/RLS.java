@@ -3,26 +3,25 @@ package io.kneo.core.model.embedded;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.kneo.core.dto.cnst.AccessLevel;
+import lombok.Getter;
 
 import java.time.ZonedDateTime;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"reader", "readingTime", "canEdit", "canDelete"})
 public class RLS {
+    @Getter
     private ZonedDateTime readingTime;
-    private long reader;
-    private long canEdit;
-    private long canDelete;
+    @Getter
+    private final long reader;
+    private final long canEdit;
+    private final long canDelete;
 
     public RLS(ZonedDateTime readingTime, long reader, long canEdit, long canDelete) {
         this.readingTime = readingTime;
         this.reader = reader;
         this.canEdit = canEdit;
         this.canDelete = canDelete;
-    }
-
-    public long getReader() {
-        return reader;
     }
 
     public AccessLevel getAccessLevel() {
@@ -44,9 +43,5 @@ public class RLS {
         return this;
     }
 
-    public ZonedDateTime getReadingTime() {
-        return readingTime;
-    }
 
-
-  }
+}

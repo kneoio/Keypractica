@@ -14,7 +14,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +28,15 @@ public class TaskTypeRepository extends AsyncRepository {
     private static final String TABLE_NAME = "ref__task_types";
     private static final String ENTITY_NAME = "task_type";
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s t ", TABLE_NAME);
-    @Inject
-    PgPool client;
-    @Inject
-    ObjectMapper mapper;
     private static final Logger LOGGER = LoggerFactory.getLogger("TaskTypeRepository");
+
+    protected TaskTypeRepository() {
+        super(null, null);
+    }
+
+    public TaskTypeRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<TaskType>> getAll(final int limit, final int offset) {
         return client.query(getBaseSelect(BASE_REQUEST, limit, offset))
