@@ -33,28 +33,26 @@ public class PositionController extends AbstractSecuredController<Position, Posi
     @GET
     @Path("/")
     @PermitAll
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
         return getAll(service, requestContext, page, size);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, user)
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.DOC_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.DOC_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
         } else {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
-
-
 }

@@ -1,11 +1,13 @@
 package io.kneo.officeframe.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -23,6 +25,14 @@ public class LabelRepository extends AsyncRepository {
 
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(LABEL);
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s", entityData.getTableName());
+
+    protected LabelRepository() {
+        super(null, null);
+    }
+
+    public LabelRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Label>> getAll(final int limit, final int offset) {
         String sql = BASE_REQUEST;

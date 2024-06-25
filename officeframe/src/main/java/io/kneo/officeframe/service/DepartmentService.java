@@ -1,18 +1,16 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.DepartmentDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.repository.DepartmentRepository;
-import io.kneo.officeframe.repository.OrganizationRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,11 +19,17 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class DepartmentService extends AbstractService<Department, DepartmentDTO> implements IRESTService<DepartmentDTO> {
-    private static final Logger LOGGER = LoggerFactory.getLogger("EmployeeService");
-    @Inject
-    private DepartmentRepository repository;
-    @Inject
-    private OrganizationRepository organizationRepository;
+    private final DepartmentRepository repository;
+
+    protected DepartmentService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    public DepartmentService(UserRepository userRepository, UserService userService, DepartmentRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<DepartmentDTO>> getAll(final int limit, final int offset) {
         Uni<List<Department>> listUni = repository.getAll(limit, offset);

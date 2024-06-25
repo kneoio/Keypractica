@@ -1,15 +1,16 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.repository.PositionRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,8 +19,17 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class PositionService extends AbstractService<Position, PositionDTO> implements IRESTService<PositionDTO> {
-    @Inject
-    private PositionRepository repository;
+    private final PositionRepository repository;
+
+    public PositionService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    public PositionService(UserRepository userRepository, UserService userService, PositionRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<PositionDTO>> getAll(final int limit, final int offset) {
         Uni<List<Position>> listUni = repository.getAll(limit, offset);

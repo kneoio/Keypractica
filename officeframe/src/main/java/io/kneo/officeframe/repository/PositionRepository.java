@@ -13,7 +13,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.time.ZoneId;
 import java.util.EnumMap;
@@ -26,11 +25,14 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.POSIT
 @ApplicationScoped
 public class PositionRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(POSITION);
-      @Inject
-    PgPool client;
 
-    @Inject
-    ObjectMapper mapper;
+    protected PositionRepository() {
+        super(null, null);
+    }
+
+    public PositionRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Position>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());

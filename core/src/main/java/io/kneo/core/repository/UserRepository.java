@@ -1,6 +1,7 @@
 package io.kneo.core.repository;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
@@ -25,22 +26,24 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class UserRepository extends AsyncRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger("UserRepository");
-    @Inject
-    PgPool client;
     private static Map<Long, IUser> userCache = new HashMap<>();
     private static final Map<String, IUser> userAltCache = new HashMap<>();
+
+    protected UserRepository() {
+        super(null, null);
+    }
+
+    @Inject
+    public UserRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     void onStart(@Observes StartupEvent ev) {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)

@@ -15,7 +15,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,12 +32,15 @@ import static io.kneo.core.repository.table.TableNameResolver.ROLE_ENTITY_NAME;
 @ApplicationScoped
 public class RoleRepository extends AsyncRepository {
     private static final EntityData entityData = TableNameResolver.create().getEntityNames(ROLE_ENTITY_NAME);
-    @Inject
-    PgPool client;
-    @Inject
-    ObjectMapper mapper;
-
     private static final Logger LOGGER = LoggerFactory.getLogger("RoleRepository");
+
+    protected RoleRepository() {
+        super(null, null);
+    }
+
+    public RoleRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Role>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM _roles";

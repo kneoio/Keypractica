@@ -3,6 +3,7 @@ package io.kneo.projects.service;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
@@ -27,10 +28,18 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 
 @ApplicationScoped
 public class ProjectService extends AbstractService<Project, ProjectDTO> {
+    private final ProjectRepository repository;
+
+    protected ProjectService() {
+        super(null, null);
+        this.repository = null;
+    }
+
     @Inject
-    private ProjectRepository repository;
-    @Inject
-    private UserService userService;
+    public ProjectService(UserRepository userRepository, UserService userService, ProjectRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
         Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
@@ -158,7 +167,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     private Project buildEntity(ProjectDTO dto, Optional<IUser> manager, Optional<IUser> coder, Optional<IUser> tester) {
-        Project project = new Project.Builder()
+        return new Project.Builder()
                 .setName(dto.getName())
                 .setManager(manager.orElseThrow(() -> new DataValidationException("Manager not found")).getId())
                 .setCoder(coder.orElseThrow(() -> new DataValidationException("Coder not found")).getId())
@@ -168,7 +177,6 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                // .setPrimaryLang(dto.getPrimaryLang())
                 .setDescription(dto.getDescription())
                 .build();
-        return project;
     }
 
 

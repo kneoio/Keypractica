@@ -16,7 +16,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -28,11 +27,14 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLO
 @ApplicationScoped
 public class EmployeeRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(EMPLOYEE);
-    @Inject
-    PgPool client;
 
-    @Inject
-    ObjectMapper mapper;
+    protected EmployeeRepository() {
+        super(null, null);
+    }
+
+    public EmployeeRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Employee>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());

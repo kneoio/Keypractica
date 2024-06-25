@@ -16,8 +16,12 @@ import java.util.UUID;
 public class RLSRepository {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
+    private final PgPool client;
+
     @Inject
-    PgPool client;
+    public RLSRepository(PgPool client) {
+        this.client = client;
+    }
 
     public Uni<int[]> findById(String accessTableName, Long userID, UUID uuid) {
         return client.preparedQuery("SELECT can_edit, can_delete FROM " + accessTableName + " a WHERE a.reader = $1 AND a.entity_id = $2")
@@ -32,7 +36,6 @@ public class RLSRepository {
                     }
                 });
     }
-
 
     private int[] from(Row row) {
         int[] access = new int[2];

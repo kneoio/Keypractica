@@ -26,11 +26,15 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.ORG_C
 @ApplicationScoped
 public class OrgCategoryRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(ORG_CATEGORY);
-      @Inject
-    PgPool client;
+
+    protected OrgCategoryRepository() {
+        super(null, null);
+    }
 
     @Inject
-    ObjectMapper mapper;
+    public OrgCategoryRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<OrgCategory>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ", entityData.getTableName());

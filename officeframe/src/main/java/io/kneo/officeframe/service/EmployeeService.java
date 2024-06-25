@@ -1,9 +1,10 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.RoleRepository;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Department;
@@ -16,7 +17,6 @@ import io.kneo.officeframe.repository.OrganizationRepository;
 import io.kneo.officeframe.repository.PositionRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.NotFoundException;
 
@@ -25,18 +25,35 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmployeeService extends AbstractService<Employee, EmployeeDTO> implements IRESTService<EmployeeDTO> {
-    @Inject
-    private EmployeeRepository repository;
-    @Inject
-    private OrganizationRepository organizationRepository;
-    @Inject
-    private DepartmentRepository departmentRepository;
-    @Inject
-    private PositionRepository positionRepository;
-    @Inject
-    private RoleRepository roleRepository;
-    @Inject
-    private PositionService positionService;
+    private final EmployeeRepository repository;
+    private final OrganizationRepository orgRepository;
+    private final DepartmentRepository depRepository;
+    private final PositionRepository positionRepository;
+    private final PositionService positionService;
+
+    protected EmployeeService() {
+        super(null, null);
+        this.repository = null;
+        this.orgRepository = null;
+        this.depRepository = null;
+        this.positionRepository = null;
+        this.positionService = null;
+    }
+
+    public EmployeeService(UserRepository userRepository,
+                           UserService userService,
+                           EmployeeRepository repository,
+                           OrganizationRepository orgRepository,
+                           DepartmentRepository depRepository,
+                           PositionRepository positionRepository,
+                           PositionService positionService) {
+        super(userRepository, userService);
+        this.repository = repository;
+        this.orgRepository = orgRepository;
+        this.depRepository = depRepository;
+        this.positionRepository = positionRepository;
+        this.positionService = positionService;
+    }
 
     public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
         Uni<List<Employee>> listUni = repository.getAll(limit, offset);
@@ -123,8 +140,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     public Uni<UUID> add(EmployeeDTO dto, IUser user) {
-        Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getId());
-        Uni<Optional<Department>> depUni = departmentRepository.findById(dto.getId());
+        Uni<Optional<Organization>> orgUni = orgRepository.findById(dto.getId());
+        Uni<Optional<Department>> depUni = depRepository.findById(dto.getId());
         Uni<Optional<Position>> positionUni = positionRepository.findById(dto.getId());
         //Uni<List<Role>> roleUni = Uni.createFrom().item(new ArrayList<>());
         return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {
@@ -145,8 +162,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
 
     @Override
     public Uni<Integer> update(String id, EmployeeDTO dto, IUser user) {
-        Uni<Optional<Organization>> orgUni = organizationRepository.findById(dto.getOrg().getId());
-        Uni<Optional<Department>> depUni = departmentRepository.findById(dto.getDep().getId());
+        Uni<Optional<Organization>> orgUni = orgRepository.findById(dto.getOrg().getId());
+        Uni<Optional<Department>> depUni = depRepository.findById(dto.getDep().getId());
         Uni<Optional<Position>> positionUni = positionRepository.findById(dto.getPosition().getId());
         //Uni<List<Role>> roleUni = Uni.createFrom().item(new ArrayList<>());
         return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((orgOpt, depOpt, posOpt) -> {

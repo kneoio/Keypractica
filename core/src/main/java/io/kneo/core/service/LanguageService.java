@@ -5,10 +5,10 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.LanguageRepository;
+import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,8 +17,18 @@ import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class LanguageService extends AbstractService<Language, LanguageDTO> {
-    @Inject
-    private LanguageRepository repository;
+
+    private final LanguageRepository repository;
+
+    protected LanguageService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    public LanguageService(UserRepository userRepository, UserService userService, LanguageRepository repository) {
+        super(userRepository, userService);
+        this.repository = repository;
+    }
 
     public Uni<List<LanguageDTO>> getAll(final int limit, final int offset) {
         Uni<List<Language>> listUni = repository.getAll(limit, offset);

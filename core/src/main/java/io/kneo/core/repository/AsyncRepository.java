@@ -14,6 +14,7 @@ import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@ApplicationScoped
 public class AsyncRepository {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
@@ -35,10 +37,16 @@ public class AsyncRepository {
     protected static final String COLUMN_RANK = "rank";
     protected static final String COLUMN_LOCALIZED_NAME = "loc_name";
 
+    protected final PgPool client;
+    protected final ObjectMapper mapper;
+
+
+
     @Inject
-    public PgPool client;
-    @Inject
-    ObjectMapper mapper;
+    public AsyncRepository(PgPool client, ObjectMapper mapper) {
+        this.client = client;
+        this.mapper = mapper;
+    }
 
     protected Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m, %s as acl WHERE m.id = acl.entity_id AND acl.reader = $1", mainTable, aclTable);
@@ -53,6 +61,7 @@ public class AsyncRepository {
                 .execute()
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
+
     public <R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
         return client.preparedQuery("SELECT * FROM " + entityData.getTableName() + " se WHERE se.id = $1")
                 .execute(Tuple.of(uuid))
@@ -75,7 +84,6 @@ public class AsyncRepository {
                 .collect().asList();
     }
 
-
     protected Uni<Void> delete(UUID uuid, String table) {
         String sql = String.format("DELETE FROM %s WHERE id = $1", table);
         return client.withTransaction(tx -> tx.preparedQuery(sql)
@@ -87,7 +95,7 @@ public class AsyncRepository {
                 }));
     }
 
-    protected  static void setDefaultFields(DataEntity<UUID> entity, Row row) {
+    protected static void setDefaultFields(DataEntity<UUID> entity, Row row) {
         entity.setId(row.getUUID("id"));
         entity.setAuthor(row.getLong("author"));
         entity.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
@@ -101,8 +109,7 @@ public class AsyncRepository {
         try {
             map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
             });
-        } catch (
-                JsonProcessingException e) {
+        } catch (JsonProcessingException e) {
             LOGGER.error(e.getMessage());
             throw new RuntimeException(e);
         }
@@ -122,7 +129,6 @@ public class AsyncRepository {
         }
         return new EnumMap<>(LanguageCode.class);
     }
-
 
     protected static String getBaseSelect(String baseRequest, final int limit, final int offset) {
         String sql = baseRequest;
