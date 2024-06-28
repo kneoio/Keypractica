@@ -26,14 +26,6 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.POSIT
 public class PositionRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(POSITION);
 
-    protected PositionRepository() {
-        super(null, null);
-    }
-
-    public PositionRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
-    }
-
     public Uni<List<Position>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());
         if (limit > 0) {

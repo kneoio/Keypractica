@@ -3,7 +3,7 @@ package io.kneo.core.localization;
 
 import io.kneo.core.localization.exception.UtilityDBException;
 import io.kneo.core.localization.exception.UtilityDBExceptionType;
-import io.kneo.core.repository.DataengineConst;
+import io.kneo.core.repository.DataEngineConst;
 import io.kneo.core.server.Environment;
 import io.kneo.core.server.IUtilityDatabase;
 import org.jboss.logging.Logger;
@@ -30,7 +30,7 @@ public class Vocabulary {
                 vp = udb.getAllWordsGrouped();
                 if (vp != null) {
                     for (String key : vp) {
-                        words.put(key, udb.getWord(DataengineConst.OVERALL_APPLICATION, key));
+                        words.put(key, udb.getWord(DataEngineConst.OVERALL_APPLICATION, key));
                     }
                 } else {
                     LOGGER.fatal("There is no utility facility");

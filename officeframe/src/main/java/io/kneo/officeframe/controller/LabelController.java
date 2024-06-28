@@ -37,13 +37,13 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
     @GET
     @Path("/")
     @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return getAll(service, requestContext, page, size);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -62,7 +62,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
 
     @GET
     @Path("/identifier/{id}")
-    public Uni<Response> getByIdentifier(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getByIdentifier(@PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();

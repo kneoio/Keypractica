@@ -1,7 +1,6 @@
 package io.kneo.core.repository;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
@@ -11,14 +10,12 @@ import io.kneo.core.server.EnvConst;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +32,6 @@ public class UserRepository extends AsyncRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger("UserRepository");
     private static Map<Long, IUser> userCache = new HashMap<>();
     private static final Map<String, IUser> userAltCache = new HashMap<>();
-
-    protected UserRepository() {
-        super(null, null);
-    }
-
-    @Inject
-    public UserRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
-    }
 
     void onStart(@Observes StartupEvent ev) {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)

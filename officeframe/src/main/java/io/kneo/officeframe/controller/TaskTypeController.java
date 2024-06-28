@@ -6,6 +6,7 @@ import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
@@ -42,7 +43,7 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
     @GET
     @Path("/")
     @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return getAll(service, requestContext, page, size);
     }
 

@@ -13,6 +13,7 @@ import io.kneo.officeframe.repository.OrgCategoryRepository;
 import io.kneo.officeframe.repository.OrganizationRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         this.orgCategoryRepository = null;
     }
 
+    @Inject
     public OrganizationService(UserRepository userRepository,
                                UserService userService,
                                OrganizationRepository repository,

@@ -5,6 +5,7 @@ import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.service.PositionService;
@@ -33,13 +34,13 @@ public class PositionController extends AbstractSecuredController<Position, Posi
     @GET
     @Path("/")
     @PermitAll
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return getAll(service, requestContext, page, size);
     }
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getById(@PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();

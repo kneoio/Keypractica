@@ -1,7 +1,6 @@
 package io.kneo.officeframe.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
@@ -11,7 +10,6 @@ import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -28,13 +26,6 @@ import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.EMPLO
 public class EmployeeRepository extends AsyncRepository {
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(EMPLOYEE);
 
-    protected EmployeeRepository() {
-        super(null, null);
-    }
-
-    public EmployeeRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
-    }
 
     public Uni<List<Employee>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());

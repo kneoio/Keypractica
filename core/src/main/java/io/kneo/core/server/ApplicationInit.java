@@ -3,6 +3,8 @@ package io.kneo.core.server;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
+import io.vertx.ext.web.Route;
+import io.vertx.ext.web.Router;
 import io.vertx.mutiny.pgclient.PgPool;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -24,6 +26,9 @@ public class ApplicationInit {
     @Inject
     PgPool client;
 
+    @Inject
+    Router router;
+
     void onStart(@Observes StartupEvent ev)  {
         LOGGER.info("The application is starting...{}", EnvConst.APP_ID);
         if (EnvConst.DEV_MODE) {
@@ -38,6 +43,11 @@ public class ApplicationInit {
             LOGGER.info(connected.await().indefinitely());
 
         }
+        LOGGER.info("Registered routes:");
+        for (Route route : router.getRoutes()) {
+            LOGGER.info("{} {}", route.methods(), route.getPath());
+        }
+
 
     }
 
