@@ -11,6 +11,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.RoleService;
 import io.kneo.core.util.RuntimeUtil;
 import io.smallrye.mutiny.Uni;
@@ -43,7 +44,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
 
     @GET
     @Path("/")
-    public Uni<Response> get(@BeanParam Parameters params, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> get(@BeanParam Parameters params, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();

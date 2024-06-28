@@ -46,7 +46,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     @GET
     @Path("/")
     @Operation(operationId = "getAllTasks")
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -85,7 +85,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     @GET
     @Path("/{id}")
     @Operation(operationId = "getTaskById")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -106,7 +106,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     @GET
     @Path("/template")
     @Operation(operationId = "getTaskTemplate")
-    public Uni<Response> getTemplate(@Context ContainerRequestContext requestContext) {
+    public Uni<Response> getTemplate(@Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -126,7 +126,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     @POST
     @Path("/")
     @Operation(operationId = "createTask", summary = "Create task")
-    public Uni<Response> create(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> create(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.add(dto, userOptional.get())
@@ -147,7 +147,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     @Path("/{id}")
     @Operation(operationId = "deleteTaskById")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> delete(@PathParam("id") String uuid, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
+    public Uni<Response> delete(@PathParam("id") String uuid, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         return delete(uuid, service, requestContext);
     }
 

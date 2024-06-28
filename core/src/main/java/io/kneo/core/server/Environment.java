@@ -3,8 +3,8 @@ package io.kneo.core.server;
 import io.kneo.core.localization.Vocabulary;
 
 public class Environment {
-    public static final String realm = "semantyca.com";
-    public static final String realmShortName = "semantyca";
+    public static final String realm = "kneo.io";
+    public static final String realmShortName = "kneo";
     public static String[] publicModules = {"workspace"};
     public static IUtilityDatabase utilityDatabase;
     public static Vocabulary vocabulary;

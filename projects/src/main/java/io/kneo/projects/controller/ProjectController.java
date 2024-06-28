@@ -51,16 +51,24 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @GET
     @Path("/")
-    public Uni<Response> get(@Valid @Min(1) @QueryParam("page") int page, @Valid @Min(10) @QueryParam("size") int pageSize, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Valid @Min(1) @QueryParam("page") int page, @Valid @Min(10) @QueryParam("size") int pageSize, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             Uni<Integer> countUni = service.getAllCount(user.getId());
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, pageSize));
             Uni<Integer> pageNumUni = Uni.createFrom().item(page);
-            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
+            Uni<Integer> offsetUni = Uni.combine().all()
+                    .unis(pageNumUni, Uni.createFrom().item(user.getPageSize()))
+                    .asTuple().map(tuple -> RuntimeUtil.calcStartEntry(tuple.getItem1(), tuple.getItem2()));
             Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(pageSize, offset, user.getId()));
-            return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((prjs, offset, pageNum, count, maxPage) -> {
+            return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).asTuple().map(tuple -> {
+                List<ProjectDTO> prjs = tuple.getItem1();
+                int offset = tuple.getItem2();
+                int pageNum = tuple.getItem3();
+                int count = tuple.getItem4();
+                int maxPage = tuple.getItem5();
+
                 ViewPage viewPage = new ViewPage();
                 ActionBox actions = ProjectActionsFactory.getViewActions(user.getActivatedRoles());
                 Action action = new Action();
@@ -75,9 +83,8 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         } else {
             return Uni.createFrom()
                     .item(Response.status(Response.Status.FORBIDDEN)
-                    .entity(String.format("%s is not allowed", AnonymousUser.USER_NAME))
-                    .build());
-
+                            .entity(String.format("%s is not allowed", AnonymousUser.USER_NAME))
+                            .build());
         }
     }
 
@@ -107,7 +114,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @GET
     @Path("/{id}")
-    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
@@ -130,7 +137,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @POST
     @Path("/")
-    public Uni<Response> create(ProjectDTO dto, @Context ContainerRequestContext requestContext) {
+    public Uni<Response> create(ProjectDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.add(dto, userOptional.get())

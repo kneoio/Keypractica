@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.dto.Views;
 import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.model.Module;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.ModuleService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -40,7 +41,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
     @GET
     @Path("/")
     @JsonView(Views.ListView.class)
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext)  {
+    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return getAll(service, requestContext, page, size);
     }
 

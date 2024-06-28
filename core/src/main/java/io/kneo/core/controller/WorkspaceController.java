@@ -10,6 +10,7 @@ import io.kneo.core.dto.document.UserModuleDTO;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.WorkspaceService;
 import io.smallrye.mutiny.Uni;
@@ -39,14 +40,14 @@ public class WorkspaceController extends AbstractSecuredController<Module, Modul
 
     @GET
     @Path("/")
-    public Uni<Response> getDefault(@Context ContainerRequestContext requestContext) {
+    public Uni<Response> getDefault(@Context ContainerRequestContext requestContext) throws UserNotFoundException {
         return get(requestContext);
     }
 
     @GET
     @Path("/workspace")
     @JsonView(Views.ListView.class)
-    public Uni<Response> get(@Context ContainerRequestContext requestContext) {
+    public Uni<Response> get(@Context ContainerRequestContext requestContext) throws UserNotFoundException {
         String acceptLanguage = requestContext.getHeaderString(HttpHeaders.ACCEPT_LANGUAGE);
         if (acceptLanguage != null) {
             Locale preferredLocale = Locale.forLanguageTag(acceptLanguage.split(",")[0].trim());

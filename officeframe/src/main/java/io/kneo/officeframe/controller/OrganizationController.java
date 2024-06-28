@@ -2,86 +2,119 @@ package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
-import io.smallrye.mutiny.Uni;
-import jakarta.annotation.security.PermitAll;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
-import java.net.URI;
 import java.util.Optional;
 
-@Path("/orgs")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
+@RouteBase(path = "/api/:org/orgs")
 public class OrganizationController extends AbstractSecuredController<Organization, OrganizationDTO> {
+
     @Inject
     OrganizationService service;
 
-    @GET
-    @Path("/")
-    @PermitAll
-    public Uni<Response> get(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) {
-        return getAll(service, requestContext, page, size);
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void get(RoutingContext rc) {
+        int page = Integer.parseInt(rc.request().getParam("page", "0"));
+        int size = Integer.parseInt(rc.request().getParam("size", "10"));
+
+        getAll(service, rc, page, size).subscribe().with(
+                response -> rc.response()
+                        .setStatusCode(response.getStatus())
+                        .end(JsonObject.mapFrom(response.getEntity()).encode()),
+                failure -> {
+                    LOGGER.error("Error processing request: ", failure);
+                    rc.response().setStatusCode(500).end("Internal Server Error");
+                }
+        );
     }
 
-    @GET
-    @Path("/{id}")
-    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) {
-        return getById(service, id, requestContext);
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getById(RoutingContext rc) {
+        String id = rc.pathParam("id");
+        getById(service, id, rc).subscribe().with(
+                response -> rc.response().setStatusCode(response.getStatus()).end(JsonObject.mapFrom(response.getEntity()).encode()),
+                failure -> {
+                    LOGGER.error(failure.getMessage(), failure);
+                    rc.response().setStatusCode(500).end(failure.getMessage());
+                }
+        );
     }
 
-    @POST
-    @Path("/")
-    public Uni<Response> create(OrganizationDTO dto, @Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.add(dto, userOptional.get())
-                    .onItem().transform(id -> Response.created(URI.create("/orgs/" + id)).build());
-        } else {
-            return Uni.createFrom()
-                    .item(postForbidden(getUserOIDCName(requestContext)));
+    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void create(RoutingContext rc) {
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
+            Optional<IUser> userOptional = getUserId(rc);
 
+            if (userOptional.isPresent()) {
+                service.add(dto, userOptional.get()).subscribe().with(
+                        id -> rc.response().setStatusCode(201).putHeader("Location", "/api/" + rc.pathParam("org") + "/orgs/" + id).end(),
+                        failure -> {
+                            LOGGER.error(failure.getMessage(), failure);
+                            rc.response().setStatusCode(500).end(failure.getMessage());
+                        }
+                );
+            } else {
+                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
+            }
+        } catch (DecodeException e) {
+            LOGGER.error("Error decoding request body: {}", e.getMessage());
+            rc.response().setStatusCode(400).end("Invalid request body");
         }
     }
 
-    @PUT
-    @Path("/{id}")
-    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, OrganizationDTO dto, @Context ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.update(id, dto, userOptional.get())
-                    .onItem().transform(count -> count > 0 ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build());
-        } else {
-            return Uni.createFrom()
-                    .item(postForbidden(getUserOIDCName(requestContext)));
+    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
+    public void update(RoutingContext rc) {
+        String id = rc.pathParam("id");
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
+            Optional<IUser> userOptional = getUserId(rc);
 
+            if (userOptional.isPresent()) {
+                service.update(id, dto, userOptional.get()).subscribe().with(
+                        count -> rc.response().setStatusCode(count > 0 ? 200 : 404).end(),
+                        failure -> {
+                            LOGGER.error(failure.getMessage(), failure);
+                            rc.response().setStatusCode(500).end(failure.getMessage());
+                        }
+                );
+            } else {
+                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
+            }
+        } catch (DecodeException e) {
+            LOGGER.error("Error decoding request body: {}", e.getMessage());
+            rc.response().setStatusCode(400).end("Invalid request body");
         }
     }
 
-    @DELETE
-    @Path("/{id}")
-    public Uni<Response> delete(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.delete(id, userOptional.get())
-                    .onItem().transform(count -> count > 0 ? Response.ok().build() : Response.status(Response.Status.NOT_FOUND).build());
-        } else {
-            return Uni.createFrom()
-                    .item(postForbidden(getUserOIDCName(requestContext)));
+    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
+    public void delete(RoutingContext rc) {
+        String id = rc.pathParam("id");
+        Optional<IUser> userOptional = getUserId(rc);
 
+        if (userOptional.isPresent()) {
+            service.delete(id, userOptional.get()).subscribe().with(
+                    count -> rc.response().setStatusCode(count > 0 ? 200 : 404).end(),
+                    failure -> {
+                        LOGGER.error(failure.getMessage(), failure);
+                        rc.response().setStatusCode(500).end(failure.getMessage());
+                    }
+            );
+        } else {
+            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
         }
     }
+
 }

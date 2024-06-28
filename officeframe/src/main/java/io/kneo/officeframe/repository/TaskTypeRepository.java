@@ -2,14 +2,12 @@ package io.kneo.officeframe.repository;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.model.TaskType;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -30,13 +28,6 @@ public class TaskTypeRepository extends AsyncRepository {
     private static final String BASE_REQUEST = String.format("SELECT * FROM %s t ", TABLE_NAME);
     private static final Logger LOGGER = LoggerFactory.getLogger("TaskTypeRepository");
 
-    protected TaskTypeRepository() {
-        super(null, null);
-    }
-
-    public TaskTypeRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
-    }
 
     public Uni<List<TaskType>> getAll(final int limit, final int offset) {
         return client.query(getBaseSelect(BASE_REQUEST, limit, offset))

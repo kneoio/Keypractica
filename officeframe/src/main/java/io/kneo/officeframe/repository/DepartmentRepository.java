@@ -23,13 +23,7 @@ public class DepartmentRepository extends AsyncRepository {
 
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(DEPARTMENT);
 
-    protected DepartmentRepository() {
-        super(null, null);
-    }
 
-    public DepartmentRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
-    }
 
     public Uni<List<Department>> getAll(final int limit, final int offset) {
         String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());

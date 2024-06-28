@@ -37,16 +37,12 @@ public class AsyncRepository {
     protected static final String COLUMN_RANK = "rank";
     protected static final String COLUMN_LOCALIZED_NAME = "loc_name";
 
-    protected final PgPool client;
-    protected final ObjectMapper mapper;
-
-
+    @Inject
+    protected PgPool client;
 
     @Inject
-    public AsyncRepository(PgPool client, ObjectMapper mapper) {
-        this.client = client;
-        this.mapper = mapper;
-    }
+    protected ObjectMapper mapper;
+
 
     protected Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m, %s as acl WHERE m.id = acl.entity_id AND acl.reader = $1", mainTable, aclTable);

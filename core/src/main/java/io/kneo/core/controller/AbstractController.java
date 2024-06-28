@@ -16,8 +16,12 @@ import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
+import io.quarkus.security.UnauthorizedException;
 import io.smallrye.jwt.auth.principal.DefaultJWTCallerPrincipal;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -36,35 +40,96 @@ public abstract class AbstractController<T, V> {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
+    @Deprecated
     protected static final String USER_NAME_CLAIM = "preferred_username";
+    protected static final String USER_NAME = "username";
+
     @Inject
     UserService userService;
 
-    protected Uni<Response> getAll(IRESTService<V> service, ContainerRequestContext requestContext, int page, int size) {
+    protected Uni<Response> getAll(IRESTService<V> service, RoutingContext rc, int page, int size) {
+        Optional<IUser> userOptional = getUserId(rc);
+
+        IUser user = userOptional.get();
+        String languageHeader = rc.request().getHeader("Accept-Language");
+        return service.getAllCount()
+                .onItem().transformToUni(count -> {
+                    int maxPage = countMaxPage(count, size);
+                    int pageNum = (page == 0) ? 1 : page;
+                    int offset = RuntimeUtil.calcStartEntry(pageNum, size);
+                    return service.getAll(size, offset)
+                            .onItem().transform(dtoList -> {
+                                ViewPage viewPage = new ViewPage();
+                                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
+                                View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
+                                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                                return Response.ok(viewPage).build();
+                            });
+                })
+                .onFailure().recoverWithItem(t -> {
+                    LOGGER.error("Error retrieving data: ", t);
+                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                });
+
+    }
+
+    @Deprecated
+    protected Uni<Response> getAll(IRESTService<V> service, ContainerRequestContext requestContext, int page, int size) throws UserNotFoundException {
+        Optional<IUser> userOptional = getUserId(requestContext);
+
+        IUser user = userOptional.get();
+        String languageHeader = requestContext.getHeaderString("Accept-Language");
+        Uni<Integer> countUni = service.getAllCount();
+        Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, size));
+        Uni<Integer> pageNumUni = Uni.createFrom().item(page);
+        Uni<Integer> offsetUni = Uni.combine().all()
+                .unis(pageNumUni, Uni.createFrom().item(user.getPageSize()))
+                .asTuple()
+                .map(tuple -> RuntimeUtil.calcStartEntry(tuple.getItem1(), tuple.getItem2()));
+        Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(size, offset));
+        return Uni.combine().all()
+                .unis(unis, offsetUni, pageNumUni, countUni, maxPageUni)
+                .asTuple()
+                .map(tuple -> {
+                    List<V> dtoList = tuple.getItem1();
+                    int offset = tuple.getItem2();
+                    int pageNum = tuple.getItem3();
+                    int count = tuple.getItem4();
+                    int maxPage = tuple.getItem5();
+
+                    ViewPage viewPage = new ViewPage();
+                    viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
+                    if (pageNum == 0) pageNum = 1;
+                    View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                    return Response.ok(viewPage).build();
+                });
+
+    }
+
+    @Deprecated
+    protected Uni<Response> getById(IRESTService<V> service, String id, ContainerRequestContext requestContext) throws UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
-            String languageHeader = requestContext.getHeaderString("Accept-Language");
-            Uni<Integer> countUni = service.getAllCount();
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, size));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
-            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-            Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(size, offset));
-            return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
-                ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
-                if (pageNum == 0) pageNum = 1;
-                View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
-                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                return Response.ok(viewPage).build();
-            });
+            FormPage page = new FormPage();
+            page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
+            return service.getDTO(id, user)
+                    .onItem().transform(p -> {
+                        page.addPayload(PayloadType.DOC_DATA, p);
+                        return Response.ok(page).build();
+                    })
+                    .onFailure().recoverWithItem(t -> {
+                        LOGGER.error(t.getMessage(), t);
+                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    });
         } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+            throw new UnauthorizedException("User not authorized");
         }
-
     }
-    protected Uni<Response> getById (IRESTService<V> service, String id, ContainerRequestContext requestContext) {
-        Optional<IUser> userOptional = getUserId(requestContext);
+
+    protected Uni<Response> getById(IRESTService<V> service, String id, RoutingContext rc) {
+        Optional<IUser> userOptional = getUserId(rc);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
@@ -83,6 +148,7 @@ public abstract class AbstractController<T, V> {
         }
     }
 
+
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
@@ -95,15 +161,36 @@ public abstract class AbstractController<T, V> {
                 .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build());
     }
 
-    protected Optional<IUser> getUserId(ContainerRequestContext requestContext) {
+    @Deprecated
+    protected Optional<IUser> getUserId(ContainerRequestContext requestContext) throws UserNotFoundException {
         try {
             DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
             return userService.findByLogin(securityIdentity.getClaim(USER_NAME_CLAIM));
         } catch (NullPointerException e) {
             LOGGER.warn(String.format("msg: %s ", e.getMessage()));
-            return Optional.empty();
+            throw new UserNotFoundException("User not authorized");
         } catch (Exception e) {
             LOGGER.error(String.format("msg: %s ", e.getMessage()), e);
+            throw new UserNotFoundException("User not authorized");
+        }
+    }
+
+    protected Optional<IUser> getUserId(RoutingContext rc) {
+        try {
+            User vertxUser = rc.user();
+            if (vertxUser != null) {
+                JsonObject principal = vertxUser.principal();
+                String username = principal.getString(USER_NAME);
+                if (username != null) {
+                    return userService.findByLogin(username);
+                }
+            }
+            return Optional.empty();
+        } catch (NullPointerException e) {
+            LOGGER.warn("Failed to get user ID: {}", e.getMessage());
+            return Optional.empty();
+        } catch (Exception e) {
+            LOGGER.error("Error while getting user ID: ", e);
             return Optional.empty();
         }
     }
@@ -122,6 +209,7 @@ public abstract class AbstractController<T, V> {
             return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
         }
     }
+
     protected Uni<Response> update(String id, AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
@@ -132,7 +220,7 @@ public abstract class AbstractController<T, V> {
         }
     }
 
-    public Uni<Response> delete(String uuid, AbstractService<T, V> service, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException {
+    public Uni<Response> delete(String uuid, AbstractService<T, V> service, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {
             return service.delete(uuid, userOptional.get())
