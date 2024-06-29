@@ -29,6 +29,7 @@ public class ProjectDTO extends AbstractDTO {
     @JsonView(Views.DetailView.class)
     private ProjectStatusType status;
     @JsonView(Views.DetailView.class)
+    private LocalDate startDate;
     private LocalDate finishDate;
 
     @JsonView(Views.DetailView.class)

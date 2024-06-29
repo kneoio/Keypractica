@@ -32,14 +32,13 @@ public class ProjectRepository extends AsyncRepository {
     private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(PROJECT);
 
     @Inject
-    private  RLSRepository rlsRepository;
-
+    private RLSRepository rlsRepository;
 
 
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
         if (limit > 0) {
-           sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
                 .execute()
@@ -90,7 +89,6 @@ public class ProjectRepository extends AsyncRepository {
     }
 
 
-
     public Uni<List<RLS>> getAllReaders(UUID uuid) {
         return client.preparedQuery("SELECT reader, reading_time, can_edit, can_delete FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND p.id = $1")
                 .execute(Tuple.of(uuid))
@@ -106,16 +104,18 @@ public class ProjectRepository extends AsyncRepository {
     }
 
     private Project from(Row row) {
-        return new Project.Builder()
-                .setId(row.getUUID("id"))
-                .setName(row.getString("name"))
-                .setStatus(ProjectStatusType.valueOf(row.getString("status")))
-                .setFinishDate(row.getLocalDate("finish_date"))
-                .setPrimaryLang(LanguageCode.getType(row.getInteger("primary_lang")))
-                .setManager(row.getLong("manager"))
-                .setCoder(row.getLong("programmer"))
-                .setTester(row.getLong("tester"))
-                .build();
+        Project doc = new Project();
+        setDefaultFields(doc, row);
+        doc.setName(row.getString("name"));
+        doc.setStatus(ProjectStatusType.valueOf(row.getString("status")));
+        doc.setFinishDate(row.getLocalDate("finish_date"));
+        //TODO reg_date is temporary, start_date need to add to the table
+        doc.setStartDate(row.getLocalDate("reg_date"));
+        doc.setPrimaryLang(LanguageCode.getType(row.getInteger("primary_lang")));
+        doc.setManager(row.getLong("manager"));
+        doc.setCoder(row.getLong("programmer"));
+        doc.setTester(row.getLong("tester"));
+       return doc;
     }
 
 
@@ -159,7 +159,6 @@ public class ProjectRepository extends AsyncRepository {
                     }
                 });
     }
-
 
 
     public Uni<Void> delete(UUID uuid) {
