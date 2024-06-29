@@ -133,4 +133,28 @@ public class AsyncRepository {
         }
         return sql;
     }
+
+    protected EnumMap<LanguageCode, String> getLocalizedNameFromDb(Row row) {
+        try {
+            JsonObject localizedNameJson = row.getJsonObject("loc_name");
+            return convertToEnumMap(localizedNameJson.getMap());
+        } catch (Exception e) {
+            return new EnumMap<>(LanguageCode.class);
+        }
+    }
+
+    private static EnumMap<LanguageCode, String> convertToEnumMap(Map<String, Object> linkedHashMap) {
+        EnumMap<LanguageCode, String> enumMap = new EnumMap<>(LanguageCode.class);
+
+        for (Map.Entry<String, Object> entry : linkedHashMap.entrySet()) {
+            try {
+                LanguageCode key = LanguageCode.valueOf(entry.getKey().toUpperCase());
+                enumMap.put(key, (String) entry.getValue());
+            } catch (IllegalArgumentException e) {
+                enumMap.put(LanguageCode.UNKNOWN, (String) entry.getValue());
+            }
+        }
+
+        return enumMap;
+    }
 }

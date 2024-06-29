@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
@@ -103,7 +104,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     @Override
-    public Uni<EmployeeDTO> getDTO(String id, IUser user) {
+    public Uni<EmployeeDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Optional<Employee>> uni;
         if ("current".equals(id)) {
             uni = repository.findByUserId(user.getId());

@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
@@ -78,7 +79,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<OrganizationDTO> getDTO(String id, IUser user) {
+    public Uni<OrganizationDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Optional<Organization>> uni = repository.findById(UUID.fromString(id));
 
         Uni<Optional<OrgCategory>> relatedUni = uni.onItem().transformToUni(item ->
@@ -100,8 +101,9 @@ public class OrganizationService extends AbstractService<Organization, Organizat
             if (orgCategory.isPresent()) {
                 OrgCategory category = orgCategory.get();
                 dto.setOrgCategory(OrgCategoryDTO.builder()
-                       // .identifier(category.getIdentifier())
-                       // .id(category.getId())
+                        .identifier(category.getIdentifier())
+                        .localizedName(category.getLocalizedName(LanguageCode.ENG))
+                        .id(category.getId())
                         .build());
             }
             return dto;

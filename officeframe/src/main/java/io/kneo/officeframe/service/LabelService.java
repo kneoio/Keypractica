@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -75,7 +76,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
 
-    public Uni<LabelDTO> getDTO(String uuid, IUser user) {
+    public Uni<LabelDTO> getDTO(String uuid, IUser user, LanguageCode language) {
         Uni<Optional<Label>> labelUni = repository.findById(UUID.fromString(uuid));
         return labelUni.onItem().transform(this::map);
     }

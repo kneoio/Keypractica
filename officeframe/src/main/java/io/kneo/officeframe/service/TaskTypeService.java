@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -66,7 +67,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return repository.getAllCount();
     }
 
-    public Uni<TaskTypeDTO> getDTO(String uuid, IUser user) {
+    public Uni<TaskTypeDTO> getDTO(String uuid, IUser user, LanguageCode language) {
         return get(UUID.fromString(uuid));
     }
 

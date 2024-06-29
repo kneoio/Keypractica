@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
@@ -62,7 +63,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<OrgCategoryDTO> getDTO(String uuid, IUser user) {
+    public Uni<OrgCategoryDTO> getDTO(String uuid, IUser user, LanguageCode language) {
         Uni<Optional<OrgCategory>> categoryUni = repository.findById(UUID.fromString(uuid));
         return categoryUni.onItem().transform(this::map);
     }
@@ -74,6 +75,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
                 .lastModifier(userRepository.getUserName(category.getLastModifier()))
                 .lastModifiedDate(category.getLastModifiedDate())
                 .identifier(category.getIdentifier())
+                .localizedNames(category.getLocalizedName())
                 .build()).orElse(null);
     }
 

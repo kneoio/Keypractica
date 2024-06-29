@@ -7,6 +7,7 @@ import io.kneo.core.dto.document.LanguageDTO;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -61,7 +62,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, AnonymousUser.build())
+        return service.getDTO(id, AnonymousUser.build(), LanguageCode.ENG)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();

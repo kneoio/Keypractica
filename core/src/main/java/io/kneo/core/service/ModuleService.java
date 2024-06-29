@@ -1,6 +1,7 @@
 package io.kneo.core.service;
 
 import io.kneo.core.dto.document.ModuleDTO;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
@@ -75,8 +76,8 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
                 );
     }
 
-
-    public Uni<ModuleDTO> getDTO(String id, IUser user) {
+    @Override
+    public Uni<ModuleDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
         return mapToDTO( uni);
     }

@@ -2,6 +2,7 @@ package io.kneo.core.service;
 
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.model.user.IUser;
@@ -27,7 +28,7 @@ public abstract class AbstractService<T, V> {
         this.userService = userService;
     }
 
-    public abstract Uni<V> getDTO(String id, IUser user);
+    public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
     public abstract Uni<UUID> add(V dto, IUser user);
     public abstract Uni<Integer> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;

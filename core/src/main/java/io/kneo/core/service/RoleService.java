@@ -2,6 +2,7 @@ package io.kneo.core.service;
 
 
 import io.kneo.core.dto.document.RoleDTO;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
@@ -54,7 +55,8 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         return repository.getAllCount();
     }
 
-    public Uni<RoleDTO> getDTO(String id, IUser user) {
+    @Override
+    public Uni<RoleDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Optional<Role>> uni = repository.findById(UUID.fromString(id));
         return uni.onItem().transform(optional -> {
             Role doc = optional.orElseThrow();
