@@ -1,164 +1,216 @@
 package io.kneo.projects.controller;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.Views;
-import io.kneo.core.dto.actions.Action;
 import io.kneo.core.dto.actions.ActionBox;
-import io.kneo.core.dto.actions.cnst.ActionType;
 import io.kneo.core.dto.cnst.PayloadType;
-import io.kneo.core.dto.cnst.RunMode;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
-import io.kneo.core.repository.exception.UserNotFoundException;
-import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.service.ProjectService;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.DecodeException;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
 
 import java.util.List;
 import java.util.Optional;
 
-import static io.kneo.core.util.RuntimeUtil.countMaxPage;
-
-@Path("/projects")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
+@RouteBase(path = "/api/:org/projects")
 public class ProjectController extends AbstractSecuredController<Project, ProjectDTO> {
+
     @Inject
     ProjectService service;
 
-    @GET
-    @Path("/")
-    public Uni<Response> get(@Valid @Min(1) @QueryParam("page") int page, @Valid @Min(10) @QueryParam("size") int pageSize, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void get(RoutingContext rc) {
+        int page = Integer.parseInt(rc.request().getParam("page", "1"));
+        int size = Integer.parseInt(rc.request().getParam("size", "10"));
+
+        Optional<IUser> userOptional = getUserId(rc);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
-            Uni<Integer> countUni = service.getAllCount(user.getId());
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, pageSize));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
-            Uni<Integer> offsetUni = Uni.combine().all()
-                    .unis(pageNumUni, Uni.createFrom().item(user.getPageSize()))
-                    .asTuple().map(tuple -> RuntimeUtil.calcStartEntry(tuple.getItem1(), tuple.getItem2()));
-            Uni<List<ProjectDTO>> prjsUni = offsetUni.onItem().transformToUni(offset -> service.getAll(pageSize, offset, user.getId()));
-            return Uni.combine().all().unis(prjsUni, offsetUni, pageNumUni, countUni, maxPageUni).asTuple().map(tuple -> {
-                List<ProjectDTO> prjs = tuple.getItem1();
-                int offset = tuple.getItem2();
-                int pageNum = tuple.getItem3();
-                int count = tuple.getItem4();
-                int maxPage = tuple.getItem5();
 
-                ViewPage viewPage = new ViewPage();
-                ActionBox actions = ProjectActionsFactory.getViewActions(user.getActivatedRoles());
-                Action action = new Action();
-                action.setIsOn(RunMode.ON);
-                action.setCaption(ActionType.CLOSE.getAlias());
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, List.of(action));
-                if (pageNum == 0) pageNum = 1;
-                View<ProjectDTO> dtoEntries = new View<>(prjs, count, pageNum, maxPage, pageSize);
-                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                return Response.ok(viewPage).build();
-            });
+            Uni.combine().all().unis(
+                    service.getAllCount(user.getId()),
+                    service.getAll(size, (page - 1) * size, user.getId())
+            ).asTuple().subscribe().with(
+                    tuple -> {
+                        int count = tuple.getItem1();
+                        List<ProjectDTO> projects = tuple.getItem2();
+
+                        int maxPage = RuntimeUtil.countMaxPage(count, size);
+
+                        ViewPage viewPage = new ViewPage();
+                        View<ProjectDTO> dtoEntries = new View<>(projects, count, page, maxPage, size);
+                        viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+
+                        ActionBox actions = ProjectActionsFactory.getViewActions(user.getActivatedRoles());
+                        viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, actions);
+
+                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
+                    },
+                    failure -> {
+                        LOGGER.error("Error processing request: ", failure);
+                        rc.response().setStatusCode(500).end("Internal Server Error");
+                    }
+            );
         } else {
-            return Uni.createFrom()
-                    .item(Response.status(Response.Status.FORBIDDEN)
-                            .entity(String.format("%s is not allowed", AnonymousUser.USER_NAME))
-                            .build());
+            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
         }
     }
 
-    @GET
-    @Path("/search/{keyword}")
-    public Uni<Response> search(@PathParam("keyword") String keyword) {
-        ViewPage viewPage = new ViewPage();
-        return service.search(keyword).onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-            return Response.ok(viewPage).build();
-        });
+    @Route(path = "/search/:keyword", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void search(RoutingContext rc) {
+        String keyword = rc.pathParam("keyword");
+        service.search(keyword).subscribe().with(
+                projects -> {
+                    ViewPage viewPage = new ViewPage();
+                    viewPage.addPayload(PayloadType.VIEW_DATA, projects);
+                    rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
+                },
+                failure -> {
+                    LOGGER.error("Error processing request: ", failure);
+                    rc.response().setStatusCode(500).end("Internal Server Error");
+                }
+        );
     }
 
-    @GET
-    @Path("/status/{status}")
-    @JsonView(Views.ListView.class)
-    public Uni<Response> searchByStatus(@PathParam("status") ProjectStatusType status) {
-        if (status == null || status == ProjectStatusType.UNKNOWN) {
-            throw new DataValidationException("Invalid status value.");
+    @Route(path = "/status/:status", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void searchByStatus(RoutingContext rc) {
+        String statusParam = rc.pathParam("status");
+        try {
+            ProjectStatusType status = ProjectStatusType.valueOf(statusParam.toUpperCase());
+            if (status == ProjectStatusType.UNKNOWN) {
+                rc.response().setStatusCode(400).end("Invalid status value.");
+                return;
+            }
+
+            service.searchByStatus(status).subscribe().with(
+                    projects -> {
+                        ViewPage viewPage = new ViewPage();
+                        viewPage.addPayload(PayloadType.VIEW_DATA, projects);
+                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
+                    },
+                    failure -> {
+                        LOGGER.error("Error processing request: ", failure);
+                        rc.response().setStatusCode(500).end("Internal Server Error");
+                    }
+            );
+        } catch (IllegalArgumentException e) {
+            rc.response().setStatusCode(400).end("Invalid status value.");
         }
-        ViewPage viewPage = new ViewPage();
-        return service.searchByStatus(status).onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-            return Response.ok(viewPage).build();
-        });
     }
 
-    @GET
-    @Path("/{id}")
-    public Uni<Response> getById(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getById(RoutingContext rc) {
+        String id = rc.pathParam("id");
+        Optional<IUser> userOptional = getUserId(rc);
         if (userOptional.isPresent()) {
             IUser user = userOptional.get();
-            FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-            return service.getDTO(id, user, LanguageCode.ENG)
-                    .onItem().transform(p -> {
-                        page.addPayload(PayloadType.DOC_DATA, p);
-                        return Response.ok(page).build();
-                    })
-                    .onFailure(DocumentHasNotFoundException.class).recoverWithItem(this::postNotFoundError)
-                    .onFailure().recoverWithItem(this::postError);
+            LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
+
+            service.getDTO(id, user, languageCode).subscribe().with(
+                    project -> {
+                        FormPage page = new FormPage();
+                        page.addPayload(PayloadType.DOC_DATA, project);
+                        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
+                    },
+                    failure -> {
+                        if (failure instanceof DocumentHasNotFoundException) {
+                            rc.response().setStatusCode(404).end("Project not found");
+                        } else {
+                            LOGGER.error("Error processing request: ", failure);
+                            rc.response().setStatusCode(500).end("Internal Server Error");
+                        }
+                    }
+            );
         } else {
-            return Uni.createFrom().item(
-                    Response.ok(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
         }
     }
 
+    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void create(RoutingContext rc) {
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
+            Optional<IUser> userOptional = getUserId(rc);
 
+            if (userOptional.isPresent()) {
+                service.add(dto, userOptional.get()).subscribe().with(
+                        createdProject -> rc.response().setStatusCode(201).end(JsonObject.mapFrom(createdProject).encode()),
+                        failure -> {
+                            LOGGER.error(failure.getMessage(), failure);
+                            rc.response().setStatusCode(500).end(failure.getMessage());
+                        }
+                );
+            } else {
+                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
+            }
+        } catch (DecodeException e) {
+            LOGGER.error("Error decoding request body: {}", e.getMessage());
+            rc.response().setStatusCode(400).end("Invalid request body");
+        }
+    }
 
-    @POST
-    @Path("/")
-    public Uni<Response> create(ProjectDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
+    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
+    public void update(RoutingContext rc) {
+        String id = rc.pathParam("id");
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
+            Optional<IUser> userOptional = getUserId(rc);
+
+            if (userOptional.isPresent()) {
+                service.update(id, dto, userOptional.get()).subscribe().with(
+                        updatedProject -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(updatedProject).encode()),
+                        failure -> {
+                            if (failure instanceof DocumentModificationAccessException) {
+                                rc.response().setStatusCode(403).end("Access denied for document modification");
+                            } else {
+                                LOGGER.error(failure.getMessage(), failure);
+                                rc.response().setStatusCode(500).end("Internal Server Error");
+                            }
+                        }
+                );
+            } else {
+                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
+            }
+        } catch (DecodeException e) {
+            LOGGER.error("Error decoding request body: {}", e.getMessage());
+            rc.response().setStatusCode(400).end("Invalid request body");
+        }
+    }
+
+    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
+    public void delete(RoutingContext rc) throws DocumentModificationAccessException {
+        String id = rc.pathParam("id");
+        Optional<IUser> userOptional = getUserId(rc);
         if (userOptional.isPresent()) {
-            return service.add(dto, userOptional.get())
-                    .onItem().transform(createdProject -> Response.ok(createdProject).build());
+            service.delete(id, userOptional.get()).subscribe().with(
+                    count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
+                    failure -> {
+                        LOGGER.error(failure.getMessage(), failure);
+                        rc.response().setStatusCode(500).end("Internal Server Error");
+                    }
+            );
         } else {
-            return Uni.createFrom().item(Response.ok(String.format("User %s does not exist", getUserOIDCName(requestContext))).build());
+            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
         }
-    }
-
-    @PUT
-    @Path("/{id}")
-    @Operation(operationId = "updateProject")
-    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid ProjectDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        return update(id, service, dto, requestContext);
-    }
-
-    @DELETE
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.noContent().build();
     }
 }
