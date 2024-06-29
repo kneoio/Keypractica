@@ -99,7 +99,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 .build();
     }
 
-    public Uni<TaskDTO> getDTO(String uuid, IUser user) {
+    @Override
+    public Uni<TaskDTO> getDTO(String uuid, IUser user, LanguageCode code) {
         return get(uuid, user);
     }
 
@@ -133,7 +134,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
                             .taskType(TaskTypeDTO.builder()
                                     .identifier(taskType.orElseThrow().getIdentifier())
-                                    .localizedName(taskType.orElseThrow().getLocName(LanguageCode.ENG))
+                                    .localizedName(taskType.orElseThrow().getLocalizedName(LanguageCode.ENG))
                                     .build())
                             .project(project)
                             .startDate(LocalDate.from(task.getStartDate()))

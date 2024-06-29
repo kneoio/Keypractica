@@ -1,6 +1,7 @@
 package io.kneo.projects.service;
 
 import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
@@ -112,7 +113,8 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         });
     }
 
-    public Uni<ProjectDTO> getDTO(String uuid, IUser user) {
+    @Override
+    public Uni<ProjectDTO> getDTO(String uuid, IUser user, LanguageCode code) {
         return get(UUID.fromString(uuid), user.getId(), true);
     }
 

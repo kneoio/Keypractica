@@ -75,7 +75,7 @@ public class EmployeeRepository extends AsyncRepository {
         doc.setDepartment(row.getUUID("department_id"));
         doc.setPosition(row.getUUID("position_id"));
         doc.setName(row.getString("name"));
-        doc.setLocalizedName(getLocalizedName(row));
+        doc.setLocalizedName(getLocalizedNameFromDb(row));
         doc.setPhone(row.getString("phone"));
         doc.setBirthDate(row.getLocalDate("birth_date"));
         doc.setStatus(row.getInteger("status"));
@@ -137,31 +137,7 @@ public class EmployeeRepository extends AsyncRepository {
         }
     }
 
-    private EnumMap<LanguageCode, String> getLocalizedName(Row row) {
-        try {
-            JsonObject localizedNameJson = row.getJsonObject("loc_name");
-            Map i = localizedNameJson.getMap();
-            return convertToEnumMap(i);
-        } catch (Exception e) {
-            return new EnumMap<>(LanguageCode.class);
-        }
-    }
 
-    private EnumMap<LanguageCode, String> convertToEnumMap(Map<String, String> linkedHashMap) {
-        EnumMap<LanguageCode, String> enumMap = new EnumMap<>(LanguageCode.class);
-
-        for (Map.Entry<String, String> entry : linkedHashMap.entrySet()) {
-            try {
-                LanguageCode key = LanguageCode.valueOf(entry.getKey().toUpperCase());
-                enumMap.put(key, entry.getValue());
-            } catch (IllegalArgumentException e) {
-                // Handle the case where the key is not a valid enum value
-                // This depends on how you want to handle invalid keys
-            }
-        }
-
-        return enumMap;
-    }
 
 
     public Uni<Integer> update(UUID id, Employee doc, long user) {

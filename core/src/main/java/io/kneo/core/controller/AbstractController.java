@@ -10,6 +10,7 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.AbstractService;
@@ -114,7 +115,7 @@ public abstract class AbstractController<T, V> {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
-            return service.getDTO(id, user)
+            return service.getDTO(id, user, LanguageCode.ENG)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
@@ -128,31 +129,51 @@ public abstract class AbstractController<T, V> {
         }
     }
 
-    protected Uni<Response> getById(IRESTService<V> service, String id, RoutingContext rc) {
-        Optional<IUser> userOptional = getUserId(rc);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
+    protected void getById(IRESTService<V> service, String id, RoutingContext rc) {
+        try {
+            IUser user = getUser(rc);
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
-            return service.getDTO(id, user)
-                    .onItem().transform(p -> {
-                        page.addPayload(PayloadType.DOC_DATA, p);
-                        return Response.ok(page).build();
-                    })
-                    .onFailure().recoverWithItem(t -> {
-                        LOGGER.error(t.getMessage(), t);
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+            service.getDTO(id, user, LanguageCode.ENG)
+                    .subscribe().with(
+                            p -> {
+                                if (p == null) {
+                                    throw new DocumentHasNotFoundException(id);
+                                } else {
+                                    page.addPayload(PayloadType.DOC_DATA, p);
+                                    sendJsonResponse(rc, 200, JsonObject.mapFrom(page));
+                                }
+                            },
+                            t -> {
+                                LOGGER.error("Error retrieving DTO: ", t);
+                                sendErrorResponse(rc, 500, "Internal Server Error");
+                            }
+                    );
+        } catch (UserNotFoundException e) {
+            LOGGER.warn("Authentication failed: ", e);
+            sendErrorResponse(rc, 401, "Authentication failed: " + e.getMessage());
+        } catch (DocumentHasNotFoundException e) {
+            sendErrorResponse(rc, 404, "Not found: " + e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error: ", e);
+            sendErrorResponse(rc, 500, "An unexpected error occurred");
         }
     }
 
+    private void sendJsonResponse(RoutingContext rc, int statusCode, JsonObject body) {
+        rc.response()
+                .setStatusCode(statusCode)
+                .end(body.encode());
+    }
+
+    private void sendErrorResponse(RoutingContext rc, int statusCode, String errorMessage) {
+        sendJsonResponse(rc, statusCode, new JsonObject().put("error", errorMessage));
+    }
 
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, AnonymousUser.build())
+        return service.getDTO(id, AnonymousUser.build(), LanguageCode.ENG)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();
@@ -175,6 +196,35 @@ public abstract class AbstractController<T, V> {
         }
     }
 
+    protected IUser getUser(RoutingContext rc) throws UserNotFoundException {
+        try {
+            User vertxUser = rc.user();
+            if (vertxUser == null) {
+                throw new UserNotFoundException("No user found in context");
+            }
+
+            JsonObject principal = vertxUser.principal();
+            String username = principal.getString(USER_NAME);
+            if (username == null) {
+                throw new UserNotFoundException("Username not found in user principal");
+            }
+
+            IUser user = userService.findByLogin(username).get();
+            if (user == null) {
+                throw new UserNotFoundException(username);
+            }
+
+            return user;
+        } catch (NullPointerException e) {
+            LOGGER.warn("Failed to get user ID: {}", e.getMessage());
+            throw new UserNotFoundException("Failed to authenticate user");
+        } catch (Exception e) {
+            LOGGER.error("Error while getting user ID: ", e);
+            throw new UserNotFoundException("An error occurred during authentication");
+        }
+    }
+
+    @Deprecated
     protected Optional<IUser> getUserId(RoutingContext rc) {
         try {
             User vertxUser = rc.user();

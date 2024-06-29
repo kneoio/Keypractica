@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -57,7 +58,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         return null;
     }
 
-    public Uni<PositionDTO> getDTO(String uuid, IUser user) {
+    public Uni<PositionDTO> getDTO(String uuid, IUser user, LanguageCode language) {
         return getDTO(UUID.fromString(uuid));
     }
 

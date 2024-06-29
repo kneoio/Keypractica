@@ -41,13 +41,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) {
         String id = rc.pathParam("id");
-        getById(service, id, rc).subscribe().with(
-                response -> rc.response().setStatusCode(response.getStatus()).end(JsonObject.mapFrom(response.getEntity()).encode()),
-                failure -> {
-                    LOGGER.error(failure.getMessage(), failure);
-                    rc.response().setStatusCode(500).end(failure.getMessage());
-                }
-        );
+        getById(service, id, rc);
     }
 
     @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")

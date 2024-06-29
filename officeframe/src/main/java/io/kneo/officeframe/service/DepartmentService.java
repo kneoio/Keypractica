@@ -1,5 +1,6 @@
 package io.kneo.officeframe.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -57,7 +58,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<DepartmentDTO> getDTO(String id, IUser user) {
+    public Uni<DepartmentDTO> getDTO(String id, IUser user, LanguageCode language) {
        return null;
     }
     @Override

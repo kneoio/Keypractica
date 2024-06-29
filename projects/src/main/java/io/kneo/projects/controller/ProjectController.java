@@ -11,6 +11,7 @@ import io.kneo.core.dto.cnst.RunMode;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
@@ -120,7 +121,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-            return service.getDTO(id, user)
+            return service.getDTO(id, user, LanguageCode.ENG)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();

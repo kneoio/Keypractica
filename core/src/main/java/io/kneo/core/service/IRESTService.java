@@ -1,5 +1,6 @@
 package io.kneo.core.service;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.smallrye.mutiny.Uni;
 
@@ -12,7 +13,7 @@ public interface IRESTService<V> {
 
     Uni<List<V>> getAll(int pageSize, int offset);
 
-    Uni<V> getDTO(String id, IUser user);
+    Uni<V> getDTO(String id, IUser user, LanguageCode language);
 
     Uni<Optional<V>> getByIdentifier(String  identifier);
 }

@@ -13,7 +13,7 @@ public class SimpleReferenceEntity extends DataEntity<UUID> {
     protected String identifier;
     protected EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
 
-    public String getLocName(LanguageCode lang) {
+    public String getLocalizedName(LanguageCode lang) {
         try {
             String val = localizedName.get(lang);
             if (val != null && (!val.isEmpty())) {
