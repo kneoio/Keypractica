@@ -2,6 +2,7 @@ package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
@@ -19,8 +20,13 @@ import java.util.Optional;
 @RouteBase(path = "/api/:org/orgs")
 public class OrganizationController extends AbstractSecuredController<Organization, OrganizationDTO> {
 
-    @Inject
     OrganizationService service;
+
+    @Inject
+    public OrganizationController(UserService userService, OrganizationService service) {
+        super(userService);
+        this.service = service;
+    }
 
     @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
     public void get(RoutingContext rc) {

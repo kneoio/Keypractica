@@ -2,6 +2,7 @@ package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.model.OrgCategory;
 import io.kneo.officeframe.service.OrgCategoryService;
@@ -20,6 +21,10 @@ public class OrgCategoryController extends AbstractSecuredController<OrgCategory
 
     @Inject
     OrgCategoryService service;
+
+    public OrgCategoryController(UserService userService) {
+        super(userService);
+    }
 
     @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
     public void get(RoutingContext rc) {

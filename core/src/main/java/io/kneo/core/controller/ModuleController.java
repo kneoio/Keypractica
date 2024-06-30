@@ -8,6 +8,7 @@ import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.model.Module;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.ModuleService;
+import io.kneo.core.service.UserService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -37,6 +38,10 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
 
     @Inject
     ModuleService service;
+
+    public ModuleController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

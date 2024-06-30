@@ -10,6 +10,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
@@ -34,6 +35,10 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     @Inject
     ProjectService service;
+
+    public ProjectController(UserService userService) {
+        super(userService);
+    }
 
     @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
     public void get(RoutingContext rc) {

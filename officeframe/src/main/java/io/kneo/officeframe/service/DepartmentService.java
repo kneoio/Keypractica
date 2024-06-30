@@ -12,6 +12,7 @@ import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.repository.DepartmentRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,11 +23,7 @@ import java.util.stream.Collectors;
 public class DepartmentService extends AbstractService<Department, DepartmentDTO> implements IRESTService<DepartmentDTO> {
     private final DepartmentRepository repository;
 
-    protected DepartmentService() {
-        super(null, null);
-        this.repository = null;
-    }
-
+    @Inject
     public DepartmentService(UserRepository userRepository, UserService userService, DepartmentRepository repository) {
         super(userRepository, userService);
         this.repository = repository;

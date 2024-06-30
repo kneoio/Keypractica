@@ -12,6 +12,7 @@ import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,11 +23,7 @@ import java.util.stream.Collectors;
 public class LabelService extends AbstractService<Label, LabelDTO> implements IRESTService<LabelDTO> {
     private final LabelRepository repository;
 
-    protected LabelService() {
-        super(null, null);
-        this.repository = null;
-    }
-
+    @Inject
     public LabelService(UserRepository userRepository, UserService userService, LabelRepository repository) {
         super(userRepository, userService);
         this.repository = repository;

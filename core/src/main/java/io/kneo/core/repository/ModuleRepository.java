@@ -1,5 +1,6 @@
 package io.kneo.core.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.UserModule;
 import io.kneo.core.model.user.AnonymousUser;
@@ -8,10 +9,12 @@ import io.kneo.core.repository.cnst.Tables;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
+import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -27,6 +30,11 @@ import static io.kneo.core.repository.cnst.Tables.USER_MODULES_TABLE_NAME;
 
 @ApplicationScoped
 public class ModuleRepository extends AsyncRepository {
+
+    @Inject
+    public ModuleRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
     public Uni<List<Module>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM " + MODULES_TABLE_NAME;

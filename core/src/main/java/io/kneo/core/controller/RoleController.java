@@ -13,6 +13,7 @@ import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.RoleService;
+import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
@@ -41,6 +42,10 @@ import java.util.Optional;
 public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
     @Inject
     RoleService service;
+
+    public RoleController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

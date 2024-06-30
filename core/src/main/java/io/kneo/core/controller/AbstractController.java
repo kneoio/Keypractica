@@ -45,8 +45,12 @@ public abstract class AbstractController<T, V> {
     protected static final String USER_NAME_CLAIM = "preferred_username";
     protected static final String USER_NAME = "username";
 
-    @Inject
     UserService userService;
+
+    @Inject
+    public AbstractController(UserService userService) {
+        this.userService = userService;
+    }
 
     protected Uni<Response> getAll(IRESTService<V> service, RoutingContext rc, int page, int size) {
         Optional<IUser> userOptional = getUserId(rc);
