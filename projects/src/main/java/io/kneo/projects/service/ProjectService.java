@@ -1,5 +1,6 @@
 package io.kneo.projects.service;
 
+import io.kneo.core.dto.document.UserDTO;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
@@ -9,8 +10,6 @@ import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
-import io.kneo.core.service.exception.DataValidationException;
-import io.kneo.officeframe.dto.PlainUserDTO;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.model.cnst.ProjectStatusType;
@@ -19,11 +18,11 @@ import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Validator;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
@@ -32,14 +31,17 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
 public class ProjectService extends AbstractService<Project, ProjectDTO> {
     private final ProjectRepository repository;
 
+    Validator validator;
+
     protected ProjectService() {
         super(null, null);
         this.repository = null;
     }
 
     @Inject
-    public ProjectService(UserRepository userRepository, UserService userService, ProjectRepository repository) {
+    public ProjectService(UserRepository userRepository, UserService userService,  Validator validator, ProjectRepository repository) {
         super(userRepository, userService);
+        this.validator = validator;
         this.repository = repository;
     }
 
@@ -100,16 +102,16 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                     .description(doc.getDescription())
                     .status(doc.getStatus())
                     .finishDate(doc.getFinishDate())
-                    .manager(PlainUserDTO.builder()
-                            .id(doc.getManager())
+                    .manager(UserDTO.builder()
+                            // .identifier(doc.getManager())
                             .name(userService.getUserName(doc.getManager()))
                             .build())
-                    .coder(PlainUserDTO.builder()
-                            .id(doc.getCoder())
+                    .coder(UserDTO.builder()
+                            // .identifier(doc.getCoder())
                             .name(userService.getUserName(doc.getCoder()))
                             .build())
-                    .tester(PlainUserDTO.builder()
-                            .id(doc.getTester())
+                    .tester(UserDTO.builder()
+                            // .identifier(doc.getTester())
                             .name(userService.getUserName(doc.getTester()))
                             .build())
                     .rls(rlsList)
@@ -125,31 +127,17 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     @Override
     public Uni<UUID> add(ProjectDTO dto, IUser user) {
-        Project doc = new Project();
-        doc.setName(dto.getName());
-        doc.setStatus(dto.getStatus());
-        doc.setStartDate(dto.getStartDate());
-        doc.setFinishDate(dto.getFinishDate());
-        doc.setPrimaryLang(dto.getPrimaryLang());
-        doc.setManager(dto.getManager().getId());
-        doc.setCoder(dto.getCoder().getId());
-        doc.setTester(dto.getTester().getId());
-        doc.setDescription(dto.getDescription());
-        repository.insert(doc, AnonymousUser.ID);
-        return Uni.createFrom().nullItem();
+        Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(dto);
+        if (violations.isEmpty()) {
+            return repository.insert(buildEntity(dto), AnonymousUser.ID);
+        } else {
+            return Uni.createFrom().failure(new ConstraintViolationException(violations));
+        }
     }
 
     @Override
     public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
-        return Uni.combine().all()
-                .unis(
-                        userService.get(dto.getManager().getId()),
-                        userService.get(dto.getCoder().getId()),
-                        userService.get(dto.getTester().getId())
-                ).asTuple().flatMap(combinedResult -> {
-                    Project doc = buildEntity(dto, combinedResult.getItem1(), combinedResult.getItem2(), combinedResult.getItem3());
-                    return repository.update(UUID.fromString(id), doc, user.getId());
-                });
+        return repository.update(UUID.fromString(id), buildEntity(dto), user.getId());
 
     }
 
@@ -168,32 +156,32 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 .name(project.getName())
                 .finishDate(project.getFinishDate())
                 .status(project.getStatus())
-                .manager(PlainUserDTO.builder()
-                        .id(project.getManager())
+                .manager(UserDTO.builder()
+                        //.id(project.getManager())
                         .name(userService.getUserName(project.getManager()))
                         .build())
-                .coder(PlainUserDTO.builder()
-                        .id(project.getManager())
+                .coder(UserDTO.builder()
+                        // .id(project.getManager())
                         .name(userService.getUserName(project.getCoder()))
                         .build())
-                .tester(PlainUserDTO.builder()
-                        .id(project.getManager())
+                .tester(UserDTO.builder()
+                        //.id(project.getManager())
                         .name(userService.getUserName(project.getCoder()))
                         .build())
                 .build();
     }
 
-    private Project buildEntity(ProjectDTO dto, Optional<IUser> manager, Optional<IUser> coder, Optional<IUser> tester) {
+    private Project buildEntity(ProjectDTO dto) {
         Project doc = new Project();
         doc.setName(dto.getName());
         doc.setStatus(dto.getStatus());
         doc.setStartDate(dto.getStartDate());
         doc.setFinishDate(dto.getFinishDate());
         doc.setPrimaryLang(dto.getPrimaryLang());
+        doc.setManager(userService.resolveIdentifier(dto.getManager().getIdentifier()));
+        doc.setCoder(userService.resolveIdentifier(dto.getCoder().getIdentifier()));
+        doc.setTester(userService.resolveIdentifier(dto.getTester().getIdentifier()));
         doc.setDescription(dto.getDescription());
-        doc.setManager(manager.orElseThrow(() -> new DataValidationException("Manager not found")).getId());
-        doc.setCoder(coder.orElseThrow(() -> new DataValidationException("Coder not found")).getId());
-        doc.setTester(tester.orElseThrow(() -> new DataValidationException("Tester not found")).getId());
         return doc;
     }
 

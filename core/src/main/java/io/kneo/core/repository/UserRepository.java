@@ -2,10 +2,7 @@ package io.kneo.core.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
-import io.kneo.core.model.user.IUser;
-import io.kneo.core.model.user.Role;
-import io.kneo.core.model.user.UndefinedUser;
-import io.kneo.core.model.user.User;
+import io.kneo.core.model.user.*;
 import io.kneo.core.server.EnvConst;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
@@ -106,6 +103,16 @@ public class UserRepository extends AsyncRepository {
          return Optional.ofNullable(userCache.get(id));
         //TODO it needs to initialize the cache
     }
+
+    public long findByIdentifier(String userName) {
+        if (userName == null) {
+            return AnonymousUser.ID;
+        } else {
+            return userAltCache.get(userName).getId();
+        }
+        //TODO it needs to initialize the cache
+    }
+
     public Optional<IUser> findByLogin(String userName) {
         if (userName == null) {
             return Optional.empty();

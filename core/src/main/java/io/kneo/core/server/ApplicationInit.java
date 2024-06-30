@@ -1,5 +1,6 @@
 package io.kneo.core.server;
 
+import io.kneo.core.server.security.GlobalErrorHandler;
 import io.quarkus.runtime.ShutdownEvent;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
@@ -12,7 +13,6 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 @ApplicationScoped
 public class ApplicationInit {
@@ -29,8 +29,11 @@ public class ApplicationInit {
     @Inject
     Router router;
 
-    void onStart(@Observes StartupEvent ev)  {
+    void onStart(@Observes StartupEvent ev) {
         LOGGER.info("The application is starting...{}", EnvConst.APP_ID);
+
+        router.route().failureHandler(new GlobalErrorHandler());
+
         if (EnvConst.DEV_MODE) {
             LOGGER.info(EnvConst.APP_ID + "'s dev mode enabled");
             LOGGER.info("Database: {}", jdbcUrl);
@@ -41,20 +44,15 @@ public class ApplicationInit {
                     .onFailure()
                     .recoverWithItem("Database connection failed");
             LOGGER.info(connected.await().indefinitely());
-
         }
+
         LOGGER.info("Registered routes:");
         for (Route route : router.getRoutes()) {
             LOGGER.info("{} {}", route.methods(), route.getPath());
         }
-
-
     }
 
     void onStop(@Observes ShutdownEvent ev) {
         LOGGER.info("The application is stopping...");
     }
-
-
-
 }

@@ -55,6 +55,11 @@ public class UserService {
     public Uni<Optional<IUser>> get(long id) {
         return repository.get(id);
     }
+
+    public long resolveIdentifier(String identifier) {
+        return repository.findByIdentifier(identifier);
+    }
+
     public Optional<IUser> findByLogin(String login) {
         return repository.findByLogin(login);
     }

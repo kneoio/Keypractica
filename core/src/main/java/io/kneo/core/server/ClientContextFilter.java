@@ -16,8 +16,6 @@ public class ClientContextFilter {
 
             String[] parts = path.split("/", 4);
             if (parts.length >= 4) {
-                String originalPath = rc.request().path();
-                System.out.println("request: " + originalPath);
                 rc.put("client_database", "postgresql://localhost:5433/flabspoema2");
                 rc.next();
             }
