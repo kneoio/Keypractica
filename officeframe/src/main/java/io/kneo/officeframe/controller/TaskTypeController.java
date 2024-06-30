@@ -7,6 +7,7 @@ import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
@@ -39,6 +40,10 @@ import java.net.URI;
 public class TaskTypeController extends AbstractSecuredController<TaskType, TaskTypeDTO> {
     @Inject
     TaskTypeService service;
+
+    public TaskTypeController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

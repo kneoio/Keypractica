@@ -13,6 +13,7 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.LanguageService;
+import io.kneo.core.service.UserService;
 import io.smallrye.mutiny.Uni;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -37,6 +38,10 @@ import jakarta.ws.rs.core.Response;
 public class LanguageController extends AbstractSecuredController<Language, LanguageDTO> {
     @Inject
     LanguageService service;
+
+    public LanguageController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

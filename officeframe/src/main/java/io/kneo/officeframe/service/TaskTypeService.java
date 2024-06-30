@@ -24,11 +24,6 @@ import java.util.stream.Collectors;
 public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> implements IRESTService<TaskTypeDTO> {
     private final TaskTypeRepository repository;
 
-    public TaskTypeService() {
-        super(null, null);
-        this.repository = null;
-    }
-
     @Inject
     public TaskTypeService(UserRepository userRepository, UserService userService, TaskTypeRepository repository) {
         super(userRepository, userService);

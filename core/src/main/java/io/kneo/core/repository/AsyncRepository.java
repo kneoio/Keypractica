@@ -14,8 +14,6 @@ import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +23,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@ApplicationScoped
 public class AsyncRepository {
 
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
@@ -37,12 +34,18 @@ public class AsyncRepository {
     protected static final String COLUMN_RANK = "rank";
     protected static final String COLUMN_LOCALIZED_NAME = "loc_name";
 
-    @Inject
     protected PgPool client;
-
-    @Inject
     protected ObjectMapper mapper;
 
+
+    public AsyncRepository() {
+
+    }
+
+    public AsyncRepository(PgPool client, ObjectMapper mapper) {
+        this.client = client;
+        this.mapper = mapper;
+    }
 
     protected Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
         String sql = String.format("SELECT count(m.id) FROM %s as m, %s as acl WHERE m.id = acl.entity_id AND acl.reader = $1", mainTable, aclTable);

@@ -7,6 +7,7 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.service.PositionService;
@@ -31,6 +32,10 @@ import java.util.Optional;
 public class PositionController extends AbstractSecuredController<Position, PositionDTO> {
     @Inject
     PositionService service;
+
+    public PositionController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

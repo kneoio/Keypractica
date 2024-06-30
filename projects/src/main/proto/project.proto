@@ -12,7 +12,8 @@ service ProjectGrpcService {
 }
 
 message ProjectRequest {
-  // Define fields based on your ProjectDTO
+  string name = 1;
+  string description = 2;
 }
 
 message ProjectResponse {

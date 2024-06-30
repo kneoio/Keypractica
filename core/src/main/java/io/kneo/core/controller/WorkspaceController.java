@@ -12,6 +12,7 @@ import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.LanguageService;
+import io.kneo.core.service.UserService;
 import io.kneo.core.service.WorkspaceService;
 import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
@@ -37,6 +38,10 @@ public class WorkspaceController extends AbstractSecuredController<Module, Modul
     private WorkspaceService workspaceService;
     @Inject
     private LanguageService languageService;
+
+    public WorkspaceController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

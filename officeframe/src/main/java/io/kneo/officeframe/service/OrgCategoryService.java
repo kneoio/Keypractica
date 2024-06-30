@@ -22,11 +22,6 @@ import java.util.stream.Collectors;
 public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategoryDTO> implements IRESTService<OrgCategoryDTO> {
     private final OrgCategoryRepository repository;
 
-    protected OrgCategoryService() {
-        super(null, null);
-        this.repository = null;
-    }
-
     @Inject
     public OrgCategoryService(UserRepository userRepository, UserService userService, OrgCategoryRepository repository) {
         super(userRepository, userService);

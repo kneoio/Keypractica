@@ -11,7 +11,6 @@ import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Uni;
-import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,10 +18,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public abstract class AbstractService<T, V> {
-    protected final UserRepository userRepository;
-    protected final UserService userService;
+    protected UserRepository userRepository;
+    protected UserService userService;
 
-    @Inject
+    public AbstractService() {
+
+    }
+
     public AbstractService(UserRepository userRepository, UserService userService) {
         this.userRepository = userRepository;
         this.userService = userService;

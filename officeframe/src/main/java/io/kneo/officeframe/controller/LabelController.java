@@ -10,6 +10,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.service.LabelService;
@@ -34,6 +35,10 @@ import java.util.Optional;
 public class LabelController extends AbstractSecuredController<Label, LabelDTO> {
     @Inject
     LabelService service;
+
+    public LabelController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

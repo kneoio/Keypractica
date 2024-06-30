@@ -11,6 +11,7 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +24,10 @@ public class DepartmentRepository extends AsyncRepository {
 
     private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(DEPARTMENT);
 
+    @Inject
+    public DepartmentRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
 
     public Uni<List<Department>> getAll(final int limit, final int offset) {

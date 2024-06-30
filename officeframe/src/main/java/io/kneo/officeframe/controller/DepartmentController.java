@@ -9,6 +9,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.DepartmentDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.service.DepartmentService;
@@ -34,6 +35,10 @@ import java.util.Optional;
 public class DepartmentController extends AbstractSecuredController<Department, DepartmentDTO> {
     @Inject
     DepartmentService service;
+
+    public DepartmentController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

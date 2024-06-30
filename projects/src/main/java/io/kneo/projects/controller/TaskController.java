@@ -11,6 +11,7 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
@@ -42,6 +43,10 @@ import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 public final class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     @Inject
     TaskService service;
+
+    public TaskController(UserService userService) {
+        super(userService);
+    }
 
     @GET
     @Path("/")

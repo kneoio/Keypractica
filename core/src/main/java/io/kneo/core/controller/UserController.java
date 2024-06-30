@@ -22,6 +22,10 @@ public class UserController extends AbstractController<User, UserDTO> {
     @Inject
     UserService service;
 
+    public UserController(UserService userService) {
+        super(userService);
+    }
+
     @Route(path = "/", methods = Route.HttpMethod.GET, produces = "application/json")
     public Uni<Response> get(RoutingContext rc) {
         Object org = rc.get("database");

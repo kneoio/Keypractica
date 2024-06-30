@@ -1,5 +1,6 @@
 package io.kneo.projects.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -9,6 +10,7 @@ import io.kneo.projects.model.Task;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -32,6 +34,11 @@ public class TaskRepository extends AsyncRepository {
     private  RLSRepository rlsRepository;
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
+
+    @Inject
+    public TaskRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
 
     public Uni<List<Task>> getAll(final int limit, final int offset, final long userID) {

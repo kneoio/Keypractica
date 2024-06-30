@@ -1,5 +1,6 @@
 package io.kneo.projects.repository;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.AsyncRepository;
@@ -12,6 +13,7 @@ import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -33,6 +35,11 @@ public class ProjectRepository extends AsyncRepository {
 
     @Inject
     private RLSRepository rlsRepository;
+
+    @Inject
+    public ProjectRepository(PgPool client, ObjectMapper mapper) {
+        super(client, mapper);
+    }
 
 
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
