@@ -126,9 +126,39 @@ public class ProjectRepository extends AsyncRepository {
     }
 
 
-    public Uni<Optional<Project>> insert(Project node, Long user) {
+    public Uni<UUID> insert(Project doc, Long user) {
+        LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
+        String sql = String.format("INSERT INTO %s" +
+                "(reg_date, author, last_mod_date, last_mod_user, name, status, finish_date, primary_lang, manager, programmer, tester)" +
+                "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;", entityData.getTableName());
 
-        return null;
+        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple allParams = params
+                .addString(doc.getName())
+                .addString(doc.getStatus().toString())
+                .addLocalDateTime(doc.getFinishDate().atStartOfDay())
+                .addInteger(doc.getPrimaryLang().getCode())
+                .addLong(doc.getManager())
+                .addLong(doc.getCoder())
+                .addLong(doc.getTester());
+
+        String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", entityData.getRlsName());
+
+        return client.withTransaction(tx -> {
+            return tx.preparedQuery(sql)
+                    .execute(allParams)
+                    .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                    .onFailure().recoverWithUni(t ->
+                            Uni.createFrom().failure(t))
+                    .onItem().transformToUni(id -> {
+                        return tx.preparedQuery(readersSql)
+                                .execute(Tuple.of(user, id, 1, 1))
+                                .onItem().ignore().andContinueWithNull()
+                                .onFailure().recoverWithUni(t ->
+                                        Uni.createFrom().failure(t))
+                                .onItem().transform(unused -> id);
+                    });
+        });
     }
 
     public Uni<Integer> update(UUID id, Project doc, Long user) {

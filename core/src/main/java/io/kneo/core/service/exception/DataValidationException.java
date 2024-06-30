@@ -6,6 +6,10 @@ public class DataValidationException extends RuntimeException {
         super(msg);
     }
 
+    public DataValidationException(Throwable failure) {
+        super(failure);
+    }
+
     public String getDeveloperMessage() {
         return getMessage();
     }

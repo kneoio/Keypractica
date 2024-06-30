@@ -16,6 +16,10 @@ import java.util.List;
 @NoArgsConstructor
 public class UserDTO {
     @NotNull
+    String identifier;
+    @NotNull
+    String name;
+    @NotNull
     String login;
     @NotNull @Email
     String email;

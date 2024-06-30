@@ -10,6 +10,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
@@ -149,29 +150,24 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         }
     }
 
-    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) {
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-            Optional<IUser> userOptional = getUserId(rc);
-
-            if (userOptional.isPresent()) {
-                service.add(dto, userOptional.get()).subscribe().with(
-                        createdProject -> rc.response().setStatusCode(201).end(JsonObject.mapFrom(createdProject).encode()),
+    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void create(RoutingContext rc) throws UserNotFoundException {
+        JsonObject jsonObject = rc.body().asJsonObject();
+        ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
+        service.add(dto, getUser(rc))
+                .subscribe().with(
+                        createdProjectId -> rc.response().setStatusCode(201).end(createdProjectId.toString()),
                         failure -> {
-                            LOGGER.error(failure.getMessage(), failure);
-                            rc.response().setStatusCode(500).end(failure.getMessage());
+                            if (failure instanceof RuntimeException) {
+                                throw (RuntimeException) failure;
+                            } else {
+                                throw new RuntimeException(failure);
+                            }
                         }
                 );
-            } else {
-                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-            }
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
-        }
+
     }
+
 
     @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
     public void update(RoutingContext rc) {
