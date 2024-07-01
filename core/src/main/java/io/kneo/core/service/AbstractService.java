@@ -33,6 +33,9 @@ public abstract class AbstractService<T, V> {
     public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
     public abstract Uni<UUID> add(V dto, IUser user);
     public abstract Uni<Integer> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
+    public Uni<UUID> upsert(String id, V dto, IUser user) throws DocumentModificationAccessException {
+         return Uni.createFrom().nullItem();
+    };
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {

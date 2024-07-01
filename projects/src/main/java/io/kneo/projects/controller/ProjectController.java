@@ -16,12 +16,10 @@ import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.model.Project;
-import io.kneo.projects.model.cnst.ProjectStatusType;
 import io.kneo.projects.service.ProjectService;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
@@ -95,68 +93,37 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         );
     }
 
-    @Route(path = "/status/:status", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void searchByStatus(RoutingContext rc) {
-        String statusParam = rc.pathParam("status");
-        try {
-            ProjectStatusType status = ProjectStatusType.valueOf(statusParam.toUpperCase());
-            if (status == ProjectStatusType.UNKNOWN) {
-                rc.response().setStatusCode(400).end("Invalid status value.");
-                return;
-            }
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getById(RoutingContext rc) throws UserNotFoundException {
+        String id = rc.pathParam("id");
+        LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
 
-            service.searchByStatus(status).subscribe().with(
-                    projects -> {
-                        ViewPage viewPage = new ViewPage();
-                        viewPage.addPayload(PayloadType.VIEW_DATA, projects);
-                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
-                    },
-                    failure -> {
+        service.getDTO(id, getUser(rc), languageCode).subscribe().with(
+                project -> {
+                    FormPage page = new FormPage();
+                    page.addPayload(PayloadType.DOC_DATA, project);
+                    page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+                    rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
+                },
+                failure -> {
+                    if (failure instanceof DocumentHasNotFoundException) {
+                        rc.response().setStatusCode(404).end("Project not found");
+                    } else {
                         LOGGER.error("Error processing request: ", failure);
                         rc.response().setStatusCode(500).end("Internal Server Error");
                     }
-            );
-        } catch (IllegalArgumentException e) {
-            rc.response().setStatusCode(400).end("Invalid status value.");
-        }
+                }
+        );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) {
+    @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void upsert(RoutingContext rc) throws UserNotFoundException {
         String id = rc.pathParam("id");
-        Optional<IUser> userOptional = getUserId(rc);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
-
-            service.getDTO(id, user, languageCode).subscribe().with(
-                    project -> {
-                        FormPage page = new FormPage();
-                        page.addPayload(PayloadType.DOC_DATA, project);
-                        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
-                    },
-                    failure -> {
-                        if (failure instanceof DocumentHasNotFoundException) {
-                            rc.response().setStatusCode(404).end("Project not found");
-                        } else {
-                            LOGGER.error("Error processing request: ", failure);
-                            rc.response().setStatusCode(500).end("Internal Server Error");
-                        }
-                    }
-            );
-        } else {
-            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-        }
-    }
-
-    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) throws UserNotFoundException {
         JsonObject jsonObject = rc.body().asJsonObject();
         ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-        service.add(dto, getUser(rc))
+        service.upsert(id, dto, getUser(rc))
                 .subscribe().with(
-                        createdProjectId -> rc.response().setStatusCode(201).end(createdProjectId.toString()),
+                        createdProjectId -> rc.response().setStatusCode(200).end(createdProjectId.toString()),
                         failure -> {
                             if (failure instanceof RuntimeException) {
                                 throw (RuntimeException) failure;
@@ -168,50 +135,15 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
 
     }
 
-
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) {
-        String id = rc.pathParam("id");
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-            Optional<IUser> userOptional = getUserId(rc);
-
-            if (userOptional.isPresent()) {
-                service.update(id, dto, userOptional.get()).subscribe().with(
-                        updatedProject -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(updatedProject).encode()),
-                        failure -> {
-                            if (failure instanceof DocumentModificationAccessException) {
-                                rc.response().setStatusCode(403).end("Access denied for document modification");
-                            } else {
-                                LOGGER.error(failure.getMessage(), failure);
-                                rc.response().setStatusCode(500).end("Internal Server Error");
-                            }
-                        }
-                );
-            } else {
-                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-            }
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
-        }
-    }
-
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws DocumentModificationAccessException {
+    public void delete(RoutingContext rc) throws DocumentModificationAccessException, UserNotFoundException {
         String id = rc.pathParam("id");
-        Optional<IUser> userOptional = getUserId(rc);
-        if (userOptional.isPresent()) {
-            service.delete(id, userOptional.get()).subscribe().with(
-                    count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
-                    failure -> {
-                        LOGGER.error(failure.getMessage(), failure);
-                        rc.response().setStatusCode(500).end("Internal Server Error");
-                    }
-            );
-        } else {
-            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-        }
+        service.delete(id, getUser(rc)).subscribe().with(
+                count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
+                failure -> {
+                    LOGGER.error(failure.getMessage(), failure);
+                    rc.response().setStatusCode(500).end("Internal Server Error");
+                }
+        );
     }
 }
