@@ -42,3 +42,20 @@
         name: keypractica
         state: started
       when: not java_version.failed
+
+    - name: Check if the server is running and accessible
+      ansible.builtin.uri:
+        url: http://api.keypractica.com
+        return_content: yes
+        status_code: 200
+      register: server_response
+      until: server_response.status == 200
+      retries: 5
+      delay: 10
+      ignore_errors: yes
+
+    - name: Fail if the server is not running
+      ansible.builtin.fail:
+        msg: "The Keypractica server is not running or not accessible at http://api.keypractica.com."
+      when: server_response.status != 200
+      ignore_errors: yes
