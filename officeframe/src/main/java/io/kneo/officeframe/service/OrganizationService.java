@@ -1,6 +1,7 @@
 package io.kneo.officeframe.service;
 
 import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
@@ -102,6 +103,23 @@ public class OrganizationService extends AbstractService<Organization, Organizat
             }
             return dto;
         });
+    }
+
+    @Override
+    public Uni<UUID> upsert(String id, OrganizationDTO dto, IUser user) {
+        Organization doc = new Organization();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setOrgCategory(dto.getOrgCategory().getId());
+        doc.setBizID(dto.getBizID());
+        doc.setRank(dto.getRank());
+        doc.setLocalizedName(dto.getLocalizedName());
+        if (id == null) {
+            return repository.insert(doc, AnonymousUser.build());
+        } else {
+            UUID uuid = UUID.fromString(id);
+            return repository.update(uuid, doc, user)
+                    .map(rowsAffected -> rowsAffected > 0 ? uuid : null);
+        }
     }
 
     @Override

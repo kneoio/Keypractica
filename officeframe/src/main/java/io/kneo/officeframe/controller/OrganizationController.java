@@ -2,6 +2,7 @@ package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
@@ -74,29 +75,18 @@ public class OrganizationController extends AbstractSecuredController<Organizati
         }
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) {
+    @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void update(RoutingContext rc) throws UserNotFoundException {
         String id = rc.pathParam("id");
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
-            Optional<IUser> userOptional = getUserId(rc);
-
-            if (userOptional.isPresent()) {
-                service.update(id, dto, userOptional.get()).subscribe().with(
-                        count -> rc.response().setStatusCode(count > 0 ? 200 : 404).end(),
-                        failure -> {
-                            LOGGER.error(failure.getMessage(), failure);
-                            rc.response().setStatusCode(500).end(failure.getMessage());
-                        }
-                );
-            } else {
-                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-            }
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
-        }
+        JsonObject jsonObject = rc.body().asJsonObject();
+        OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
+        service.upsert(id, dto, getUser(rc)).subscribe().with(
+                createdDoc -> rc.response().setStatusCode(200).end(createdDoc.toString()),
+                failure -> {
+                    LOGGER.error(failure.getMessage(), failure);
+                    rc.response().setStatusCode(500).end(failure.getMessage());
+                }
+        );
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")

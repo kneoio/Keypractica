@@ -126,6 +126,17 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
+    public Uni<UUID> upsert(String id, ProjectDTO dto, IUser user) {
+        if (id == null) {
+            return repository.insert(buildEntity(dto), AnonymousUser.ID);
+        } else {
+            UUID uuid = UUID.fromString(id);
+            return repository.update(uuid, buildEntity(dto), user.getId())
+                    .map(rowsAffected -> rowsAffected > 0 ? uuid : null);
+        }
+    }
+
+    @Override
     public Uni<UUID> add(ProjectDTO dto, IUser user) {
         Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(dto);
         if (violations.isEmpty()) {
