@@ -1,4 +1,4 @@
-name: Deploy Keypractica Project
+name: Deploy Keypractica
 
 on:
   push:
