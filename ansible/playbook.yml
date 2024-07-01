@@ -1,4 +1,3 @@
----
 - hosts: all
   become: yes
 
@@ -8,19 +7,33 @@
         name: keypractica
         state: stopped
 
+    - name: Check if Java 21 is installed
+      ansible.builtin.command: java -version
+      register: java_version
+      failed_when: "'21' not in java_version.stderr"
+      ignore_errors: yes
+
+    - name: Fail if Java 21 is not installed
+      ansible.builtin.fail:
+        msg: "Java 21 is not installed. Please install Java 21 and try again."
+      when: java_version.failed
+
     - name: Update the Keypractica project from GitHub
       ansible.builtin.git:
         repo: 'https://github.com/Semantyca/Keypractica.git'
         dest: '/home/keypractica/be_server'
         version: master
         force: yes
+      when: not java_version.failed
 
     - name: Build the project using Maven
       ansible.builtin.shell:
         cmd: '/opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
         chdir: '/home/keypractica/be_server'
+      when: not java_version.failed
 
     - name: Start Keypractica service
       ansible.builtin.systemd:
         name: keypractica
         state: started
+      when: not java_version.failed

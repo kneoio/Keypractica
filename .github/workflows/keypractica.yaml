@@ -33,6 +33,12 @@ jobs:
       - name: Install Ansible Community General Collection
         run: ansible-galaxy collection install community.general
 
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
       - name: Run Ansible Playbook
         env:
           ANSIBLE_HOST_KEY_CHECKING: False
