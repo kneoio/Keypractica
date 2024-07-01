@@ -4,14 +4,14 @@
   <parent>
     <groupId>io.kneo</groupId>
     <artifactId>keypractica</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2</version>
   </parent>
   <artifactId>officeframe</artifactId>
   <dependencies>
     <dependency>
       <groupId>io.kneo</groupId>
       <artifactId>core</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.0.2</version>
     </dependency>
   </dependencies>
 </project>
