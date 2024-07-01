@@ -2,6 +2,11 @@
   become: yes
 
   tasks:
+    - name: Ensure core utilities are installed
+      ansible.builtin.apt:
+        name: coreutils
+        state: present
+
     - name: Stop the Keypractica service
       ansible.builtin.systemd:
         name: keypractica
