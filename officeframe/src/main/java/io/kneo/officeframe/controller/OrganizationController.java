@@ -9,7 +9,6 @@ import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
@@ -51,32 +50,8 @@ public class OrganizationController extends AbstractSecuredController<Organizati
         getById(service, id, rc);
     }
 
-    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) {
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
-            Optional<IUser> userOptional = getUserId(rc);
-
-            if (userOptional.isPresent()) {
-                service.add(dto, userOptional.get()).subscribe().with(
-                        id -> rc.response().setStatusCode(201).putHeader("Location", "/api/" + rc.pathParam("org") + "/orgs/" + id).end(),
-                        failure -> {
-                            LOGGER.error(failure.getMessage(), failure);
-                            rc.response().setStatusCode(500).end(failure.getMessage());
-                        }
-                );
-            } else {
-                rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
-            }
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
-        }
-    }
-
     @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) throws UserNotFoundException {
+    public void upsert(RoutingContext rc) throws UserNotFoundException {
         String id = rc.pathParam("id");
         JsonObject jsonObject = rc.body().asJsonObject();
         OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
