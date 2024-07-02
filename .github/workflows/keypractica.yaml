@@ -10,28 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.4
-
-      - name: Setup SSH Agent
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
-
-      - name: Check if key is added
-        run: ssh-add -l
-
-      - name: Setup Python
-        uses: actions/setup-python@v5.1.0
-        with:
-          python-version: '3.x'
-
-      - name: Install Ansible
-        run: |
-          python -m pip install --upgrade pip
-          pip install ansible
-
-      - name: Install Ansible Community General Collection
-        run: ansible-galaxy collection install community.general
+        uses: actions/checkout@v4
 
       - name: Set up JDK 21
         uses: actions/setup-java@v3
@@ -39,9 +18,43 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Run Ansible Playbook
-        env:
-          ANSIBLE_HOST_KEY_CHECKING: False
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Add server to known hosts
+        run: ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
+
+      - name: Stop Keypractica service
+        run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "systemctl stop keypractica"
+
+      - name: Update project from GitHub
         run: |
-          ansible-playbook -i root@${{ secrets.HOST_NAME }}, playbook.yml -e ansible_port=${{ secrets.SSH_PORT }} -vvv
-        working-directory: ./ansible
+          ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
+            cd /home/keypractica/be_server
+            git pull origin master
+          "
+
+      - name: Build project
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
+            cd /home/keypractica/be_server
+            /opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests
+          "
+
+      - name: Start Keypractica service
+        run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "systemctl start keypractica"
+
+      - name: Check if server is running
+        run: |
+          for i in {1..5}; do
+            if curl -sSf http://api.keypractica.com > /dev/null; then
+              echo "Server is running"
+              exit 0
+            fi
+            echo "Attempt $i: Server not yet running, waiting..."
+            sleep 10
+          done
+          echo "Server failed to start"
+          exit 1
