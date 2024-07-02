@@ -26,6 +26,22 @@ jobs:
       - name: Add server to known hosts
         run: ssh-keyscan -p ${{ secrets.SSH_PORT }} ${{ secrets.HOST_NAME }} >> ~/.ssh/known_hosts
 
+      - name: Ensure core utilities are installed
+        run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "apt-get install -y coreutils"
+
+      - name: Ensure Java 21 is installed
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
+            apt-get install -y openjdk-21-jdk
+            if ! java -version 2>&1 | grep -q '21'; then
+              echo 'Java 21 is not installed. Please install Java 21 and try again.'
+              exit 1
+            fi
+          "
+
+      - name: Ensure Maven is installed
+        run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "apt-get install -y maven"
+
       - name: Stop Keypractica service
         run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "systemctl stop keypractica"
 
@@ -36,12 +52,21 @@ jobs:
             git pull origin master
           "
 
+      - name: Set JAVA_HOME environment variable
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
+            echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk' >> /etc/profile
+            source /etc/profile
+          "
+
       - name: Build project
         run: |
           ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
             cd /home/keypractica/be_server
-            /opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests
+            mvn package -Dquarkus.package.type=uber-jar -DskipTests
           "
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-21-openjdk
 
       - name: Start Keypractica service
         run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "systemctl start keypractica"
