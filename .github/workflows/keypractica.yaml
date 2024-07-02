@@ -58,15 +58,15 @@ jobs:
             echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk' >> /etc/profile
             source /etc/profile
           "
-
       - name: Build project
         run: |
           ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "
-            cd /home/keypractica/be_server
-            mvn package -Dquarkus.package.type=uber-jar -DskipTests
-          "
-        env:
-          JAVA_HOME: /usr/lib/jvm/java-21-openjdk
+              cd /home/keypractica/be_server
+              mvn package -Dquarkus.package.type=uber-jar -DskipTests -Djdk.module.illegalAccess=permit
+            "
+          env:
+            JAVA_HOME: /usr/lib/jvm/java-21-openjdk
+            MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
 
       - name: Start Keypractica service
         run: ssh -p ${{ secrets.SSH_PORT }} root@${{ secrets.HOST_NAME }} "systemctl start keypractica"
