@@ -6,6 +6,16 @@
         name: coreutils
         state: present
 
+    - name: Ensure Java 21 is installed
+      ansible.builtin.apt:
+        name: openjdk-21-jdk
+        state: present
+
+    - name: Ensure Maven is installed
+      ansible.builtin.apt:
+        name: maven
+        state: present
+
     - name: Stop the Keypractica service
       ansible.builtin.systemd:
         name: keypractica
@@ -30,10 +40,18 @@
         force: yes
       when: not java_version.failed
 
+    - name: Set JAVA_HOME environment variable
+      ansible.builtin.shell: |
+        echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk' >> /etc/profile
+        source /etc/profile
+      when: not java_version.failed
+
     - name: Build the project using Maven
       ansible.builtin.shell:
-        cmd: '/opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
+        cmd: '/usr/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
         chdir: '/home/keypractica/be_server'
+      environment:
+        JAVA_HOME: /usr/lib/jvm/java-21-openjdk
       when: not java_version.failed
 
     - name: Start Keypractica service
