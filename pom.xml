@@ -193,7 +193,6 @@
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
       </plugin>
-
     </plugins>
   </build>
 </project>
