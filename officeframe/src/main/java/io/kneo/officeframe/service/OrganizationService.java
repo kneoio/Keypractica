@@ -79,30 +79,33 @@ public class OrganizationService extends AbstractService<Organization, Organizat
 
         Uni<Optional<OrgCategory>> relatedUni = uni.onItem().transformToUni(item ->
                 orgCategoryRepository.findById(item.get().getOrgCategory())
-
         );
-        return Uni.combine().all().unis(uni, relatedUni).combinedWith((docOpt, orgCategory) -> {
-            Organization doc = docOpt.orElseThrow();
-            OrganizationDTO dto = OrganizationDTO.builder()
-                    .id(doc.getId())
-                    .author(userRepository.getUserName(doc.getAuthor()))
-                    .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                    .lastModifiedDate(doc.getLastModifiedDate())
-                    .identifier(doc.getIdentifier())
-                    .localizedName(doc.getLocalizedName())
-                    .bizID(doc.getBizID())
-                    .build();
-            if (orgCategory.isPresent()) {
-                OrgCategory category = orgCategory.get();
-                dto.setOrgCategory(OrgCategoryDTO.builder()
-                        .identifier(category.getIdentifier())
-                        .localizedName(category.getLocalizedName(LanguageCode.ENG))
-                        .id(category.getId())
-                        .build());
-            }
-            return dto;
-        });
+
+        return Uni.combine().all().unis(uni, relatedUni)
+                .with((docOpt, orgCategory) -> {
+                    Organization doc = docOpt.orElseThrow();
+                    OrganizationDTO dto = OrganizationDTO.builder()
+                            .id(doc.getId())
+                            .author(userRepository.getUserName(doc.getAuthor()))
+                            .regDate(doc.getRegDate())
+                            .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                            .lastModifiedDate(doc.getLastModifiedDate())
+                            .identifier(doc.getIdentifier())
+                            .localizedName(doc.getLocalizedName())
+                            .bizID(doc.getBizID())
+                            .build();
+
+                    if (orgCategory.isPresent()) {
+                        OrgCategory category = orgCategory.get();
+                        dto.setOrgCategory(OrgCategoryDTO.builder()
+                                .identifier(category.getIdentifier())
+                                .localizedName(category.getLocalizedName(LanguageCode.ENG))
+                                .id(category.getId())
+                                .build());
+                    }
+
+                    return dto;
+                });
     }
 
     @Override

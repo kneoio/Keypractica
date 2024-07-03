@@ -1,7 +1,7 @@
 package io.kneo.officeframe.controller;
 
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.model.OrgCategory;
@@ -12,8 +12,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-
-import java.util.Optional;
 
 @RolesAllowed("**")
 @RouteBase(path = "/api/:org/orgcategories")
@@ -44,8 +42,7 @@ public class OrgCategoryController extends AbstractSecuredController<OrgCategory
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) {
-        String id = rc.pathParam("id");
-        getById(service, id, rc);
+        getById(service, rc.pathParam("id"), rc);
     }
 
   /*  @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
@@ -85,20 +82,10 @@ public class OrgCategoryController extends AbstractSecuredController<OrgCategory
     }*/
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
-        String id = rc.pathParam("id");
-        Optional<IUser> userOptional = getUserId(rc);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            service.delete(id, user).subscribe().with(
-                    count -> rc.response().setStatusCode(count > 0 ? 200 : 404).end(),
-                    failure -> {
-                        LOGGER.error("Error processing request: ", failure);
-                        rc.response().setStatusCode(500).end("Internal Server Error");
-                    }
-            );
-        } else {
-            rc.response().setStatusCode(401).end("User not found");
-        }
+    public void delete(RoutingContext rc) throws UserNotFoundException {
+        service.delete(rc.pathParam("id"), getUser(rc))
+                .subscribe().with(
+                        count -> rc.response().setStatusCode(count > 0 ? 200 : 404).end()
+                );
     }
 }
