@@ -33,17 +33,17 @@ public abstract class AbstractService<T, V> {
     public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
     public abstract Uni<UUID> add(V dto, IUser user);
     public abstract Uni<Integer> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
-    public Uni<UUID> upsert(String id, V dto, IUser user) throws DocumentModificationAccessException {
+    public Uni<UUID> upsert(String id, V dto, IUser user) {
          return Uni.createFrom().nullItem();
     };
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
-        Uni<List<RLS>> rlsEntires = secureDataEntityUni.onItem().transformToUni(item ->
+        Uni<List<RLS>> rlsEntries = secureDataEntityUni.onItem().transformToUni(item ->
                 asyncRepository.getAllReaders(id, entityData)
         );
 
-        return rlsEntires.onItem().transform(rlsList -> rlsList.stream()
+        return rlsEntries.onItem().transform(rlsList -> rlsList.stream()
                 .map(this::convertRlSEntries)
                 .collect(Collectors.toList()));
     }
