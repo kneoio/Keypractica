@@ -11,7 +11,7 @@ public interface IRESTService<V> {
 
     Uni<Integer> getAllCount();
 
-    Uni<List<V>> getAll(int pageSize, int offset);
+    Uni<List<V>> getAll(int pageSize, int offset, LanguageCode languageCode);
 
     Uni<V> getDTO(String id, IUser user, LanguageCode language);
 

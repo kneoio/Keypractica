@@ -11,6 +11,9 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.ConnectException;
+
 @Provider
 public class WebExceptionMapper implements ExceptionMapper<Exception> {
 
@@ -37,6 +40,11 @@ public class WebExceptionMapper implements ExceptionMapper<Exception> {
             int errorNumber = NumberUtil.getRandomNumber(100000, 199000);
             LOGGER.error("SQL exception: {}, code: {}", pgException.getMessage(), errorNumber, pgException);
             pgException.printStackTrace();
+            json = "{\"error\":\"System exception\", \"code\": " + errorNumber + " }";
+            status = Response.Status.INTERNAL_SERVER_ERROR;
+        } else if (exception instanceof ConnectException connectException) {
+            int errorNumber = NumberUtil.getRandomNumber(100000, 199000);
+            LOGGER.error("Connect exception: {}, code: {}", connectException.getMessage(), errorNumber, connectException);
             json = "{\"error\":\"System exception\", \"code\": " + errorNumber + " }";
             status = Response.Status.INTERNAL_SERVER_ERROR;
         } else {

@@ -39,7 +39,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @SuppressWarnings("ConstantConditions")
-    public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Organization>> listUni = repository.getAll(limit, offset);
         return listUni
                 .onItem().transform(taskList -> taskList.stream()
@@ -109,7 +109,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    public Uni<UUID> upsert(String id, OrganizationDTO dto, IUser user) {
+    public Uni<Organization> upsert(String id, OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
@@ -120,14 +120,13 @@ public class OrganizationService extends AbstractService<Organization, Organizat
             return repository.insert(doc, AnonymousUser.build());
         } else {
             UUID uuid = UUID.fromString(id);
-            return repository.update(uuid, doc, user)
-                    .map(rowsAffected -> rowsAffected > 0 ? uuid : null);
+            return repository.update(uuid, doc, user);
         }
     }
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<UUID> add(OrganizationDTO dto, IUser user) {
+    public Uni<Organization> add(OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
@@ -139,15 +138,14 @@ public class OrganizationService extends AbstractService<Organization, Organizat
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<Integer> update(String id, OrganizationDTO dto, IUser user) {
+    public Uni<Organization> update(String id, OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
         doc.setLocalizedName(dto.getLocalizedName());
-        return repository.update(UUID.fromString(id), doc, user)
-                .onItem().transform(count -> count > 0 ? count : null);
+        return repository.update(UUID.fromString(id), doc, user);
     }
 
     @Override

@@ -29,7 +29,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         this.repository = repository;
     }
 
-    public Uni<List<LabelDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<LabelDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Label>> taskUni = repository.getAll(limit, offset);
         return taskUni
                 .onItem().transform(taskList -> taskList.stream()

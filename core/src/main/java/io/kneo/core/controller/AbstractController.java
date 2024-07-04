@@ -62,7 +62,7 @@ public abstract class AbstractController<T, V> {
                     int maxPage = countMaxPage(count, size);
                     int pageNum = (page == 0) ? 1 : page;
                     int offset = RuntimeUtil.calcStartEntry(pageNum, size);
-                    return service.getAll(size, offset)
+                    return service.getAll(size, offset, LanguageCode.ENG)
                             .onItem().transform(dtoList -> {
                                 ViewPage viewPage = new ViewPage();
                                 viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
@@ -91,7 +91,7 @@ public abstract class AbstractController<T, V> {
                 .unis(pageNumUni, Uni.createFrom().item(user.getPageSize()))
                 .asTuple()
                 .map(tuple -> RuntimeUtil.calcStartEntry(tuple.getItem1(), tuple.getItem2()));
-        Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(size, offset));
+        Uni<List<V>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(size, offset, LanguageCode.ENG));
         return Uni.combine().all()
                 .unis(unis, offsetUni, pageNumUni, countUni, maxPageUni)
                 .asTuple()
@@ -304,6 +304,15 @@ public abstract class AbstractController<T, V> {
         LOGGER.warn(String.format("code: %s, msg: %s ", randomNum, e.getMessage()), e);
         return Response.status(Response.Status.NOT_FOUND).entity(String.format("code: %s, msg: %s ", randomNum, e.getMessage())).build();
     }
+
+    protected static LanguageCode resolveLanguage(RoutingContext rc) {
+        try {
+            return LanguageCode.valueOf(rc.acceptableLanguages().getFirst().value().toUpperCase());
+        } catch (Exception e) {
+            return LanguageCode.ENG;
+        }
+    }
+
 
     public static class Parameters {
         @QueryParam("page")

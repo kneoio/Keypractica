@@ -30,7 +30,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         this.repository = repository;
     }
 
-    public Uni<List<TaskTypeDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<TaskTypeDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<TaskType>> taskUni = repository.getAll(limit, offset);
         return taskUni
                 .onItem().transform(taskList -> taskList.stream()

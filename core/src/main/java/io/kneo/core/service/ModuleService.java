@@ -33,7 +33,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         this.repository = repository;
     }
 
-    public Uni<List<ModuleDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<ModuleDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Module>> listUni = repository.getAll(limit, offset);
         return listUni.onItem().transform(list -> list.stream()
                 .map(doc ->

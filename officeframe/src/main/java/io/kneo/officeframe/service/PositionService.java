@@ -28,7 +28,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         this.repository = repository;
     }
 
-    public Uni<List<PositionDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<PositionDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Position>> listUni = repository.getAll(limit, offset);
         return listUni
                 .onItem().transform(taskList -> taskList.stream()

@@ -29,7 +29,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @SuppressWarnings("ConstantConditions")
-    public Uni<List<OrgCategoryDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<OrgCategoryDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<OrgCategory>> uni = repository.getAll(limit, offset);
         return uni
                 .onItem().transform(l -> l.stream()
