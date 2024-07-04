@@ -29,7 +29,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
         this.repository = repository;
     }
 
-    public Uni<List<DepartmentDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<DepartmentDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Department>> listUni = repository.getAll(limit, offset);
         return listUni
                 .onItem().transform(taskList -> taskList.stream()

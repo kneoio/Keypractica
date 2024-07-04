@@ -126,7 +126,7 @@ public class ProjectRepository extends AsyncRepository {
     }
 
 
-    public Uni<UUID> insert(Project doc, Long user) {
+    public Uni<Project> insert(Project doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, name, status, finish_date, primary_lang, manager, programmer, tester)" +
@@ -158,10 +158,11 @@ public class ProjectRepository extends AsyncRepository {
                                         Uni.createFrom().failure(t))
                                 .onItem().transform(unused -> id);
                     });
-        });
+        }).onItem().transformToUni(id -> findById(id, user)
+                .onItem().transform(optionalProject -> optionalProject.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted project"))));
     }
 
-    public Uni<Integer> update(UUID id, Project doc, Long user) {
+    public Uni<Project> update(UUID id, Project doc, Long user) {
         return rlsRepository.findById(entityData.getRlsName(), user, id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[0] == 1) {
@@ -188,7 +189,8 @@ public class ProjectRepository extends AsyncRepository {
                                     if (rowCount == 0) {
                                         return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                                     }
-                                    return Uni.createFrom().item(rowCount);
+                                    return findById(id, user)
+                                            .onItem().transform(optionalProject -> optionalProject.orElseThrow(() -> new RuntimeException("Failed to retrieve updated project")));
                                 })
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t)));
                     } else {

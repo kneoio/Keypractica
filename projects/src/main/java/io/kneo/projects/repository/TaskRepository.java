@@ -106,7 +106,7 @@ public class TaskRepository extends AsyncRepository {
                 .build();
     }
 
-    public Uni<UUID> insert(Task doc, Long user) {
+    public Uni<Task> insert(Task doc, Long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
@@ -164,10 +164,11 @@ public class TaskRepository extends AsyncRepository {
                         }
                         return Uni.combine().all().unis(unis).combinedWith(l -> id);
                     });
-        });
+        }).onItem().transformToUni(id -> findById(id, user)
+                .onItem().transform(optionalTask -> optionalTask.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted task"))));
     }
 
-    public Uni<Integer> update(UUID id, Task doc, Long user) {
+    public Uni<Task> update(UUID id, Task doc, Long user) {
         return rlsRepository.findById(entityData.getRlsName(), user, id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[0] == 1) {
@@ -196,40 +197,41 @@ public class TaskRepository extends AsyncRepository {
                                 .addLong(user);
                         allParams.addUUID(id);
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
-                                .execute(allParams)
-                                .onItem().transformToUni(rowSet -> {
-                                    int rowCount = rowSet.rowCount();
-                                    if (rowCount == 0) {
-                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
-                                    }
-                                    if (doc.getLabels() != null && !doc.getLabels().isEmpty()) {
-                                        String deleteLabelsSql = "DELETE FROM prj__task_labels WHERE id=$1";
-                                        Uni<Void> deleteLabelsUni = tx.preparedQuery(deleteLabelsSql)
-                                                .execute(Tuple.of(id))
-                                                .onItem().ignore().andContinueWithNull();
+                                        .execute(allParams)
+                                        .onItem().transformToUni(rowSet -> {
+                                            int rowCount = rowSet.rowCount();
+                                            if (rowCount == 0) {
+                                                return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                                            }
+                                            if (doc.getLabels() != null && !doc.getLabels().isEmpty()) {
+                                                String deleteLabelsSql = "DELETE FROM prj__task_labels WHERE id=$1";
+                                                Uni<Void> deleteLabelsUni = tx.preparedQuery(deleteLabelsSql)
+                                                        .execute(Tuple.of(id))
+                                                        .onItem().ignore().andContinueWithNull();
 
-                                        List<Uni<Void>> labelInsertUnis = new ArrayList<>();
-                                        for (UUID label : doc.getLabels()) {
-                                            String labelsSql = "INSERT INTO prj__task_labels(id, label_id) VALUES($1, $2)";
-                                            Uni<Void> labelInsertUni = tx.preparedQuery(labelsSql)
-                                                    .execute(Tuple.of(id, label))
-                                                    .onItem().ignore().andContinueWithNull();
-                                            labelInsertUnis.add(labelInsertUni);
-                                        }
+                                                List<Uni<Void>> labelInsertUnis = new ArrayList<>();
+                                                for (UUID label : doc.getLabels()) {
+                                                    String labelsSql = "INSERT INTO prj__task_labels(id, label_id) VALUES($1, $2)";
+                                                    Uni<Void> labelInsertUni = tx.preparedQuery(labelsSql)
+                                                            .execute(Tuple.of(id, label))
+                                                            .onItem().ignore().andContinueWithNull();
+                                                    labelInsertUnis.add(labelInsertUni);
+                                                }
 
-                                        return deleteLabelsUni.flatMap(ignored ->
-                                                Uni.combine().all().unis(labelInsertUnis).discardItems()
-                                        ).map(ignored -> rowCount);
-                                    } else {
-                                        return Uni.createFrom().item(rowCount);
-                                    }
-                                })
-                                .onFailure().recoverWithUni(t ->
-                                        Uni.createFrom()
-                                                .failure(t)));
+                                                return deleteLabelsUni.flatMap(ignored ->
+                                                        Uni.combine().all().unis(labelInsertUnis).discardItems()
+                                                ).map(ignored -> rowCount);
+                                            } else {
+                                                return Uni.createFrom().item(rowCount);
+                                            }
+                                        })
+                                        .onFailure().recoverWithUni(t ->
+                                                Uni.createFrom().failure(t)))
+                                .onItem().transformToUni(rowCount -> findById(id, user)
+                                        .onItem().transform(optionalTask -> optionalTask.orElseThrow(() -> new RuntimeException("Failed to retrieve updated task"))));
                     } else {
                         return Uni.createFrom()
-                                .failure(new DocumentModificationAccessException("User does not have delete permission", user, id));
+                                .failure(new DocumentModificationAccessException("User does not have edit permission", user, id));
                     }
                 });
     }

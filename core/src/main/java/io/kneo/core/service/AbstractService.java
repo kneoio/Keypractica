@@ -31,9 +31,9 @@ public abstract class AbstractService<T, V> {
     }
 
     public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
-    public abstract Uni<UUID> add(V dto, IUser user);
-    public abstract Uni<Integer> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
-    public Uni<UUID> upsert(String id, V dto, IUser user) {
+    public abstract Uni<T> add(V dto, IUser user);
+    public abstract Uni<T> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
+    public Uni<T> upsert(String id, V dto, IUser user) {
          return Uni.createFrom().nullItem();
     };
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;

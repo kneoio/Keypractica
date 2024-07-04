@@ -126,18 +126,17 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<UUID> upsert(String id, ProjectDTO dto, IUser user) {
+    public Uni<Project> upsert(String id, ProjectDTO dto, IUser user) {
         if (id == null) {
             return repository.insert(buildEntity(dto), AnonymousUser.ID);
         } else {
             UUID uuid = UUID.fromString(id);
-            return repository.update(uuid, buildEntity(dto), user.getId())
-                    .map(rowsAffected -> rowsAffected > 0 ? uuid : null);
+            return repository.update(uuid, buildEntity(dto), user.getId());
         }
     }
 
     @Override
-    public Uni<UUID> add(ProjectDTO dto, IUser user) {
+    public Uni<Project> add(ProjectDTO dto, IUser user) {
         Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(dto);
         if (violations.isEmpty()) {
             return repository.insert(buildEntity(dto), AnonymousUser.ID);
@@ -147,7 +146,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<Integer> update(String id, ProjectDTO dto, IUser user) {
+    public Uni<Project> update(String id, ProjectDTO dto, IUser user) {
         return repository.update(UUID.fromString(id), buildEntity(dto), user.getId());
 
     }

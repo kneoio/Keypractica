@@ -89,7 +89,7 @@ public class OrganizationRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<UUID> insert(Organization doc, IUser user) {
+    public Uni<Organization> insert(Organization doc, IUser user) {
         String sql = String.format("INSERT INTO %s (%s, %s, %s, %s, %s, %s, %s, %s, %s) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
                 entityData.getTableName(),
                 COLUMN_AUTHOR,
@@ -114,11 +114,13 @@ public class OrganizationRepository extends AsyncRepository {
 
         return client.preparedQuery(sql)
                 .execute(params)
-                .onItem().transform(result -> result.iterator().next().getUUID("id"));
+                .onItem().transformToUni(result -> {
+                    UUID id = result.iterator().next().getUUID("id");
+                    return findById(id).onItem().transform(optionalOrg -> optionalOrg.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted document")));
+                });
     }
 
-
-    public Uni<Integer> update(UUID id, Organization doc, IUser user) {
+    public Uni<Organization> update(UUID id, Organization doc, IUser user) {
         String sql = String.format("UPDATE %s SET %s=$1, %s=$2, %s=$3, %s=$4, %s=$5, %s=$6, %s=$7 WHERE id=$8",
                 entityData.getTableName(),
                 COLUMN_LAST_MOD_USER,
@@ -143,12 +145,12 @@ public class OrganizationRepository extends AsyncRepository {
         return client.preparedQuery(sql)
                 .execute(params)
                 .onItem().transformToUni(rowSet -> {
-                    int rowCount = rowSet.rowCount();
-                    if (rowCount == 0) {
+                    if (rowSet.rowCount() == 0) {
                         return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                     }
-                    return Uni.createFrom().item(rowCount);
-                });
+                    return findById(id);
+                })
+                .onItem().transform(optionalOrg -> optionalOrg.orElseThrow(() -> new RuntimeException("Failed to retrieve updated document")));
     }
 
     public Uni<Integer> delete(UUID id) {

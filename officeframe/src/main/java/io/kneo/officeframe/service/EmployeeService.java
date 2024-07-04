@@ -56,7 +56,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         this.positionService = positionService;
     }
 
-    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset) {
+    public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Employee>> listUni = repository.getAll(limit, offset);
         return listUni
                 .onItem().transformToUni(employees ->

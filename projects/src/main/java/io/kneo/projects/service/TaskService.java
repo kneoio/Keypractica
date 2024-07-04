@@ -169,7 +169,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return assigneeDTO;
     }
 
-    public Uni<UUID> add(TaskDTO dto, IUser user) {
+    public Uni<Task> add(TaskDTO dto, IUser user) {
         Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
         Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
         Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
@@ -181,7 +181,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         }).flatMap(uni -> uni);
     }
 
-    public Uni<Integer> update(String id, TaskDTO dto, IUser user) {
+    public Uni<Task> update(String id, TaskDTO dto, IUser user) {
         Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
         Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
         Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
