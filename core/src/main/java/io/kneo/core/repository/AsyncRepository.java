@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
+import io.kneo.core.model.SimpleReferenceEntity;
 import io.kneo.core.model.embedded.RLS;
 import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Multi;
@@ -102,6 +103,15 @@ public class AsyncRepository {
         entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
     }
 
+    protected static void setLocalizedNames(SimpleReferenceEntity entity, Row row) {
+        JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
+        if (localizedNameJson != null) {
+            EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
+            localizedNameJson.getMap().forEach((key, value) -> localizedName.put(LanguageCode.valueOf(key), (String) value));
+            entity.setLocalizedName(localizedName);
+        }
+    }
+
     @Deprecated
     protected EnumMap<LanguageCode, String> extractLanguageMap(Row row) {
         EnumMap<LanguageCode, String> map;
@@ -115,6 +125,7 @@ public class AsyncRepository {
         return map;
     }
 
+    @Deprecated
     protected static EnumMap<LanguageCode, String> getLocalizedData(JsonObject json) {
         if (json != null) {
             Map<LanguageCode, String> map = json.getMap().entrySet().stream()
@@ -137,6 +148,7 @@ public class AsyncRepository {
         return sql;
     }
 
+    @Deprecated
     protected EnumMap<LanguageCode, String> getLocalizedNameFromDb(Row row) {
         try {
             JsonObject localizedNameJson = row.getJsonObject("loc_name");

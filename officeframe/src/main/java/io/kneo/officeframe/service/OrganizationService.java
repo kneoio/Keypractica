@@ -75,41 +75,11 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     @Override
     @SuppressWarnings("ConstantConditions")
     public Uni<OrganizationDTO> getDTO(String id, IUser user, LanguageCode language) {
-        Uni<Optional<Organization>> uni = repository.findById(UUID.fromString(id));
-
-        Uni<Optional<OrgCategory>> relatedUni = uni.onItem().transformToUni(item ->
-                orgCategoryRepository.findById(item.get().getOrgCategory())
-        );
-
-        return Uni.combine().all().unis(uni, relatedUni)
-                .with((docOpt, orgCategory) -> {
-                    Organization doc = docOpt.orElseThrow();
-                    OrganizationDTO dto = OrganizationDTO.builder()
-                            .id(doc.getId())
-                            .author(userRepository.getUserName(doc.getAuthor()))
-                            .regDate(doc.getRegDate())
-                            .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                            .lastModifiedDate(doc.getLastModifiedDate())
-                            .identifier(doc.getIdentifier())
-                            .localizedName(doc.getLocalizedName())
-                            .bizID(doc.getBizID())
-                            .build();
-
-                    if (orgCategory.isPresent()) {
-                        OrgCategory category = orgCategory.get();
-                        dto.setOrgCategory(OrgCategoryDTO.builder()
-                                .identifier(category.getIdentifier())
-                                .localizedName(category.getLocalizedName(LanguageCode.ENG))
-                                .id(category.getId())
-                                .build());
-                    }
-
-                    return dto;
-                });
+        return mapOptional(repository.findById(UUID.fromString(id)));
     }
 
     @Override
-    public Uni<Organization> upsert(String id, OrganizationDTO dto, IUser user) {
+    public Uni<OrganizationDTO> upsert(String id, OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
@@ -117,35 +87,35 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         doc.setRank(dto.getRank());
         doc.setLocalizedName(dto.getLocalizedName());
         if (id == null) {
-            return repository.insert(doc, AnonymousUser.build());
+            return map(repository.insert(doc, AnonymousUser.build()));
         } else {
             UUID uuid = UUID.fromString(id);
-            return repository.update(uuid, doc, user);
+            return map(repository.update(uuid, doc, user));
         }
     }
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<Organization> add(OrganizationDTO dto, IUser user) {
+    public Uni<OrganizationDTO> add(OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
         doc.setLocalizedName(dto.getLocalizedName());
-        return repository.insert(doc, user);
+        return map(repository.insert(doc, user));
     }
 
     @Override
     @SuppressWarnings("ConstantConditions")
-    public Uni<Organization> update(String id, OrganizationDTO dto, IUser user) {
+    public Uni<OrganizationDTO> update(String id, OrganizationDTO dto, IUser user) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
         doc.setLocalizedName(dto.getLocalizedName());
-        return repository.update(UUID.fromString(id), doc, user);
+        return map(repository.update(UUID.fromString(id), doc, user));
     }
 
     @Override
@@ -154,4 +124,44 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         return repository.delete(UUID.fromString(id))
                 .onItem().transform(count -> count);
     }
+
+    private Uni<OrganizationDTO> map(Uni<Organization> uniOrganization) {
+        Uni<Optional<OrgCategory>> relatedUni = uniOrganization.onItem().transformToUni(organization ->
+                orgCategoryRepository.findById(organization.getOrgCategory())
+        );
+
+        return Uni.combine().all().unis(uniOrganization, relatedUni)
+                .combinedWith((organization, orgCategory) -> {
+                    OrganizationDTO dto = OrganizationDTO.builder()
+                            .id(organization.getId())
+                            .author(userRepository.getUserName(organization.getAuthor()))
+                            .regDate(organization.getRegDate())
+                            .lastModifier(userRepository.getUserName(organization.getLastModifier()))
+                            .lastModifiedDate(organization.getLastModifiedDate())
+                            .identifier(organization.getIdentifier())
+                            .localizedName(organization.getLocalizedName())
+                            .bizID(organization.getBizID())
+                            .build();
+
+                    if (orgCategory.isPresent()) {
+                        OrgCategory orgCat = orgCategory.get();
+                        dto.setOrgCategory(OrgCategoryDTO.builder()
+                                .identifier(orgCat.getIdentifier())
+                                .localizedName(orgCat.getLocalizedName(LanguageCode.ENG))
+                                .id(orgCat.getId())
+                                .build());
+                    }
+
+                    return dto;
+                });
+    }
+
+   @Deprecated
+    private Uni<OrganizationDTO> mapOptional(Uni<Optional<Organization>> uniOpt) {
+        return uniOpt.onItem().transformToUni(optionalOrg -> {
+            Organization organization = optionalOrg.orElseThrow();
+            return map(Uni.createFrom().item(organization));
+        });
+    }
+
 }

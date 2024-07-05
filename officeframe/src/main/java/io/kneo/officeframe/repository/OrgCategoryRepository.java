@@ -1,20 +1,17 @@
 package io.kneo.officeframe.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.OrgCategory;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,12 +50,7 @@ public class OrgCategoryRepository extends AsyncRepository {
         OrgCategory doc = new OrgCategory();
         setDefaultFields(doc, row);
         doc.setIdentifier(row.getString(COLUMN_IDENTIFIER));
-        JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
-        if (localizedNameJson != null) {
-            EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
-            localizedNameJson.getMap().forEach((key, value) -> localizedName.put(LanguageCode.valueOf(key), (String) value));
-            doc.setLocalizedName(localizedName);
-        }
+        setLocalizedNames(doc, row);
         return doc;
     }
 

@@ -41,6 +41,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
                                         .lastModifier(userRepository.getUserName(e.getLastModifier()))
                                         .lastModifiedDate(e.getLastModifiedDate())
                                         .identifier(e.getIdentifier())
+                                        .localizedNames(e.getLocalizedName())
                                         .build())
                         .collect(Collectors.toList()));
     }
@@ -75,13 +76,13 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @Override
-    public Uni<UUID> add(OrgCategoryDTO dto, IUser user) {
+    public Uni<OrgCategoryDTO> add(OrgCategoryDTO dto, IUser user) {
         return Uni.createFrom().nullItem();
     }
 
     @Override
-    public Uni<Integer> update(String id, OrgCategoryDTO dto, IUser user) {
-        return Uni.createFrom().item(0);
+    public Uni<OrgCategoryDTO> update(String id, OrgCategoryDTO dto, IUser user) {
+        return null;
     }
 
     @Override
