@@ -49,7 +49,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
         return uni
                 .onItem().transform(projectList -> projectList.stream()
-                        .map(this::map)
+                        .map(this::plainMap)
                         .collect(Collectors.toList()));
     }
 
@@ -65,7 +65,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         Uni<List<Project>> uni = repository.searchByCondition(String.format("status = '%s'", statusType));
         return uni
                 .onItem().transform(projectList -> projectList.stream()
-                        .map(this::map)
+                        .map(this::plainMap)
                         .collect(Collectors.toList()));
     }
 
@@ -104,15 +104,15 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                     .finishDate(doc.getFinishDate())
                     .manager(UserDTO.builder()
                             // .identifier(doc.getManager())
-                            .name(userService.getUserName(doc.getManager()))
+                            .name(userService.getName(doc.getManager()))
                             .build())
                     .coder(UserDTO.builder()
                             // .identifier(doc.getCoder())
-                            .name(userService.getUserName(doc.getCoder()))
+                            .name(userService.getName(doc.getCoder()))
                             .build())
                     .tester(UserDTO.builder()
                             // .identifier(doc.getTester())
-                            .name(userService.getUserName(doc.getTester()))
+                            .name(userService.getName(doc.getTester()))
                             .build())
                     .rls(rlsList)
                     .primaryLang(doc.getPrimaryLang())
@@ -126,29 +126,63 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<Project> upsert(String id, ProjectDTO dto, IUser user) {
+    public Uni<ProjectDTO> upsert(String id, ProjectDTO dto, IUser user) {
         if (id == null) {
-            return repository.insert(buildEntity(dto), AnonymousUser.ID);
+            return repository.insert(buildEntity(dto), AnonymousUser.ID)
+                    .onItem().transformToUni(project -> map(project));
         } else {
             UUID uuid = UUID.fromString(id);
-            return repository.update(uuid, buildEntity(dto), user.getId());
+            return repository.update(uuid, buildEntity(dto), user.getId())
+                    .onItem().transformToUni(project -> map(project));
         }
     }
 
     @Override
-    public Uni<Project> add(ProjectDTO dto, IUser user) {
+    public Uni<ProjectDTO> add(ProjectDTO dto, IUser user) {
         Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(dto);
         if (violations.isEmpty()) {
-            return repository.insert(buildEntity(dto), AnonymousUser.ID);
+            return repository.insert(buildEntity(dto), user.getId())
+                    .onItem().transformToUni(project -> map(project));
         } else {
             return Uni.createFrom().failure(new ConstraintViolationException(violations));
         }
     }
 
     @Override
-    public Uni<Project> update(String id, ProjectDTO dto, IUser user) {
-        return repository.update(UUID.fromString(id), buildEntity(dto), user.getId());
+    public Uni<ProjectDTO> update(String id, ProjectDTO dto, IUser user) {
+        return repository.update(UUID.fromString(id), buildEntity(dto), user.getId())
+                .onItem().transformToUni(project -> map(project));
+    }
 
+    private Uni<ProjectDTO> map(Project project) {
+        Uni<String> managerNameUni = userService.getUserName(project.getManager());
+        Uni<String> coderNameUni = userService.getUserName(project.getCoder());
+        Uni<String> testerNameUni = userService.getUserName(project.getTester());
+
+        return Uni.combine().all().unis(managerNameUni, coderNameUni, testerNameUni)
+                .combinedWith((managerName, coderName, testerName) ->
+                        ProjectDTO.builder()
+                                .id(project.getId())
+                                .author(userRepository.getUserName(project.getAuthor()))
+                                .regDate(project.getRegDate())
+                                .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                                .lastModifiedDate(project.getLastModifiedDate())
+                                .name(project.getName())
+                                .description(project.getDescription())
+                                .status(project.getStatus())
+                                .finishDate(project.getFinishDate())
+                                .manager(UserDTO.builder()
+                                        .name(managerName)
+                                        .build())
+                                .coder(UserDTO.builder()
+                                        .name(coderName)
+                                        .build())
+                                .tester(UserDTO.builder()
+                                        .name(testerName)
+                                        .build())
+                                .primaryLang(project.getPrimaryLang())
+                                .build()
+                );
     }
 
     @Override
@@ -156,7 +190,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return null;
     }
 
-    private ProjectDTO map(Project project) {
+    private ProjectDTO plainMap(Project project) {
         return ProjectDTO.builder()
                 .id(project.getId())
                 .author(userRepository.getUserName(project.getAuthor()))
@@ -168,15 +202,15 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 .status(project.getStatus())
                 .manager(UserDTO.builder()
                         //.id(project.getManager())
-                        .name(userService.getUserName(project.getManager()))
+                        .name(userService.getName(project.getManager()))
                         .build())
                 .coder(UserDTO.builder()
                         // .id(project.getManager())
-                        .name(userService.getUserName(project.getCoder()))
+                        .name(userService.getName(project.getCoder()))
                         .build())
                 .tester(UserDTO.builder()
                         //.id(project.getManager())
-                        .name(userService.getUserName(project.getCoder()))
+                        .name(userService.getName(project.getCoder()))
                         .build())
                 .build();
     }

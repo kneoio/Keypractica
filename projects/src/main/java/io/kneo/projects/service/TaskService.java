@@ -2,6 +2,7 @@ package io.kneo.projects.service;
 
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
@@ -169,35 +170,43 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return assigneeDTO;
     }
 
-    public Uni<Task> add(TaskDTO dto, IUser user) {
-        Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
+    public Uni<TaskDTO> add(TaskDTO dto, IUser user) {
+        Uni<List<Label>> combinedLabelUnis = getLabelsUni(dto.getLabels());
         Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
         Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
         Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
         Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
-            Task doc = buildEntity(dto, assignee, labels,  taskType, project, taskOpt);
-            return repository.insert(doc, user.getId());
-        }).flatMap(uni -> uni);
+
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis)
+                .combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+                    Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
+                    return repository.insert(doc, user.getId());
+                })
+                .flatMap(uni -> uni)
+                .onItem().transformToUni(task -> get(task.getId().toString(), user));
     }
 
-    public Uni<Task> update(String id, TaskDTO dto, IUser user) {
-        Uni<List<Optional<Label>>> combinedLabelUnis = getLabelsUni( dto.getLabels());
+    public Uni<TaskDTO> update(String id, TaskDTO dto, IUser user) {
+        Uni<List<Label>> combinedLabelUnis = getLabelsUni(dto.getLabels());
         Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
         Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
         Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
         Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).combinedWith((assignee, taskType, project, taskOpt, labels) -> {
-            Task doc = buildEntity(dto, assignee, labels,  taskType, project, taskOpt);
-            return repository.update(UUID.fromString(id), doc, user.getId());
-        }).flatMap(uni -> uni);
+
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis)
+                .combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+                    Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
+                    return repository.update(UUID.fromString(id), doc, user.getId());
+                })
+                .flatMap(uni -> uni)
+                .onItem().transformToUni(task -> get(task.getId().toString(), user));
     }
 
     public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id), user.getId());
     }
 
-    private Task buildEntity(TaskDTO dto, Optional<IUser> assignee, List<Optional<Label>> labels, Optional<TaskType> taskType, ProjectDTO project, Optional<Task> taskOpt) {
+    private Task buildEntity(TaskDTO dto, Optional<IUser> assignee, List<Label> labels, Optional<TaskType> taskType, ProjectDTO project, Optional<Task> taskOpt) {
         Task doc = new Task.Builder()
                 .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
                 .setBody(dto.getBody())
@@ -206,8 +215,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 .setCancellationComment(dto.getCancellationComment())
                 .setTitle(dto.getTitle())
                 .setLabels(labels.stream()
-                        .filter(Optional::isPresent)
-                        .map(o -> o.get().getId())
+                        .map(DataEntity::getId)
                         .collect(Collectors.toList()))
                 .setTaskType(taskType.orElseThrow(() -> new DataValidationException("Task type is not correct")).getId())
                 .setProject(project.getId())
@@ -220,8 +228,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return doc;
     }
 
-    private Uni<List<Optional<Label>>> getLabelsUni(List<LabelDTO> labelDTOs) {
-        List<Uni<Optional<Label>>> labelUnis = labelDTOs.stream()
+    private Uni<List<Label>> getLabelsUni(List<LabelDTO> labelDTOs) {
+        List<Uni<Label>> labelUnis = labelDTOs.stream()
                 .map(v ->
                         labelService.findByIdentifier(v.getIdentifier())
                                 .onItem()
@@ -233,7 +241,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         if (labelUnis.isEmpty()) {
             return Uni.createFrom().item(Collections.emptyList());
         } else {
-            return Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Optional<Label>>) list);
+            return Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Label>) list);
         }
     }
 

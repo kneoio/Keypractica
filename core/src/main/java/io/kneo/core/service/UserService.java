@@ -68,8 +68,12 @@ public class UserService {
         return repository.findById(id);
     }
 
-    public String getUserName(long id) {
+    public String getName(long id) {
         return repository.getUserName(id);
+    }
+
+    public Uni<String> getUserName(long id) {
+        return Uni.createFrom().item(repository.getUserName(id));
     }
 
     public Uni<Long> add(UserDTO dto) {

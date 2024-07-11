@@ -74,17 +74,16 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
 
 
     public Uni<LabelDTO> getDTO(String uuid, IUser user, LanguageCode language) {
-        Uni<Optional<Label>> labelUni = repository.findById(UUID.fromString(uuid));
+        Uni<Label> labelUni = repository.findById(UUID.fromString(uuid));
         return labelUni.onItem().transform(this::map);
     }
 
     public Uni<LabelDTO> getDTOByIdentifier(String identifier, IUser user) {
-        Uni<Optional<Label>> labelUni = repository.findByIdentifier(identifier);
+        Uni<Label> labelUni = repository.findByIdentifier(identifier);
         return labelUni.onItem().transform(this::map);
     }
 
-    private LabelDTO map(Optional<Label> labelOpt) {
-        Label label = labelOpt.get();
+    private LabelDTO map(Label label) {
         return LabelDTO.builder()
                 .author(userRepository.getUserName(label.getAuthor()))
                 .regDate(label.getRegDate())
@@ -94,17 +93,17 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
                 .build();
     }
 
-    public Uni<Optional<Label>> findByIdentifier(String identifier) {
+    public Uni<Label> findByIdentifier(String identifier) {
         return repository.findByIdentifier(identifier);
     }
 
     @Override
-    public Uni<UUID> add(LabelDTO dto, IUser user) {
+    public Uni<LabelDTO> add(LabelDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, LabelDTO dto, IUser user) {
+    public Uni<LabelDTO> update(String id, LabelDTO dto, IUser user) {
         return null;
     }
 

@@ -21,7 +21,6 @@ import jakarta.inject.Inject;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.ORGANIZATION;
@@ -54,15 +53,15 @@ public class OrganizationRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<Organization>> findById(UUID uuid) {
+    public Uni<Organization> findById(UUID uuid) {
         return client.preparedQuery(String.format("SELECT * FROM %s WHERE id = $1", entityData.getTableName()))
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
-                        return Optional.of(from(iterator.next()));
+                        return from(iterator.next());
                     } else {
-                        return Optional.empty();
+                        return null;
                     }
                 });
     }
@@ -116,7 +115,8 @@ public class OrganizationRepository extends AsyncRepository {
                 .execute(params)
                 .onItem().transformToUni(result -> {
                     UUID id = result.iterator().next().getUUID("id");
-                    return findById(id).onItem().transform(optionalOrg -> optionalOrg.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted document")));
+                    return findById(id).onItem()
+                            .transform(optionalOrg -> optionalOrg);
                 });
     }
 
@@ -150,7 +150,7 @@ public class OrganizationRepository extends AsyncRepository {
                     }
                     return findById(id);
                 })
-                .onItem().transform(optionalOrg -> optionalOrg.orElseThrow(() -> new RuntimeException("Failed to retrieve updated document")));
+                .onItem().transform(optionalOrg -> optionalOrg);
     }
 
     public Uni<Integer> delete(UUID id) {

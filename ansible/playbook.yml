@@ -6,11 +6,6 @@
         name: coreutils
         state: present
 
-    - name: Ensure Java 21 is installed
-      ansible.builtin.apt:
-        name: openjdk-21-jdk
-        state: present
-
     - name: Ensure Maven is installed
       ansible.builtin.apt:
         name: maven
@@ -21,41 +16,21 @@
         name: keypractica
         state: stopped
 
-    - name: Check if Java 21 is installed
-      ansible.builtin.command: java -version
-      register: java_version
-      failed_when: "'21' not in java_version.stderr"
-      ignore_errors: yes
-
-    - name: Fail if Java 21 is not installed
-      ansible.builtin.fail:
-        msg: "Java 21 is not installed. Please install Java 21 and try again."
-      when: java_version.failed
-
     - name: Update the Keypractica project from GitHub
       ansible.builtin.git:
         repo: 'https://github.com/Semantyca/Keypractica.git'
         dest: '/home/keypractica/be_server'
         version: master
         force: yes
-      when: not java_version.failed
-
-    - name: Set JAVA_HOME environment variable
-      ansible.builtin.shell: |
-        echo 'export JAVA_HOME=/usr/lib/jvm/java-21-openjdk' >> /etc/profile
-        source /etc/profile
-      when: not java_version.failed
 
     - name: Build the project using Maven
       ansible.builtin.shell:
-        cmd: '/usr/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
+        cmd: '/opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
         chdir: '/home/keypractica/be_server'
-      environment:
-        JAVA_HOME: /usr/lib/jvm/java-21-openjdk
-      when: not java_version.failed
+        environment:
+          MAVEN_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
 
     - name: Start Keypractica service
       ansible.builtin.systemd:
         name: keypractica
         state: started
-      when: not java_version.failed

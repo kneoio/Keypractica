@@ -68,14 +68,14 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @SuppressWarnings("ConstantConditions")
-    public Uni<Optional<Organization>> get(String id) {
+    public Uni<Organization> get(String id) {
         return repository.findById(UUID.fromString(id));
     }
 
     @Override
     @SuppressWarnings("ConstantConditions")
     public Uni<OrganizationDTO> getDTO(String id, IUser user, LanguageCode language) {
-        return mapOptional(repository.findById(UUID.fromString(id)));
+        return map(repository.findById(UUID.fromString(id)));
     }
 
     @Override
@@ -126,12 +126,12 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     private Uni<OrganizationDTO> map(Uni<Organization> uniOrganization) {
-        Uni<Optional<OrgCategory>> relatedUni = uniOrganization.onItem().transformToUni(organization ->
+        Uni<OrgCategory> relatedUni = uniOrganization.onItem().transformToUni(organization ->
                 orgCategoryRepository.findById(organization.getOrgCategory())
         );
 
         return Uni.combine().all().unis(uniOrganization, relatedUni)
-                .combinedWith((organization, orgCategory) -> {
+                .combinedWith((organization, category) -> {
                     OrganizationDTO dto = OrganizationDTO.builder()
                             .id(organization.getId())
                             .author(userRepository.getUserName(organization.getAuthor()))
@@ -143,25 +143,15 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                             .bizID(organization.getBizID())
                             .build();
 
-                    if (orgCategory.isPresent()) {
-                        OrgCategory orgCat = orgCategory.get();
                         dto.setOrgCategory(OrgCategoryDTO.builder()
-                                .identifier(orgCat.getIdentifier())
-                                .localizedName(orgCat.getLocalizedName(LanguageCode.ENG))
-                                .id(orgCat.getId())
+                                .identifier(category.getIdentifier())
+                                .localizedName(category.getLocalizedName(LanguageCode.ENG))
+                                .id(category.getId())
                                 .build());
-                    }
+
 
                     return dto;
                 });
-    }
-
-   @Deprecated
-    private Uni<OrganizationDTO> mapOptional(Uni<Optional<Organization>> uniOpt) {
-        return uniOpt.onItem().transformToUni(optionalOrg -> {
-            Organization organization = optionalOrg.orElseThrow();
-            return map(Uni.createFrom().item(organization));
-        });
     }
 
 }

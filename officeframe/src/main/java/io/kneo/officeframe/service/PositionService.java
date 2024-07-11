@@ -59,12 +59,12 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
-    public Uni<UUID> add(PositionDTO dto, IUser user) {
+    public Uni<PositionDTO> add(PositionDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, PositionDTO dto, IUser user) {
+    public Uni<PositionDTO> update(String id, PositionDTO dto, IUser user) {
         return null;
     }
 
@@ -74,10 +74,8 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     public Uni<PositionDTO> getDTO(UUID uuid) {
-        Uni<Optional<Position>> uni = get(uuid);
-        return uni.onItem().transform(docOpt -> {
-            if (docOpt.isPresent()) {
-                Position doc = docOpt.get();
+        Uni<Position> uni = get(uuid);
+        return uni.onItem().transform(doc -> {
                 return PositionDTO.builder()
                         .author(userRepository.getUserName(doc.getAuthor()))
                         .regDate(doc.getRegDate())
@@ -85,12 +83,10 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
                         .lastModifiedDate(doc.getLastModifiedDate())
                         .identifier(doc.getIdentifier())
                         .build();
-            } else {
-                return null;
-            }
+
         });
     }
-    public Uni<Optional<Position>> get(UUID uuid) {
+    public Uni<Position> get(UUID uuid) {
         return repository.findById(uuid);
     }
 
