@@ -64,15 +64,15 @@ public class EmployeeRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Optional<Employee>> findById(UUID uuid) {
+    public Uni<Employee> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 
-    public Uni<Optional<Employee>> findByUserId(long id) {
+    public Uni<Employee> findByUserId(long id) {
         return client.preparedQuery(String.format("SELECT * FROM %s se WHERE se.user_id = $1", entityData.getTableName()))
                 .execute(Tuple.of(id))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
     }
 
     private Employee from(Row row) {
@@ -99,17 +99,13 @@ public class EmployeeRepository extends AsyncRepository {
             employee.setName(row.getString("name"));
             employee.setPhone(row.getString("phone"));
             employee.setStatus(1);
-            return insert(employee, SuperUser.ID)
-                    .onItem().transform(uuid -> {
-                        employee.setId(uuid);
-                        return employee;
-                    });
+            return insert(employee, SuperUser.ID);
         } else {
             return Uni.createFrom().failure(new IllegalArgumentException("Unsupported type for id: " + entityData));
         }
     }
 
-    public Uni<UUID> insert(Employee doc, long user) {
+    public Uni<Employee> insert(Employee doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s " +
                 "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, " +
@@ -130,25 +126,17 @@ public class EmployeeRepository extends AsyncRepository {
 
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(allParams)
-                .onItem().transform(result -> result.iterator().next().getUUID("id"))
+                .onItem().transformToUni(result -> {
+                    UUID id = result.iterator().next().getUUID("id");
+                    return findById(id);
+                })
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
                     return Uni.createFrom().failure(new RuntimeException(String.format("Failed to insert to %s", EMPLOYEE), throwable));
                 }));
     }
 
-    private JsonObject getLocalizedName(EnumMap<LanguageCode, String> localizedName) {
-        try {
-            return new JsonObject(mapper.writeValueAsString(localizedName));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-
-
-    public Uni<Integer> update(UUID id, Employee doc, long user) {
+    public Uni<Employee> update(UUID id, Employee doc, long user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
                 "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
@@ -168,12 +156,19 @@ public class EmployeeRepository extends AsyncRepository {
         allParams.addUUID(id);
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(allParams)
-                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
+                .onItem().transformToUni(result -> {
+                    if (result.rowCount() > 0) {
+                        return findById(id);
+                    } else {
+                        return Uni.createFrom().nullItem();
+                    }
+                })
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().item(0);
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to update %s", EMPLOYEE), throwable));
                 }));
     }
+
 
     public Uni<Integer> patch(UUID id, Map<String, Object> changes, long user) {
         if (changes.isEmpty()) {
@@ -214,6 +209,14 @@ public class EmployeeRepository extends AsyncRepository {
                     LOGGER.error(throwable.getMessage());
                     return Uni.createFrom().item(0);
                 }));
+    }
+
+    private JsonObject getLocalizedName(EnumMap<LanguageCode, String> localizedName) {
+        try {
+            return new JsonObject(mapper.writeValueAsString(localizedName));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

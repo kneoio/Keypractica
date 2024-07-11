@@ -18,7 +18,6 @@ import jakarta.inject.Inject;
 import java.time.ZoneId;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.POSITION;
@@ -47,7 +46,7 @@ public class PositionRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<Position>> findById(UUID uuid) {
+    public Uni<Position> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 

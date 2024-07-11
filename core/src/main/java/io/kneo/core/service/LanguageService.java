@@ -36,9 +36,9 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
                 .map(language ->
                         LanguageDTO.builder()
                                 .id(language.getId())
-                                .author(userService.getUserName(language.getAuthor()))
+                                .author(userService.getName(language.getAuthor()))
                                 .regDate(language.getRegDate())
-                                .lastModifier(userService.getUserName(language.getLastModifier()))
+                                .lastModifier(userService.getName(language.getLastModifier()))
                                 .lastModifiedDate(language.getLastModifiedDate())
                                 .code(language.getCode())
                                 .localizedName(language.getLocalizedName())
@@ -65,9 +65,9 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
             Language language = languageOpt.orElseThrow();
             return LanguageDTO.builder()
                     .id(language.getId())
-                    .author(userService.getUserName(language.getAuthor()))
+                    .author(userService.getName(language.getAuthor()))
                     .regDate(language.getRegDate())
-                    .lastModifier(userService.getUserName(language.getLastModifier()))
+                    .lastModifier(userService.getName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
                     .localizedName(language.getLocalizedName())
@@ -82,9 +82,9 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
             Language language = languageOpt.orElseThrow();
             return LanguageDTO.builder()
                     .id(language.getId())
-                    .author(userService.getUserName(language.getAuthor()))
+                    .author(userService.getName(language.getAuthor()))
                     .regDate(language.getRegDate())
-                    .lastModifier(userService.getUserName(language.getLastModifier()))
+                    .lastModifier(userService.getName(language.getLastModifier()))
                     .lastModifiedDate(language.getLastModifiedDate())
                     .code(language.getCode())
                     .localizedName(language.getLocalizedName())
@@ -93,12 +93,12 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> {
     }
 
     @Override
-    public Uni<UUID> add(LanguageDTO dto, IUser user) {
+    public Uni<LanguageDTO> add(LanguageDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, LanguageDTO dto, IUser user) {
+    public Uni<LanguageDTO> update(String id, LanguageDTO dto, IUser user) {
         return null;
     }
 

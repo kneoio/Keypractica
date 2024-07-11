@@ -13,7 +13,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.ORG_CATEGORY;
@@ -42,7 +41,7 @@ public class OrgCategoryRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<OrgCategory>> findById(UUID uuid) {
+    public Uni<OrgCategory> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 

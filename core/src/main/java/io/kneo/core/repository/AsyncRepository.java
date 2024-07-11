@@ -62,11 +62,11 @@ public class AsyncRepository {
                 .onItem().transform(rows -> rows.iterator().next().getInteger(0));
     }
 
-    public <R> Uni<Optional<R>> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
+    public <R> Uni<R> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
         return client.preparedQuery("SELECT * FROM " + entityData.getTableName() + " se WHERE se.id = $1")
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(fromFunc.apply(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> iterator.hasNext() ? fromFunc.apply(iterator.next()) : null);
     }
 
     public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {

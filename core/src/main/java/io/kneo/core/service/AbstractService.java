@@ -54,9 +54,9 @@ public abstract class AbstractService<T, V> {
 
     protected void setDefaultFields(AbstractDTO dto, DataEntity<UUID> doc) {
         dto.setId(doc.getId());
-        dto.setAuthor(userService.getUserName(doc.getAuthor()));
+        dto.setAuthor(userService.getName(doc.getAuthor()));
         dto.setRegDate(doc.getRegDate());
-        dto.setLastModifier(userService.getUserName(doc.getLastModifier()));
+        dto.setLastModifier(userService.getName(doc.getLastModifier()));
         dto.setLastModifiedDate(doc.getLastModifiedDate());
     }
 }

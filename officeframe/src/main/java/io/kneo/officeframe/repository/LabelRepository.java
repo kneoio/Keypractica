@@ -16,7 +16,6 @@ import jakarta.inject.Inject;
 
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.LABEL;
@@ -49,7 +48,7 @@ public class LabelRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<Label>> findById(UUID uuid) {
+    public Uni<Label> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 
@@ -63,16 +62,16 @@ public class LabelRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Optional<Label>> findByIdentifier(String identifier) {
+    public Uni<Label> findByIdentifier(String identifier) {
         return client.preparedQuery(BASE_REQUEST + " WHERE identifier = $1")
                 .execute(Tuple.of(identifier))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
-                        return Optional.of(from(iterator.next()));
+                        return from(iterator.next());
                     } else {
                         LOGGER.warn(String.format("No %s found with identifier: " + identifier, entityData.getTableName()));
-                        return Optional.empty();
+                        return null;
                     }
                 });
     }

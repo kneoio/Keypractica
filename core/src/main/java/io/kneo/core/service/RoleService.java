@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -42,9 +41,9 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
                 .onItem().transform(roleStream -> roleStream.stream()
                         .map(role ->
                                 RoleDTO.builder()
-                                        .author(userService.getUserName(role.getAuthor()))
+                                        .author(userService.getName(role.getAuthor()))
                                         .regDate(role.getRegDate())
-                                        .lastModifier(userService.getUserName(role.getLastModifier()))
+                                        .lastModifier(userService.getName(role.getLastModifier()))
                                         .lastModifiedDate(role.getLastModifiedDate())
                                         .identifier(role.getIdentifier())
                                         .build())
@@ -57,25 +56,24 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
 
     @Override
     public Uni<RoleDTO> getDTO(String id, IUser user, LanguageCode language) {
-        Uni<Optional<Role>> uni = repository.findById(UUID.fromString(id));
+        Uni<Role> uni = repository.findById(UUID.fromString(id));
         return uni.onItem().transform(optional -> {
-            Role doc = optional.orElseThrow();
             RoleDTO dto = new RoleDTO();
-            setDefaultFields(dto, doc);
-            dto.setIdentifier(doc.getIdentifier());
-            dto.setLocalizedName(doc.getLocalizedName());
-            dto.setLocalizedDescription(doc.getLocalizedDescription());
+            setDefaultFields(dto, optional);
+            dto.setIdentifier(optional.getIdentifier());
+            dto.setLocalizedName(optional.getLocalizedName());
+            dto.setLocalizedDescription(optional.getLocalizedDescription());
             return dto;
         });
     }
 
     @Override
-    public Uni<UUID> add(RoleDTO dto, IUser user) {
+    public Uni<RoleDTO> add(RoleDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, RoleDTO dto, IUser user) {
+    public Uni<RoleDTO> update(String id, RoleDTO dto, IUser user) {
         return null;
     }
 

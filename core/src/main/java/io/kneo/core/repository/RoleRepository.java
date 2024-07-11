@@ -55,7 +55,7 @@ public class RoleRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<Role>> findById(UUID uuid) {
+    public Uni<Role> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 

@@ -13,3 +13,5 @@
 
 /publickey.crt
 /publickey.der
+/ansible/inventory.ini
+/ansible/ansible_env/

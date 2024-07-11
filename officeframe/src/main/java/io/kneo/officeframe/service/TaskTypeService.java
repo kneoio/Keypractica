@@ -67,12 +67,12 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
-    public Uni<UUID> add(TaskTypeDTO dto, IUser user) {
+    public Uni<TaskTypeDTO> add(TaskTypeDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, TaskTypeDTO dto, IUser user) {
+    public Uni<TaskTypeDTO> update(String id, TaskTypeDTO dto, IUser user) {
         return null;
     }
 

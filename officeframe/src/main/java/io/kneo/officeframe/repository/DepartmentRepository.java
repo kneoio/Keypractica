@@ -43,7 +43,7 @@ public class DepartmentRepository extends AsyncRepository {
     public Uni<Integer> getAllCount() {
         return getAllCount(entityData.getTableName());
     }
-    public Uni<Optional<Department>> findById(UUID uuid) {
+    public Uni<Department> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 

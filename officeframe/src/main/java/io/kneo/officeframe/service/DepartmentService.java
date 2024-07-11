@@ -16,7 +16,6 @@ import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -59,12 +58,12 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
        return null;
     }
     @Override
-    public Uni<UUID> add(DepartmentDTO dto, IUser user) {
+    public Uni<DepartmentDTO> add(DepartmentDTO dto, IUser user) {
         return null;
     }
 
     @Override
-    public Uni<Integer> update(String id, DepartmentDTO dto, IUser user) {
+    public Uni<DepartmentDTO> update(String id, DepartmentDTO dto, IUser user) {
         return null;
     }
 
