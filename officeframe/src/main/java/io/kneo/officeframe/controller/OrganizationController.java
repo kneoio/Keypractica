@@ -75,13 +75,17 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsert(RoutingContext rc) throws UserNotFoundException {
         JsonObject jsonObject = rc.body().asJsonObject();
         OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
-        service.upsert(rc.pathParam("id"), dto, getUser(rc))
+        String id = rc.pathParam("id");
+        service.upsert(id, dto, getUser(rc))
                 .subscribe().with(
-                        organization -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(organization).encode()),
+                        organization -> {
+                            int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
+                            rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(organization).encode());
+                        },
                         rc::fail
                 );
     }
