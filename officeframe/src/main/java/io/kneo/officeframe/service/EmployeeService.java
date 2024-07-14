@@ -18,10 +18,11 @@ import io.kneo.officeframe.repository.OrganizationRepository;
 import io.kneo.officeframe.repository.PositionRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.json.JsonObject;
-import jakarta.ws.rs.NotFoundException;
+import jakarta.inject.Inject;
 
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -41,6 +42,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         this.positionService = null;
     }
 
+    @Inject
     public EmployeeService(UserRepository userRepository,
                            UserService userService,
                            EmployeeRepository repository,
@@ -61,31 +63,12 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return listUni
                 .onItem().transformToUni(employees ->
                         Uni.combine().all().unis(
-                                employees.stream().map(emp ->
-                                        positionService.getDTO(emp.getPosition())
-                                                .onFailure(NotFoundException.class).recoverWithItem(PositionDTO.builder()
-                                                        .identifier("undefined")
-                                                        .build())
-                                                .onItem().transformToUni(position ->
-                                                        Uni.createFrom().item(
-                                                                EmployeeDTO.builder()
-                                                                        .id(emp.getId())
-                                                                        .userId(emp.getUser())
-                                                                        .author(userRepository.getUserName(emp.getAuthor()))
-                                                                        .regDate(emp.getRegDate())
-                                                                        .lastModifier(userRepository.getUserName(emp.getLastModifier()))
-                                                                        .lastModifiedDate(emp.getLastModifiedDate())
-                                                                        .name(emp.getName())
-                                                                        .phone(emp.getPhone())
-                                                                        .rank(emp.getRank())
-                                                                        .position(position)
-                                                                        //TODO temporary
-                                                                        .identifier(getIdentifier(emp))
-                                                                        .build()
-                                                        )
-                                                )
-                                ).collect(Collectors.toList())
-                        ).combinedWith(results -> results.stream().map(result -> (EmployeeDTO) result).collect(Collectors.toList()))
+                                employees.stream()
+                                        .map(this::createEmployeeDTOUni)
+                                        .collect(Collectors.toList())
+                        ).combinedWith(results -> results.stream()
+                                .map(result -> (EmployeeDTO) result)
+                                .collect(Collectors.toList()))
                 );
     }
 
@@ -128,10 +111,10 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                     .rank(doc.getRank())
                     .identifier(doc.getIdentifier())
                     .build();
-                dto.setPosition(PositionDTO.builder()
-                        .identifier(position.getIdentifier())
-                        .id(position.getId())
-                        .build());
+            dto.setPosition(PositionDTO.builder()
+                    .identifier(position.getIdentifier())
+                    .id(position.getId())
+                    .build());
             return dto;
         });
     }
@@ -198,39 +181,14 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                             .rank(emp.getRank())
                             .identifier(emp.getIdentifier())
                             .build();
-                        dto.setPosition(PositionDTO.builder()
-                                .identifier(position.getIdentifier())
-                                .id(position.getId())
-                                .build());
+                    dto.setPosition(PositionDTO.builder()
+                            .identifier(position.getIdentifier())
+                            .id(position.getId())
+                            .build());
 
                     return dto;
                 });
     }
-
-
-    public Uni<Integer> patch(String id, JsonObject updates, IUser user) {
-        Map<String, Object> changes = new HashMap<>();
-
-        if (updates.containsKey("name")) {
-            changes.put("name", updates.getString("name"));
-            changes.put("identifier", constructIdentifier(updates.getString("name")));
-        }
-        if (updates.containsKey("birthDate")) {
-            changes.put("birthDate", updates.getString("birthDate"));
-        }
-        if (updates.containsKey("phone")) {
-            changes.put("phone", updates.getString("phone"));
-        }
-        if (updates.containsKey("localizedName")) {
-            changes.put("localizedName", updates.getString("localizedName"));
-        }
-        if (updates.containsKey("rank")) {
-            changes.put("rank", updates.getString("rank"));
-        }
-
-        return repository.patch(UUID.fromString(id), changes, user.getId());
-    }
-
 
     public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id));
@@ -247,5 +205,34 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
 
     protected static String constructIdentifier(String name) {
         return name.toLowerCase().replace(" ", "_");
+    }
+
+    private Uni<EmployeeDTO> createEmployeeDTOUni(Employee emp) {
+        Uni<PositionDTO> positionDTOUni;
+
+        if (emp.getPosition() == null) {
+            positionDTOUni = Uni.createFrom().nullItem();
+        } else {
+            positionDTOUni = positionService.getDTO(emp.getPosition())
+                    .onFailure().recoverWithNull();
+        }
+
+        return positionDTOUni.onItem().transform(position -> createEmployeeDTO(emp, position));
+    }
+
+    private EmployeeDTO createEmployeeDTO(Employee emp, PositionDTO position) {
+        return EmployeeDTO.builder()
+                .id(emp.getId())
+                .userId(emp.getUser())
+                .author(userRepository.getUserName(emp.getAuthor()))
+                .regDate(emp.getRegDate())
+                .lastModifier(userRepository.getUserName(emp.getLastModifier()))
+                .lastModifiedDate(emp.getLastModifiedDate())
+                .name(emp.getName())
+                .phone(emp.getPhone())
+                .rank(emp.getRank())
+                .position(position)
+                .identifier(getIdentifier(emp))
+                .build();
     }
 }
