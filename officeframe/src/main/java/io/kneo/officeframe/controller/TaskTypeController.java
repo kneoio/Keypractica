@@ -1,92 +1,100 @@
 package io.kneo.officeframe.controller;
 
-import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.controller.AbstractSecuredController;
-import io.kneo.core.dto.Views;
 import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
-import io.kneo.core.repository.exception.UserNotFoundException;
+import io.kneo.core.dto.view.View;
+import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.service.UserService;
+import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.TaskTypeService;
-import io.smallrye.mutiny.Uni;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
-import java.net.URI;
+import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@Path("/tasktypes")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
+@RouteBase(path = "/api/:org/tasktypes")
 public class TaskTypeController extends AbstractSecuredController<TaskType, TaskTypeDTO> {
-    @Inject
+
     TaskTypeService service;
 
-    public TaskTypeController(UserService userService) {
+    @Inject
+    public TaskTypeController(UserService userService, TaskTypeService service) {
         super(userService);
+        this.service = service;
     }
 
-    @GET
-    @Path("/")
-    @JsonView(Views.ListView.class)
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Valid @Min(0) @QueryParam("size") int size, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        return getAll(service, requestContext, page, size);
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getAll(RoutingContext rc) {
+        int page = Integer.parseInt(rc.request().getParam("page", "0"));
+        int size = Integer.parseInt(rc.request().getParam("size", "10"));
+        service.getAllCount()
+                .onItem().transformToUni(count -> {
+                    int maxPage = countMaxPage(count, size);
+                    int pageNum = (page == 0) ? 1 : page;
+                    int offset = RuntimeUtil.calcStartEntry(pageNum, size);
+                    LanguageCode languageCode = resolveLanguage(rc);
+                    return service.getAll(size, offset, languageCode)
+                            .onItem().transform(dtoList -> {
+                                ViewPage viewPage = new ViewPage();
+                                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+                                View<TaskTypeDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
+                                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                                return viewPage;
+                            });
+                })
+                .subscribe().with(
+                        viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                        rc::fail
+                );
     }
 
-    @GET
-    @Path("/{identifier}")
-    public Uni<Response> get(String identifier) {
+    @Route(path = "/:identifier", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void get(RoutingContext rc) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.findByIdentifier(identifier)
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.DOC_DATA, p);
-                    return Response.ok(page).build();
+        service.findByIdentifier(rc.pathParam("identifier"))
+                .onItem().transform(dto -> {
+                    page.addPayload(PayloadType.DOC_DATA, dto);
+                    return page;
                 })
-                .onFailure().recoverWithItem(this::postError);
+                .subscribe().with(
+                        formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                        rc::fail
+                );
     }
 
-    @POST
-    @Path("/")
-    public Uni<Response> create(@Valid LabelDTO dto) {
-        return service.add(dto)
-                .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
+    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void create(RoutingContext rc) {
+        JsonObject jsonObject = rc.body().asJsonObject();
+        LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
+        service.add(dto)
+                .subscribe().with(
+                        id -> rc.response().setStatusCode(201).end(),
+                        error -> {
+                            LOGGER.error(error.getMessage());
+                            rc.response().setStatusCode(500).end();
+                        }
+                );
     }
 
-    @PUT
-    @Path("/")
-    public Response update(@Valid LabelDTO dto) {
-        return Response.ok(URI.create("/" + service.update(dto).getId())).build();
+    @Route(path = "", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
+    public void update(RoutingContext rc) {
+
     }
 
-    @DELETE
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") String id) {
-        return Response.ok().build();
+    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
+    public void delete(RoutingContext rc) {
+        rc.response().setStatusCode(200).end();
     }
-
 }

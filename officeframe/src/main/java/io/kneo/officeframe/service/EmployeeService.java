@@ -51,6 +51,11 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                            PositionRepository positionRepository,
                            PositionService positionService) {
         super(userRepository, userService);
+        assert repository != null : "EmployeeRepository is null";
+        assert orgRepository != null : "OrganizationRepository is null";
+        assert depRepository != null : "DepartmentRepository is null";
+        assert positionRepository != null : "PositionRepository is null";
+        assert positionService != null : "PositionService is null";
         this.repository = repository;
         this.orgRepository = orgRepository;
         this.depRepository = depRepository;
@@ -66,7 +71,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                                 employees.stream()
                                         .map(this::createEmployeeDTOUni)
                                         .collect(Collectors.toList())
-                        ).combinedWith(results -> results.stream()
+                        ).with(results -> results.stream()
                                 .map(result -> (EmployeeDTO) result)
                                 .collect(Collectors.toList()))
                 );
@@ -97,7 +102,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         Uni<Position> positionUni = uni.onItem().transformToUni(item ->
                 positionService.get(item.getPosition())
         );
-        return Uni.combine().all().unis(uni, positionUni).combinedWith((doc, position) -> {
+        return Uni.combine().all().unis(uni, positionUni).with((doc, position) -> {
             EmployeeDTO dto = EmployeeDTO.builder()
                     .id(doc.getId())
                     .userId(doc.getUser())
@@ -125,7 +130,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         Uni<Department> depUni = depRepository.findById(dto.getDep().getId());
         Uni<Position> positionUni = positionRepository.findById(dto.getPosition().getId());
 
-        return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((org, dep, pos) -> {
+        return Uni.combine().all().unis(orgUni, depUni, positionUni).with((org, dep, pos) -> {
             Employee doc = new Employee();
             doc.setName(dto.getName());
             doc.setIdentifier(constructIdentifier(dto.getName()));
@@ -147,7 +152,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         Uni<Department> depUni = depRepository.findById(dto.getDep().getId());
         Uni<Position> positionUni = positionRepository.findById(dto.getPosition().getId());
 
-        return Uni.combine().all().unis(orgUni, depUni, positionUni).combinedWith((org, dep, pos) -> {
+        return Uni.combine().all().unis(orgUni, depUni, positionUni).with((org, dep, pos) -> {
             Employee doc = new Employee();
             doc.setName(dto.getName());
             doc.setIdentifier(constructIdentifier(dto.getName()));
@@ -166,28 +171,27 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     private Uni<EmployeeDTO> map(Employee employee) {
         Uni<Position> positionUni = positionService.get(employee.getPosition());
 
-        return Uni.combine().all().unis(Uni.createFrom().item(employee), positionUni)
-                .combinedWith((emp, position) -> {
-                    EmployeeDTO dto = EmployeeDTO.builder()
-                            .id(emp.getId())
-                            .userId(emp.getUser())
-                            .author(userRepository.getUserName(emp.getAuthor()))
-                            .regDate(emp.getRegDate())
-                            .lastModifier(userRepository.getUserName(emp.getLastModifier()))
-                            .lastModifiedDate(emp.getLastModifiedDate())
-                            .name(emp.getName())
-                            .localizedName(emp.getLocalizedName())
-                            .phone(emp.getPhone())
-                            .rank(emp.getRank())
-                            .identifier(emp.getIdentifier())
-                            .build();
-                    dto.setPosition(PositionDTO.builder()
-                            .identifier(position.getIdentifier())
-                            .id(position.getId())
-                            .build());
+        return Uni.combine().all().unis(Uni.createFrom().item(employee), positionUni).with((emp, position) -> {
+            EmployeeDTO dto = EmployeeDTO.builder()
+                    .id(emp.getId())
+                    .userId(emp.getUser())
+                    .author(userRepository.getUserName(emp.getAuthor()))
+                    .regDate(emp.getRegDate())
+                    .lastModifier(userRepository.getUserName(emp.getLastModifier()))
+                    .lastModifiedDate(emp.getLastModifiedDate())
+                    .name(emp.getName())
+                    .localizedName(emp.getLocalizedName())
+                    .phone(emp.getPhone())
+                    .rank(emp.getRank())
+                    .identifier(emp.getIdentifier())
+                    .build();
+            dto.setPosition(PositionDTO.builder()
+                    .identifier(position.getIdentifier())
+                    .id(position.getId())
+                    .build());
 
-                    return dto;
-                });
+            return dto;
+        });
     }
 
     public Uni<Integer> delete(String id, IUser user) {

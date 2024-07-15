@@ -130,28 +130,27 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                 orgCategoryRepository.findById(organization.getOrgCategory())
         );
 
-        return Uni.combine().all().unis(uniOrganization, relatedUni)
-                .combinedWith((organization, category) -> {
-                    OrganizationDTO dto = OrganizationDTO.builder()
-                            .id(organization.getId())
-                            .author(userRepository.getUserName(organization.getAuthor()))
-                            .regDate(organization.getRegDate())
-                            .lastModifier(userRepository.getUserName(organization.getLastModifier()))
-                            .lastModifiedDate(organization.getLastModifiedDate())
-                            .identifier(organization.getIdentifier())
-                            .localizedName(organization.getLocalizedName())
-                            .bizID(organization.getBizID())
-                            .build();
+        return Uni.combine().all().unis(uniOrganization, relatedUni).with((organization, category) -> {
+            OrganizationDTO dto = OrganizationDTO.builder()
+                    .id(organization.getId())
+                    .author(userRepository.getUserName(organization.getAuthor()))
+                    .regDate(organization.getRegDate())
+                    .lastModifier(userRepository.getUserName(organization.getLastModifier()))
+                    .lastModifiedDate(organization.getLastModifiedDate())
+                    .identifier(organization.getIdentifier())
+                    .localizedName(organization.getLocalizedName())
+                    .bizID(organization.getBizID())
+                    .build();
 
-                        dto.setOrgCategory(OrgCategoryDTO.builder()
-                                .identifier(category.getIdentifier())
-                                .localizedName(category.getLocalizedName(LanguageCode.ENG))
-                                .id(category.getId())
-                                .build());
+            dto.setOrgCategory(OrgCategoryDTO.builder()
+                    .identifier(category.getIdentifier())
+                    .localizedName(category.getLocalizedName(LanguageCode.ENG))
+                    .id(category.getId())
+                    .build());
 
 
-                    return dto;
-                });
+            return dto;
+        });
     }
 
 }
