@@ -10,7 +10,6 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.AbstractService;
@@ -52,30 +51,43 @@ public abstract class AbstractController<T, V> {
         this.userService = userService;
     }
 
-    protected Uni<Response> getAll(IRESTService<V> service, RoutingContext rc, int page, int size) {
-        Optional<IUser> userOptional = getUserId(rc);
-
-        IUser user = userOptional.get();
-        String languageHeader = rc.request().getHeader("Accept-Language");
-        return service.getAllCount()
+    protected void getAll(IRESTService<V> service, RoutingContext rc) {
+        int page = Integer.parseInt(rc.request().getParam("page", "0"));
+        int size = Integer.parseInt(rc.request().getParam("size", "10"));
+        service.getAllCount()
                 .onItem().transformToUni(count -> {
                     int maxPage = countMaxPage(count, size);
                     int pageNum = (page == 0) ? 1 : page;
                     int offset = RuntimeUtil.calcStartEntry(pageNum, size);
-                    return service.getAll(size, offset, LanguageCode.ENG)
+                    LanguageCode languageCode = resolveLanguage(rc);
+                    return service.getAll(size, offset, languageCode)
                             .onItem().transform(dtoList -> {
                                 ViewPage viewPage = new ViewPage();
-                                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
+                                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(languageCode));
                                 View<V> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
                                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                                return Response.ok(viewPage).build();
+                                return viewPage;
                             });
                 })
-                .onFailure().recoverWithItem(t -> {
-                    LOGGER.error("Error retrieving data: ", t);
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
+                .subscribe().with(
+                        viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                        rc::fail
+                );
 
+    }
+
+    protected void getById(IRESTService<V> service, RoutingContext rc) throws UserNotFoundException {
+        FormPage page = new FormPage();
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+        service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+                .onItem().transform(dto -> {
+                    page.addPayload(PayloadType.DOC_DATA, dto);
+                    return page;
+                })
+                .subscribe().with(
+                        formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                        rc::fail
+                );
     }
 
     @Deprecated
@@ -130,37 +142,6 @@ public abstract class AbstractController<T, V> {
                     });
         } else {
             throw new UnauthorizedException("User not authorized");
-        }
-    }
-
-    protected void getById(IRESTService<V> service, String id, RoutingContext rc) {
-        try {
-            IUser user = getUser(rc);
-            FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
-            service.getDTO(id, user, LanguageCode.ENG)
-                    .subscribe().with(
-                            p -> {
-                                if (p == null) {
-                                    throw new DocumentHasNotFoundException(id);
-                                } else {
-                                    page.addPayload(PayloadType.DOC_DATA, p);
-                                    sendJsonResponse(rc, 200, JsonObject.mapFrom(page));
-                                }
-                            },
-                            t -> {
-                                LOGGER.error("Error retrieving DTO: ", t);
-                                sendErrorResponse(rc, 500, "Internal Server Error");
-                            }
-                    );
-        } catch (UserNotFoundException e) {
-            LOGGER.warn("Authentication failed: ", e);
-            sendErrorResponse(rc, 401, "Authentication failed: " + e.getMessage());
-        } catch (DocumentHasNotFoundException e) {
-            sendErrorResponse(rc, 404, "Not found: " + e.getMessage());
-        } catch (Exception e) {
-            LOGGER.error("Unexpected error: ", e);
-            sendErrorResponse(rc, 500, "An unexpected error occurred");
         }
     }
 

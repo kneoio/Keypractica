@@ -62,13 +62,8 @@ public class OrgCategoryController extends AbstractSecuredController<OrgCategory
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) {
-        try {
-            getById(service, rc.pathParam("id"), rc);
-        } catch (Exception e) {
-            LOGGER.error("Error fetching by ID: ", e);
-            rc.fail(500, e);
-        }
+    public void getById(RoutingContext rc) throws UserNotFoundException {
+        getById(service, rc);
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")

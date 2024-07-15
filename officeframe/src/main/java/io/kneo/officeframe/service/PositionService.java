@@ -40,6 +40,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
                                         .lastModifier(userRepository.getUserName(doc.getLastModifier()))
                                         .lastModifiedDate(doc.getLastModifiedDate())
                                         .identifier(doc.getIdentifier())
+                                        .localizedName(doc.getLocalizedName())
                                         .build())
                         .collect(Collectors.toList()));
     }
@@ -75,7 +76,6 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
 
     public Uni<PositionDTO> getDTO(UUID uuid) {
         Uni<Position> uni = get(uuid);
-        System.out.println(uuid);
         return uni.onItem().transform(doc -> {
                 return PositionDTO.builder()
                         .author(userRepository.getUserName(doc.getAuthor()))
@@ -83,6 +83,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
                         .lastModifier(userRepository.getUserName(doc.getLastModifier()))
                         .lastModifiedDate(doc.getLastModifiedDate())
                         .identifier(doc.getIdentifier())
+                        .localizedName(doc.getLocalizedName())
                         .build();
 
         });
