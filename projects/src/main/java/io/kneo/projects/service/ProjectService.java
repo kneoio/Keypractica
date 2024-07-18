@@ -160,7 +160,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         Uni<String> testerNameUni = userService.getUserName(project.getTester());
 
         return Uni.combine().all().unis(managerNameUni, coderNameUni, testerNameUni)
-                .combinedWith((managerName, coderName, testerName) ->
+                .with((managerName, coderName, testerName) ->
                         ProjectDTO.builder()
                                 .id(project.getId())
                                 .author(userRepository.getUserName(project.getAuthor()))

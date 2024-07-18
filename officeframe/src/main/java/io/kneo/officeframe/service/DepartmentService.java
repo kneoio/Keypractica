@@ -57,6 +57,11 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     public Uni<DepartmentDTO> getDTO(String id, IUser user, LanguageCode language) {
        return null;
     }
+
+    public Uni<DepartmentDTO> upsert(String id, DepartmentDTO dto, IUser user) {
+        return null;
+    }
+
     @Override
     public Uni<DepartmentDTO> add(DepartmentDTO dto, IUser user) {
         return null;
