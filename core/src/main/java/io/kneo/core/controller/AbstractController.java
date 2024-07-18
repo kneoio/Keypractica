@@ -1,6 +1,8 @@
 
 package io.kneo.core.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.dto.actions.ActionBox;
 import io.kneo.core.dto.actions.ActionsFactory;
 import io.kneo.core.dto.cnst.PayloadType;
@@ -86,6 +88,24 @@ public abstract class AbstractController<T, V> {
                 })
                 .subscribe().with(
                         formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                        rc::fail
+                );
+    }
+
+    protected void upsert(IRESTService<V> service, String id, RoutingContext rc) throws UserNotFoundException {
+        JsonObject jsonObject = rc.body().asJsonObject();
+
+        ObjectMapper mapper = new ObjectMapper();
+        V dto = mapper.convertValue(jsonObject, new TypeReference<V>() {});
+
+        service.upsert(id, dto, getUser(rc))
+                .subscribe().with(
+                        doc -> {
+                            int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
+                            rc.response()
+                                    .setStatusCode(statusCode)
+                                    .end(JsonObject.mapFrom(doc).encode());
+                        },
                         rc::fail
                 );
     }

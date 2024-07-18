@@ -7,11 +7,11 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.DepartmentDTO;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.service.DepartmentService;
 import io.quarkus.vertx.web.Route;
@@ -76,21 +76,10 @@ public class DepartmentController extends AbstractSecuredController<Department, 
     }
 
     @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) throws UserNotFoundException {
-
+    public void upsert(RoutingContext rc) throws UserNotFoundException {
+        upsert(service, rc.pathParam("id"), rc);
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
-        JsonObject jsonObject = rc.body().asJsonObject();
-        DepartmentDTO dto = jsonObject.mapTo(DepartmentDTO.class);
-        String id = rc.pathParam("id");
-        service.update(id, dto, getUser(rc))
-                .subscribe().with(
-                        department -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(department).encode()),
-                        rc::fail
-                );
-    }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
     public void delete(RoutingContext rc) {

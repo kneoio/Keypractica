@@ -162,7 +162,7 @@ public class TaskRepository extends AsyncRepository {
                                     .onItem().transform(unused -> label);
                             unis.add(uni);
                         }
-                        return Uni.combine().all().unis(unis).combinedWith(l -> id);
+                        return Uni.combine().all().unis(unis).with(l -> id);
                     });
         }).onItem().transformToUni(id -> findById(id, user)
                 .onItem().transform(optionalTask -> optionalTask.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted task"))));

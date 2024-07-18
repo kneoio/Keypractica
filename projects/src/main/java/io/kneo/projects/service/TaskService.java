@@ -121,7 +121,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository,ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
 
-        return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, labelsUni, rlsDtoListUni).combinedWith((taskOpt, project, taskType, labels, rls) -> {
+        return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, labelsUni, rlsDtoListUni).with((taskOpt, project, taskType, labels, rls) -> {
                     Task task = taskOpt.orElseThrow();
                     return TaskDTO.builder()
                             .id(task.getId())
@@ -177,8 +177,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
         Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
 
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis)
-                .combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).with((assignee, taskType, project, taskOpt, labels) -> {
                     Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
                     return repository.insert(doc, user.getId());
                 })
@@ -193,8 +192,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
         Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
 
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis)
-                .combinedWith((assignee, taskType, project, taskOpt, labels) -> {
+        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).with((assignee, taskType, project, taskOpt, labels) -> {
                     Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
                     return repository.update(UUID.fromString(id), doc, user.getId());
                 })
@@ -241,7 +239,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         if (labelUnis.isEmpty()) {
             return Uni.createFrom().item(Collections.emptyList());
         } else {
-            return Uni.combine().all().unis(labelUnis).combinedWith(list -> (List<Label>) list);
+            return Uni.combine().all().unis(labelUnis).with(list -> (List<Label>) list);
         }
     }
 
