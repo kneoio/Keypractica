@@ -31,10 +31,13 @@ public abstract class AbstractService<T, V> {
     }
 
     public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
+
     public abstract Uni<V> add(V dto, IUser user);
+
     public abstract Uni<V> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
+
     public Uni<V> upsert(String id, V dto, IUser user) {
-         return Uni.createFrom().nullItem();
+         return Uni.createFrom().failure(new RuntimeException("The upsert is not implemented"));
     };
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;
 

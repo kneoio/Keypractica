@@ -97,11 +97,11 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
         String id = rc.pathParam("id");
         service.upsert(id, dto, getUser(rc))
                 .subscribe().with(
-                        employee -> {
+                        doc -> {
                             int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
                             rc.response()
                                     .setStatusCode(statusCode)
-                                    .end(JsonObject.mapFrom(employee).encode());
+                                    .end(JsonObject.mapFrom(doc).encode());
                         },
                         rc::fail
                 );

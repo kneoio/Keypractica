@@ -8,9 +8,7 @@ import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.PositionDTO;
-import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.model.Employee;
-import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.repository.DepartmentRepository;
 import io.kneo.officeframe.repository.EmployeeRepository;
@@ -124,54 +122,64 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         });
     }
 
+    public Uni<EmployeeDTO> upsert(String id, EmployeeDTO dto, IUser user) {
+        Employee doc = new Employee();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setPhone(dto.getPhone());
+        doc.setDepartment(dto.getDep().getId());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setOrganization(dto.getOrg().getId());
+        doc.setBirthDate(dto.getBirthDate());
+        doc.setPosition(dto.getPosition().getId());
+        doc.setRoles(null);
+        doc.setRank(dto.getRank());
+        doc.setBirthDate(dto.getBirthDate());
+        if (id == null) {
+            return map(repository.insert(doc, user));
+        } else {
+            UUID uuid = UUID.fromString(id);
+            return map(repository.update(uuid, doc, user));
+        }
+    }
+
     @Override
     public Uni<EmployeeDTO> add(EmployeeDTO dto, IUser user) {
-        Uni<Organization> orgUni = orgRepository.findById(dto.getOrg().getId());
-        Uni<Department> depUni = depRepository.findById(dto.getDep().getId());
-        Uni<Position> positionUni = positionRepository.findById(dto.getPosition().getId());
-
-        return Uni.combine().all().unis(orgUni, depUni, positionUni).with((org, dep, pos) -> {
-            Employee doc = new Employee();
-            doc.setName(dto.getName());
-            doc.setIdentifier(constructIdentifier(dto.getName()));
-            doc.setUser(dto.getUserId());
-            doc.setBirthDate(dto.getBirthDate());
-            doc.setPhone(dto.getPhone());
-            doc.setRank(dto.getRank());
-            doc.setLocalizedName(dto.getLocalizedName());
-            doc.setOrganization(org.getId());
-            doc.setDepartment(dep.getId());
-            doc.setPosition(pos.getId());
-            return repository.insert(doc, user.getId());
-        }).flatMap(uni -> uni).onItem().transformToUni(this::map);
+        Employee doc = new Employee();
+        doc.setName(dto.getName());
+        doc.setIdentifier(constructIdentifier(dto.getName()));
+        doc.setUser(dto.getUserId());
+        doc.setBirthDate(dto.getBirthDate());
+        doc.setPhone(dto.getPhone());
+        doc.setRank(dto.getRank());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setOrganization(dto.getOrg().getId());
+        doc.setDepartment(dto.getDep().getId());
+        doc.setPosition(dto.getPosition().getId());
+        return map(repository.insert(doc, user));
     }
 
     @Override
     public Uni<EmployeeDTO> update(String id, EmployeeDTO dto, IUser user) {
-        Uni<Organization> orgUni = orgRepository.findById(dto.getOrg().getId());
-        Uni<Department> depUni = depRepository.findById(dto.getDep().getId());
-        Uni<Position> positionUni = positionRepository.findById(dto.getPosition().getId());
-
-        return Uni.combine().all().unis(orgUni, depUni, positionUni).with((org, dep, pos) -> {
-            Employee doc = new Employee();
-            doc.setName(dto.getName());
-            doc.setIdentifier(constructIdentifier(dto.getName()));
-            doc.setUser(dto.getUserId());
-            doc.setBirthDate(dto.getBirthDate());
-            doc.setPhone(dto.getPhone());
-            doc.setRank(dto.getRank());
-            doc.setLocalizedName(dto.getLocalizedName());
-            doc.setOrganization(org.getId());
-            doc.setDepartment(dep.getId());
-            doc.setPosition(pos.getId());
-            return repository.update(UUID.fromString(id), doc, user.getId());
-        }).flatMap(uni -> uni).onItem().transformToUni(this::map);
+        Employee doc = new Employee();
+        doc.setName(dto.getName());
+        doc.setIdentifier(constructIdentifier(dto.getName()));
+        doc.setUser(dto.getUserId());
+        doc.setBirthDate(dto.getBirthDate());
+        doc.setPhone(dto.getPhone());
+        doc.setRank(dto.getRank());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setOrganization(dto.getOrg().getId());
+        doc.setDepartment(dto.getDep().getId());
+        doc.setPosition(dto.getPosition().getId());
+        return map(repository.update(UUID.fromString(id), doc, user));
     }
 
-    private Uni<EmployeeDTO> map(Employee employee) {
-        Uni<Position> positionUni = positionService.get(employee.getPosition());
+    private Uni<EmployeeDTO> map(Uni<Employee> employeeUni) {
+        Uni<Position> positionUni = employeeUni.onItem().transformToUni(employee ->
+                positionService.get(employee.getPosition())
+        );
 
-        return Uni.combine().all().unis(Uni.createFrom().item(employee), positionUni).with((emp, position) -> {
+        return Uni.combine().all().unis(employeeUni, positionUni).with((emp, position) -> {
             EmployeeDTO dto = EmployeeDTO.builder()
                     .id(emp.getId())
                     .userId(emp.getUser())

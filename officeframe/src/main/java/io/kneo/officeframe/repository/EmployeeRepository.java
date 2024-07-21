@@ -3,6 +3,7 @@ package io.kneo.officeframe.repository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
@@ -99,19 +100,19 @@ public class EmployeeRepository extends AsyncRepository {
             employee.setName(row.getString("name"));
             employee.setPhone(row.getString("phone"));
             employee.setStatus(1);
-            return insert(employee, SuperUser.ID);
+            return insert(employee, SuperUser.build());
         } else {
             return Uni.createFrom().failure(new IllegalArgumentException("Unsupported type for id: " + entityData));
         }
     }
 
-    public Uni<Employee> insert(Employee doc, long user) {
+    public Uni<Employee> insert(Employee doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s " +
                 "(reg_date, author, last_mod_date, last_mod_user, status, birth_date, name, " +
                 "department_id, organization_id, position_id, user_id, rank, loc_name, phone) " +
                 "VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id", entityData.getTableName());
-        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple params = Tuple.of(nowTime, user.getId(), nowTime, user.getId());
         Tuple allParams = params
                 .addInteger(doc.getStatus())
                 .addLocalDate(doc.getBirthDate())
@@ -136,12 +137,12 @@ public class EmployeeRepository extends AsyncRepository {
                 }));
     }
 
-    public Uni<Employee> update(UUID id, Employee doc, long user) {
+    public Uni<Employee> update(UUID id, Employee doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
                 "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
                 "user_id=$11, rank=$12, loc_name=$13, phone=$14 WHERE id=$15", entityData.getTableName());
-        Tuple params = Tuple.of(nowTime, user, nowTime, user);
+        Tuple params = Tuple.of(nowTime, user.getId(), nowTime, user.getId());
         Tuple allParams = params
                 .addInteger(doc.getStatus())
                 .addLocalDate(doc.getBirthDate())
