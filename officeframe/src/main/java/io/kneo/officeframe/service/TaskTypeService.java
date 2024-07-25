@@ -41,6 +41,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
                                         .lastModifier(userRepository.getUserName(e.getLastModifier()))
                                         .lastModifiedDate(e.getLastModifiedDate())
                                         .identifier(e.getIdentifier())
+                                        .localizedName(e.getLocalizedName())
                                         .build())
                         .collect(Collectors.toList()));
     }

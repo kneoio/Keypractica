@@ -1,103 +1,45 @@
-
 package io.kneo.core.controller;
 
-import io.kneo.core.dto.actions.ActionBox;
-import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.document.LanguageDTO;
-import io.kneo.core.dto.form.FormPage;
-import io.kneo.core.dto.view.View;
-import io.kneo.core.dto.view.ViewPage;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
-import io.kneo.core.model.user.AnonymousUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.LanguageService;
 import io.kneo.core.service.UserService;
-import io.smallrye.mutiny.Uni;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
-@Path("/languages")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
+@RouteBase(path = "/api/:org/languages")
 public class LanguageController extends AbstractSecuredController<Language, LanguageDTO> {
-    @Inject
+
     LanguageService service;
 
-    public LanguageController(UserService userService) {
+    @Inject
+    public LanguageController(UserService userService, LanguageService service) {
         super(userService);
+        this.service = service;
     }
 
-    @GET
-    @Path("/")
-    public Response get()  {
-        ViewPage viewPage = new ViewPage();
-        viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        View<LanguageDTO> view = new View<>(service.getAll(100, 0).await().indefinitely());
-        viewPage.addPayload(PayloadType.VIEW_DATA, view);
-        return Response.ok(viewPage).build();
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void get(RoutingContext rc) {
+        getAll(service, rc);
     }
 
-    @GET
-    @Path("/code/{code}")
-    public Response getByCode(@PathParam("code") String code)  {
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        page.addPayload(PayloadType.DOC_DATA, service.findByCode(code.toUpperCase()).await().indefinitely());
-        return Response.ok(page).build();
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getOne(RoutingContext rc) throws UserNotFoundException {
+        getById(service, rc);
     }
 
-    @GET
-    @Path("/{id}")
-    public Uni<Response> getById(@PathParam("id") String id)  {
-        FormPage page = new FormPage();
-        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, AnonymousUser.build(), LanguageCode.ENG)
-                .onItem().transform(p -> {
-                    page.addPayload(PayloadType.DOC_DATA, p);
-                    return Response.ok(page).build();
-                })
-                .onFailure().invoke(failure -> LOGGER.error(failure.getMessage()))
-                .onFailure().recoverWithItem(Response.status(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode()).build());
+    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void upsert(RoutingContext rc) throws UserNotFoundException {
+        // Implementation for upsert operation
     }
 
-    @POST
-    public Uni<Response> create(LanguageDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        return create(service, dto, requestContext);
+    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
+    public void delete(RoutingContext rc) throws UserNotFoundException {
+        // Implementation for delete operation
     }
-
-    @PUT
-    @Path("/{id}")
-    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, LanguageDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
-        return update(id, service, dto, requestContext);
-    }
-
-    @DELETE
-    @Path("/{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> delete(@PathParam("id") String id) {
-        return service.delete(id)
-                .onItem().transformToUni(result -> Uni.createFrom().voidItem())
-                .onItem().transform(ignore -> Response.status(Response.Status.OK).build())
-                .onFailure().recoverWithItem(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                });
-    }
-
 }

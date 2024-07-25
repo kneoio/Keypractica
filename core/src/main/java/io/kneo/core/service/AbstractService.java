@@ -32,8 +32,10 @@ public abstract class AbstractService<T, V> {
 
     public abstract Uni<V> getDTO(String id, IUser user, LanguageCode language);
 
+    @Deprecated(since = "1.0", forRemoval = true)
     public abstract Uni<V> add(V dto, IUser user);
 
+    @Deprecated(since = "1.0", forRemoval = true)
     public abstract Uni<V> update(String id, V dto, IUser user) throws DocumentModificationAccessException;
 
     public Uni<V> upsert(String id, V dto, IUser user) {

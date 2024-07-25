@@ -18,7 +18,7 @@ public class LabelDTO extends AbstractReferenceDTO {
     @JsonView(Views.DetailView.class)
     private String color;
     @JsonView(Views.DetailView.class)
-    private LabelDTO parent;
+    private String parent;
     @JsonView(Views.DetailView.class)
     private boolean hidden;
     private String identifier;

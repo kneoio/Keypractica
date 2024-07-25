@@ -1,9 +1,6 @@
 package io.kneo.officeframe.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Position;
@@ -16,7 +13,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.ZoneId;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -51,13 +47,6 @@ public class PositionRepository extends AsyncRepository {
     }
 
     private Position from(Row row) {
-        EnumMap<LanguageCode, String> map;
-        try {
-            map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
         Position doc = new Position();
         doc.setId(row.getUUID("id"));
         doc.setAuthor(row.getLong("author"));
@@ -65,7 +54,9 @@ public class PositionRepository extends AsyncRepository {
         doc.setLastModifier(row.getLong("last_mod_user"));
         doc.setRegDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
         doc.setIdentifier(row.getString("identifier"));
-        doc.setLocalizedName(map);
+        doc.setHidden(row.getBoolean("hidden"));
+        doc.setParent(row.getUUID("parent"));
+        setLocalizedNames(doc, row);
         return doc;
     }
 
