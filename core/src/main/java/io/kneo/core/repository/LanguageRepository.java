@@ -3,6 +3,8 @@ package io.kneo.core.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
+import io.kneo.core.repository.table.EntityData;
+import io.kneo.core.repository.table.TableNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -22,10 +24,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.core.repository.cnst.Tables.LANGUAGES_TABLE_NAME;
+import static io.kneo.core.repository.table.TableNameResolver.LANGUAGE_ENTITY_NAME;
 
 @ApplicationScoped
 public class LanguageRepository extends AsyncRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
+    private static final EntityData entityData = TableNameResolver.create().getEntityNames(LANGUAGE_ENTITY_NAME);
 
     @Inject
     public LanguageRepository(PgPool client, ObjectMapper mapper) {
@@ -44,6 +48,10 @@ public class LanguageRepository extends AsyncRepository {
                 .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
                 .onItem().transform(this::from)
                 .collect().asList();
+    }
+
+    public Uni<Integer> getAllCount() {
+        return getAllCount(entityData.getTableName());
     }
 
     public Uni<List<Language>> getAvailable() {
@@ -73,9 +81,9 @@ public class LanguageRepository extends AsyncRepository {
         Language doc = new Language();
         setDefaultFields(doc, row);
         doc.setCode(LanguageCode.valueOf(row.getString("code")));
-        doc.setLocalizedName(extractLanguageMap(row));
         doc.setOn(row.getBoolean("is_on"));
         doc.setPosition(row.getInteger("position"));
+        setLocalizedNames(doc, row);
         return doc;
     }
 

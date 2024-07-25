@@ -14,7 +14,6 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
@@ -78,16 +77,13 @@ public class LabelRepository extends AsyncRepository {
 
     private Label from(Row row) {
         Label label = new Label();
-        label.setId(row.getUUID("id"));
-        label.setAuthor(row.getLong("author"));
-        label.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
-        label.setLastModifier(row.getLong("last_mod_user"));
-        label.setRegDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
+        setDefaultFields(label, row);
         label.setIdentifier(row.getString("identifier"));
         label.setColor(row.getString("color"));
         label.setCategory(row.getString("category"));
         label.setHidden(row.getBoolean("hidden"));
         label.setParent(row.getUUID("parent"));
+        setLocalizedNames(label, row);
         return label;
     }
 

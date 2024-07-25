@@ -83,11 +83,11 @@ public class EmployeeRepository extends AsyncRepository {
         doc.setOrganization(row.getUUID("organization_id"));
         doc.setDepartment(row.getUUID("department_id"));
         doc.setPosition(row.getUUID("position_id"));
-        doc.setName(row.getString("name"));
-        doc.setLocalizedName(getLocalizedNameFromDb(row));
+        doc.setIdentifier(row.getString("identifier"));
         doc.setPhone(row.getString("phone"));
         doc.setBirthDate(row.getLocalDate("birth_date"));
         doc.setStatus(row.getInteger("status"));
+        setLocalizedNames(doc, row);
         return doc;
     }
 
@@ -97,7 +97,6 @@ public class EmployeeRepository extends AsyncRepository {
             return Uni.createFrom().item(from(row));
         } else if (value instanceof Integer || value instanceof Long) {
             Employee employee = new Employee();
-            employee.setName(row.getString("name"));
             employee.setPhone(row.getString("phone"));
             employee.setStatus(1);
             return insert(employee, SuperUser.build());
@@ -116,7 +115,6 @@ public class EmployeeRepository extends AsyncRepository {
         Tuple allParams = params
                 .addInteger(doc.getStatus())
                 .addLocalDate(doc.getBirthDate())
-                .addString(doc.getName())
                 .addUUID(doc.getDepartment())
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())
@@ -146,7 +144,6 @@ public class EmployeeRepository extends AsyncRepository {
         Tuple allParams = params
                 .addInteger(doc.getStatus())
                 .addLocalDate(doc.getBirthDate())
-                .addString(doc.getName())
                 .addUUID(doc.getDepartment())
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())

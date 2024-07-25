@@ -36,11 +36,9 @@ public class PositionController extends AbstractSecuredController<Position, Posi
 
     @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsert(RoutingContext rc) throws UserNotFoundException {
-        // Implement the upsert method similar to OrganizationController
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
     public void delete(RoutingContext rc) throws UserNotFoundException {
-        // Implement the delete method similar to OrganizationController
     }
 }

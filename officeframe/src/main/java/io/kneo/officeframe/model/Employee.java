@@ -1,14 +1,12 @@
 package io.kneo.officeframe.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.SimpleReferenceEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,8 +15,6 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class Employee extends SimpleReferenceEntity {
-    private String name;
-    private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
     private long user;
     private LocalDate birthDate;
     private String phone;

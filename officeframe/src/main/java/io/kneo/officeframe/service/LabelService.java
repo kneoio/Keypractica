@@ -7,6 +7,7 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
+import io.kneo.core.service.cnst.Cnst;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
@@ -15,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -43,8 +45,9 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
                                         .identifier(e.getIdentifier())
                                         .color(e.getColor())
                                         .category(e.getCategory())
-                                        //.parent(e.getParent())
+                                        .parent(Objects.toString(e.getParent(), Cnst.UNDEFINED))
                                         .hidden(e.isHidden())
+                                        .localizedName(e.getLocalizedName())
                                         .build())
                         .collect(Collectors.toList()));
     }

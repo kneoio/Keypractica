@@ -29,7 +29,7 @@ public class SimpleReferenceEntity extends DataEntity<UUID> {
     public String getLocalizedName(LanguageCode lang) {
         try {
             String val = localizedName.get(lang);
-            if (val!= null &&!val.isEmpty()) {
+            if (val != null && !val.isEmpty()) {
                 return val;
             } else {
                 return identifier;

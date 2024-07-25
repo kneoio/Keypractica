@@ -1,9 +1,6 @@
 package io.kneo.officeframe.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.model.TaskType;
@@ -18,8 +15,6 @@ import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.ZoneId;
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,7 +50,7 @@ public class TaskTypeRepository extends AsyncRepository {
                 .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
     }
 
-    public Uni<Optional<TaskType>> findByIdentifier(String  identifier) {
+    public Uni<Optional<TaskType>> findByIdentifier(String identifier) {
         return client.preparedQuery(BASE_REQUEST + " WHERE t.identifier = $1")
                 .execute(Tuple.of(identifier))
                 .onItem().transform(RowSet::iterator)
@@ -70,22 +65,11 @@ public class TaskTypeRepository extends AsyncRepository {
     }
 
     private TaskType from(Row row) {
-        EnumMap<LanguageCode, String> map;
-        try {
-            map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {});
-        } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
-        TaskType taskType = new TaskType();
-        taskType.setId(row.getUUID("id"));
-        taskType.setAuthor(row.getLong("author"));
-        taskType.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
-        taskType.setLastModifier(row.getLong("last_mod_user"));
-        taskType.setRegDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
-        taskType.setIdentifier(row.getString("identifier"));
-        taskType.setLocalizedName(map);
-        return taskType;
+        TaskType doc = new TaskType();
+        setDefaultFields(doc, row);
+        doc.setIdentifier(row.getString("identifier"));
+        setLocalizedNames(doc, row);
+        return doc;
     }
 
     public UUID insert(Organization node, Long user) {
