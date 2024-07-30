@@ -54,8 +54,6 @@ public class PositionRepository extends AsyncRepository {
         doc.setLastModifier(row.getLong("last_mod_user"));
         doc.setRegDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
         doc.setIdentifier(row.getString("identifier"));
-        doc.setHidden(row.getBoolean("hidden"));
-        doc.setParent(row.getUUID("parent"));
         setLocalizedNames(doc, row);
         return doc;
     }

@@ -47,6 +47,15 @@ public class LabelRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
+    public Uni<List<Label>> getOfCategory(String categoryName) {
+        String sql = String.format("SELECT * FROM %s WHERE category=$1", entityData.getTableName());
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(categoryName))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
     public Uni<Label> findById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
@@ -76,15 +85,15 @@ public class LabelRepository extends AsyncRepository {
     }
 
     private Label from(Row row) {
-        Label label = new Label();
-        setDefaultFields(label, row);
-        label.setIdentifier(row.getString("identifier"));
-        label.setColor(row.getString("color"));
-        label.setCategory(row.getString("category"));
-        label.setHidden(row.getBoolean("hidden"));
-        label.setParent(row.getUUID("parent"));
-        setLocalizedNames(label, row);
-        return label;
+        Label doc = new Label();
+        setDefaultFields(doc, row);
+        doc.setIdentifier(row.getString("identifier"));
+        doc.setColor(row.getString("color"));
+        doc.setCategory(row.getString("category"));
+        doc.setHidden(row.getBoolean("hidden"));
+        doc.setParent(row.getUUID("parent"));
+        setLocalizedNames(doc, row);
+        return doc;
     }
 
     public Label update(Label node) {
@@ -94,4 +103,6 @@ public class LabelRepository extends AsyncRepository {
     public int delete(Long id) {
         return 1;
     }
+
+
 }

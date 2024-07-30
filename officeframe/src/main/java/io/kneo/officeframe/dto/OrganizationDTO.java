@@ -17,6 +17,7 @@ import java.util.EnumMap;
 @NoArgsConstructor
 public class OrganizationDTO extends AbstractReferenceDTO {
     private OrgCategoryDTO orgCategory;
+    private boolean isPrimary;
     private String bizID;
     private int rank;
     EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
