@@ -53,6 +53,14 @@ public class OrganizationRepository extends AsyncRepository {
         return getAllCount(entityData.getTableName());
     }
 
+    public Uni<List<Organization>> getAllPrimary() {
+        String sql = String.format("SELECT * FROM %s t WHERE t.is_primary = true ORDER BY rank", entityData.getTableName());
+        return client.query(sql)
+                .execute()
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from).collect().asList();
+    }
+
     public Uni<Organization> findById(UUID uuid) {
         return client.preparedQuery(String.format("SELECT * FROM %s WHERE id = $1", entityData.getTableName()))
                 .execute(Tuple.of(uuid))

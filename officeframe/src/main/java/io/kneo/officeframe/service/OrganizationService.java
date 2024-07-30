@@ -38,7 +38,6 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         this.orgCategoryRepository = orgCategoryRepository;
     }
 
-    @SuppressWarnings("ConstantConditions")
     public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         Uni<List<Organization>> listUni = repository.getAll(limit, offset);
         return listUni
@@ -50,6 +49,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                                         .regDate(e.getRegDate())
                                         .lastModifier(userRepository.getUserName(e.getLastModifier()))
                                         .lastModifiedDate(e.getLastModifiedDate())
+                                        .isPrimary(e.isPrimary())
                                         .localizedName(e.getLocalizedName())
                                         .identifier(e.getIdentifier())
                                         .build())
@@ -57,9 +57,26 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
+    }
+
+    public Uni<List<OrganizationDTO>> getPrimary(LanguageCode languageCode) {
+        Uni<List<Organization>> listUni = repository.getAllPrimary();
+        return listUni
+                .onItem().transform(taskList -> taskList.stream()
+                        .map(e ->
+                                OrganizationDTO.builder()
+                                        .id(e.getId())
+                                        .author(userRepository.getUserName(e.getAuthor()))
+                                        .regDate(e.getRegDate())
+                                        .lastModifier(userRepository.getUserName(e.getLastModifier()))
+                                        .lastModifiedDate(e.getLastModifiedDate())
+                                        .isPrimary(e.isPrimary())
+                                        .localizedName(e.getLocalizedName())
+                                        .identifier(e.getIdentifier())
+                                        .build())
+                        .collect(Collectors.toList()));
     }
 
     @Override
@@ -70,6 +87,10 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     @SuppressWarnings("ConstantConditions")
     public Uni<Organization> get(String id) {
         return repository.findById(UUID.fromString(id));
+    }
+
+    public Uni<Organization> get(UUID uuid) {
+        return repository.findById(uuid);
     }
 
     @Override
@@ -85,6 +106,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         doc.setOrgCategory(dto.getOrgCategory().getId());
         doc.setBizID(dto.getBizID());
         doc.setRank(dto.getRank());
+        doc.setPrimary(dto.isPrimary());
         doc.setLocalizedName(dto.getLocalizedName());
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
@@ -97,25 +119,13 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     @Override
     @SuppressWarnings("ConstantConditions")
     public Uni<OrganizationDTO> add(OrganizationDTO dto, IUser user) {
-        Organization doc = new Organization();
-        doc.setIdentifier(dto.getIdentifier());
-        doc.setOrgCategory(dto.getOrgCategory().getId());
-        doc.setBizID(dto.getBizID());
-        doc.setRank(dto.getRank());
-        doc.setLocalizedName(dto.getLocalizedName());
-        return map(repository.insert(doc, user));
+       return null;
     }
 
     @Override
     @SuppressWarnings("ConstantConditions")
     public Uni<OrganizationDTO> update(String id, OrganizationDTO dto, IUser user) {
-        Organization doc = new Organization();
-        doc.setIdentifier(dto.getIdentifier());
-        doc.setOrgCategory(dto.getOrgCategory().getId());
-        doc.setBizID(dto.getBizID());
-        doc.setRank(dto.getRank());
-        doc.setLocalizedName(dto.getLocalizedName());
-        return map(repository.update(UUID.fromString(id), doc, user));
+        return null;
     }
 
     @Override
@@ -130,16 +140,17 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                 orgCategoryRepository.findById(organization.getOrgCategory())
         );
 
-        return Uni.combine().all().unis(uniOrganization, relatedUni).with((organization, category) -> {
+        return Uni.combine().all().unis(uniOrganization, relatedUni).with((org, category) -> {
             OrganizationDTO dto = OrganizationDTO.builder()
-                    .id(organization.getId())
-                    .author(userRepository.getUserName(organization.getAuthor()))
-                    .regDate(organization.getRegDate())
-                    .lastModifier(userRepository.getUserName(organization.getLastModifier()))
-                    .lastModifiedDate(organization.getLastModifiedDate())
-                    .identifier(organization.getIdentifier())
-                    .localizedName(organization.getLocalizedName())
-                    .bizID(organization.getBizID())
+                    .id(org.getId())
+                    .author(userRepository.getUserName(org.getAuthor()))
+                    .regDate(org.getRegDate())
+                    .lastModifier(userRepository.getUserName(org.getLastModifier()))
+                    .lastModifiedDate(org.getLastModifiedDate())
+                    .isPrimary(org.isPrimary())
+                    .identifier(org.getIdentifier())
+                    .localizedName(org.getLocalizedName())
+                    .bizID(org.getBizID())
                     .build();
 
             dto.setOrgCategory(OrgCategoryDTO.builder()

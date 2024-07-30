@@ -11,7 +11,6 @@ import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.DepartmentDTO;
-import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.model.Department;
 import io.kneo.officeframe.service.DepartmentService;
 import io.quarkus.vertx.web.Route;
@@ -53,6 +52,21 @@ public class DepartmentController extends AbstractSecuredController<Department, 
                                 viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                                 return viewPage;
                             });
+                })
+                .subscribe().with(
+                        viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                        rc::fail
+                );
+    }
+
+    @Route(path = "/only/member_of/:primary_org", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getDepartmentsOfOrg(RoutingContext rc) {
+        LanguageCode languageCode = resolveLanguage(rc);
+        service.getOfOrg(rc.pathParam("primary_org"), languageCode)
+                .onItem().transform(dtoList -> {
+                    ViewPage viewPage = new ViewPage();
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoList);
+                    return viewPage;
                 })
                 .subscribe().with(
                         viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),

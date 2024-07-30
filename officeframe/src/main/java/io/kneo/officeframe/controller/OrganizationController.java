@@ -60,6 +60,22 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
+    @Route(path = "/only/primary", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getPrimary(RoutingContext rc) {
+        LanguageCode languageCode = resolveLanguage(rc);
+
+        service.getPrimary(languageCode)
+                .onItem().transform(dtoList -> {
+                    ViewPage viewPage = new ViewPage();
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoList);
+                    return viewPage;
+                })
+                .subscribe().with(
+                        viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                        rc::fail
+                );
+    }
+
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();

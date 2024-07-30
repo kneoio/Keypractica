@@ -6,10 +6,11 @@ import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
+import io.kneo.officeframe.dto.DepartmentDTO;
 import io.kneo.officeframe.dto.EmployeeDTO;
+import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.dto.PositionDTO;
 import io.kneo.officeframe.model.Employee;
-import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.repository.DepartmentRepository;
 import io.kneo.officeframe.repository.EmployeeRepository;
 import io.kneo.officeframe.repository.OrganizationRepository;
@@ -18,6 +19,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +31,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     private final OrganizationRepository orgRepository;
     private final DepartmentRepository depRepository;
     private final PositionRepository positionRepository;
+    private final OrganizationService organizationService;
+    private final DepartmentService departmentService;
     private final PositionService positionService;
 
     protected EmployeeService() {
@@ -38,6 +42,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         this.depRepository = null;
         this.positionRepository = null;
         this.positionService = null;
+        this.organizationService = null;
+        this.departmentService = null;
     }
 
     @Inject
@@ -47,18 +53,24 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                            OrganizationRepository orgRepository,
                            DepartmentRepository depRepository,
                            PositionRepository positionRepository,
-                           PositionService positionService) {
+                           PositionService positionService,
+                           OrganizationService organizationService,
+                           DepartmentService departmentService) {
         super(userRepository, userService);
         assert repository != null : "EmployeeRepository is null";
         assert orgRepository != null : "OrganizationRepository is null";
         assert depRepository != null : "DepartmentRepository is null";
         assert positionRepository != null : "PositionRepository is null";
         assert positionService != null : "PositionService is null";
+        assert organizationService != null : "OrganizationService is null";
+        assert departmentService != null : "DepartmentService is null";
         this.repository = repository;
         this.orgRepository = orgRepository;
         this.depRepository = depRepository;
         this.positionRepository = positionRepository;
         this.positionService = positionService;
+        this.organizationService = organizationService;
+        this.departmentService = departmentService;
     }
 
     public Uni<List<EmployeeDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
@@ -68,29 +80,29 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                 .onItem().transformToUni(employees ->
                         Uni.combine().all().unis(
                                 employees.stream()
-                                        .map(emp -> {
+                                        .map(doc -> {
                                             Uni<PositionDTO> positionDTOUni;
-                                            if (emp.getPosition() == null) {
+                                            if (doc.getPosition() == null) {
                                                 positionDTOUni = Uni.createFrom().nullItem();
                                             } else {
                                                 assert positionService != null;
-                                                positionDTOUni = positionService.getDTO(emp.getPosition())
+                                                positionDTOUni = positionService.getDTO(doc.getPosition())
                                                         .onFailure().recoverWithNull();
                                             }
 
                                             return positionDTOUni.onItem().transform(position ->
                                                     EmployeeDTO.builder()
-                                                            .id(emp.getId())
-                                                            .userId(emp.getUser())
-                                                            .author(userRepository.getUserName(emp.getAuthor()))
-                                                            .regDate(emp.getRegDate())
-                                                            .lastModifier(userRepository.getUserName(emp.getLastModifier()))
-                                                            .lastModifiedDate(emp.getLastModifiedDate())
-                                                            .phone(emp.getPhone())
-                                                            .rank(emp.getRank())
+                                                            .id(doc.getId())
+                                                            .userId(doc.getUser())
+                                                            .author(userRepository.getUserName(doc.getAuthor()))
+                                                            .regDate(doc.getRegDate())
+                                                            .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                                                            .lastModifiedDate(doc.getLastModifiedDate())
+                                                            .phone(doc.getPhone())
+                                                            .rank(doc.getRank())
                                                             .position(position)
-                                                            .localizedName(emp.getLocalizedName())
-                                                            .identifier(emp.getIdentifier())
+                                                            .localizedName(doc.getLocalizedName())
+                                                            .identifier(doc.getIdentifier())
                                                             .build()
                                             );
                                         })
@@ -127,34 +139,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             assert repository != null;
             uni = repository.findById(UUID.fromString(id));
         }
-        return uni.onItem().transformToUni(doc -> {
-            EmployeeDTO dto = EmployeeDTO.builder()
-                    .id(doc.getId())
-                    .userId(doc.getUser())
-                    .author(userRepository.getUserName(doc.getAuthor()))
-                    .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                    .lastModifiedDate(doc.getLastModifiedDate())
-                    .localizedName(doc.getLocalizedName())
-                    .phone(doc.getPhone())
-                    .rank(doc.getRank())
-                    .identifier(doc.getIdentifier())
-                    .build();
-
-            if (doc.getPosition() != null) {
-                assert positionService != null;
-                return positionService.get(doc.getPosition())
-                        .onItem().transform(position -> {
-                            dto.setPosition(PositionDTO.builder()
-                                    .identifier(position.getIdentifier())
-                                    .id(position.getId())
-                                    .build());
-                            return dto;
-                        });
-            } else {
-                return Uni.createFrom().item(dto);
-            }
-        });
+        return map(uni);
     }
 
     public Uni<EmployeeDTO> upsert(String id, EmployeeDTO dto, IUser user) {
@@ -190,32 +175,64 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     private Uni<EmployeeDTO> map(Uni<Employee> employeeUni) {
-        Uni<Position> positionUni = employeeUni.onItem().transformToUni(employee ->
-                {
-                    assert positionService != null;
-                    return positionService.get(employee.getPosition());
-                }
-        );
-
-        return Uni.combine().all().unis(employeeUni, positionUni).with((emp, position) -> {
+        return employeeUni.onItem().transformToUni(employee -> {
             EmployeeDTO dto = EmployeeDTO.builder()
-                    .id(emp.getId())
-                    .userId(emp.getUser())
-                    .author(userRepository.getUserName(emp.getAuthor()))
-                    .regDate(emp.getRegDate())
-                    .lastModifier(userRepository.getUserName(emp.getLastModifier()))
-                    .lastModifiedDate(emp.getLastModifiedDate())
-                    .localizedName(emp.getLocalizedName())
-                    .phone(emp.getPhone())
-                    .rank(emp.getRank())
-                    .identifier(emp.getIdentifier())
+                    .id(employee.getId())
+                    .userId(employee.getUser())
+                    .author(userRepository.getUserName(employee.getAuthor()))
+                    .regDate(employee.getRegDate())
+                    .lastModifier(userRepository.getUserName(employee.getLastModifier()))
+                    .lastModifiedDate(employee.getLastModifiedDate())
+                    .localizedName(employee.getLocalizedName())
+                    .phone(employee.getPhone())
+                    .rank(employee.getRank())
+                    .identifier(employee.getIdentifier())
+                    .birthDate(employee.getBirthDate())
                     .build();
-            dto.setPosition(PositionDTO.builder()
-                    .identifier(position.getIdentifier())
-                    .id(position.getId())
-                    .build());
 
-            return dto;
+            List<Uni<?>> unis = new ArrayList<>();
+
+            if (employee.getDepartment() != null) {
+                unis.add(departmentService.get(employee.getDepartment())
+                        .onItem().transform(department -> {
+                            dto.setDep(DepartmentDTO.builder()
+                                    .id(department.getId())
+                                    .identifier(department.getIdentifier())
+                                    .localizedName(department.getLocalizedName())
+                                    .build());
+                            return dto;
+                        }));
+            }
+
+            if (employee.getOrganization() != null) {
+                unis.add(organizationService.get(employee.getOrganization().toString())
+                        .onItem().transform(organization -> {
+                            dto.setOrg(OrganizationDTO.builder()
+                                    .id(organization.getId())
+                                    .identifier(organization.getIdentifier())
+                                    .localizedName(organization.getLocalizedName())
+                                    .build());
+                            return dto;
+                        }));
+            }
+
+            if (employee.getPosition() != null) {
+                unis.add(positionService.get(employee.getPosition())
+                        .onItem().transform(position -> {
+                            dto.setPosition(PositionDTO.builder()
+                                    .id(position.getId())
+                                    .identifier(position.getIdentifier())
+                                    .localizedName(position.getLocalizedName())
+                                    .build());
+                            return dto;
+                        }));
+            }
+
+            if (unis.isEmpty()) {
+                return Uni.createFrom().item(dto);
+            } else {
+                return Uni.combine().all().unis(unis).with(ignored -> dto);
+            }
         });
     }
 
