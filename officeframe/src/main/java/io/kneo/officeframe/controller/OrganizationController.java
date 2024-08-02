@@ -67,7 +67,12 @@ public class OrganizationController extends AbstractSecuredController<Organizati
         service.getPrimary(languageCode)
                 .onItem().transform(dtoList -> {
                     ViewPage viewPage = new ViewPage();
-                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoList);
+                    viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(languageCode));
+                    int pageNum = 1;
+                    int pageSize = dtoList.size();
+                    int count = dtoList.size();
+                    View<OrganizationDTO> dtoEntries = new View<>(dtoList, count, pageNum, 1, pageSize);
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                     return viewPage;
                 })
                 .subscribe().with(
@@ -75,6 +80,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                         rc::fail
                 );
     }
+
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) throws UserNotFoundException {
