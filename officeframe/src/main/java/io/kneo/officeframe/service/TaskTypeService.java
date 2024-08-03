@@ -36,6 +36,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
                 .onItem().transform(taskList -> taskList.stream()
                         .map(e ->
                                 TaskTypeDTO.builder()
+                                        .id(e.getId())
                                         .author(userRepository.getUserName(e.getAuthor()))
                                         .regDate(e.getRegDate())
                                         .lastModifier(userRepository.getUserName(e.getLastModifier()))

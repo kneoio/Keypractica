@@ -7,6 +7,7 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.LabelDTO;
@@ -59,11 +60,12 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
                 );
     }
 
-    @Route(path = "/:identifier", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) {
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void get(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
+        LanguageCode languageCode = resolveLanguage(rc);
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.findByIdentifier(rc.pathParam("identifier"))
+        service.getDTO(rc.pathParam("id"), getUser(rc), languageCode)
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;

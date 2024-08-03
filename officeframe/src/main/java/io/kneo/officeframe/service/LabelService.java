@@ -7,7 +7,6 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
-import io.kneo.core.service.cnst.Cnst;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.repository.LabelRepository;
@@ -16,7 +15,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -89,6 +87,11 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
                 .lastModifier(userRepository.getUserName(label.getLastModifier()))
                 .lastModifiedDate(label.getLastModifiedDate())
                 .identifier(label.getIdentifier())
+                .localizedName(label.getLocalizedName())
+                .category(label.getCategory())
+                .parent(label.getParent())
+                .color(label.getColor())
+                .hidden(label.isHidden())
                 .build();
     }
 
@@ -102,7 +105,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
                 .identifier(doc.getIdentifier())
                 .color(doc.getColor())
                 .category(doc.getCategory())
-                .parent(Objects.toString(doc.getParent(), Cnst.UNDEFINED))
+                .parent(doc.getParent())
                 .hidden(doc.isHidden())
                 .localizedName(doc.getLocalizedName())
                 .build();
