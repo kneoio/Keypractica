@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.UUID;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @Setter
 @Getter
@@ -18,7 +20,7 @@ public class LabelDTO extends AbstractReferenceDTO {
     @JsonView(Views.DetailView.class)
     private String color;
     @JsonView(Views.DetailView.class)
-    private String parent;
+    private UUID parent;
     @JsonView(Views.DetailView.class)
     private boolean hidden;
     private String identifier;

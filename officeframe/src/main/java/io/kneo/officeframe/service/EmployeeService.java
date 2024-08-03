@@ -175,25 +175,26 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     private Uni<EmployeeDTO> map(Uni<Employee> employeeUni) {
-        return employeeUni.onItem().transformToUni(employee -> {
+        return employeeUni.onItem().transformToUni(empl -> {
             EmployeeDTO dto = EmployeeDTO.builder()
-                    .id(employee.getId())
-                    .userId(employee.getUser())
-                    .author(userRepository.getUserName(employee.getAuthor()))
-                    .regDate(employee.getRegDate())
-                    .lastModifier(userRepository.getUserName(employee.getLastModifier()))
-                    .lastModifiedDate(employee.getLastModifiedDate())
-                    .localizedName(employee.getLocalizedName())
-                    .phone(employee.getPhone())
-                    .rank(employee.getRank())
-                    .identifier(employee.getIdentifier())
-                    .birthDate(employee.getBirthDate())
+                    .id(empl.getId())
+                    .userId(empl.getUser())
+                    .author(userRepository.getUserName(empl.getAuthor()))
+                    .regDate(empl.getRegDate())
+                    .lastModifier(userRepository.getUserName(empl.getLastModifier()))
+                    .lastModifiedDate(empl.getLastModifiedDate())
+                    .localizedName(empl.getLocalizedName())
+                    .phone(empl.getPhone())
+                    .rank(empl.getRank())
+                    .identifier(empl.getIdentifier())
+                    .birthDate(empl.getBirthDate())
                     .build();
 
             List<Uni<?>> unis = new ArrayList<>();
 
-            if (employee.getDepartment() != null) {
-                unis.add(departmentService.get(employee.getDepartment())
+            if (empl.getDepartment() != null) {
+                assert departmentService != null;
+                unis.add(departmentService.get(empl.getDepartment())
                         .onItem().transform(department -> {
                             dto.setDep(DepartmentDTO.builder()
                                     .id(department.getId())
@@ -204,8 +205,9 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                         }));
             }
 
-            if (employee.getOrganization() != null) {
-                unis.add(organizationService.get(employee.getOrganization().toString())
+            if (empl.getOrganization() != null) {
+                assert organizationService != null;
+                unis.add(organizationService.get(empl.getOrganization())
                         .onItem().transform(organization -> {
                             dto.setOrg(OrganizationDTO.builder()
                                     .id(organization.getId())
@@ -216,8 +218,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                         }));
             }
 
-            if (employee.getPosition() != null) {
-                unis.add(positionService.get(employee.getPosition())
+            if (empl.getPosition() != null) {
+                unis.add(positionService.get(empl.getPosition())
                         .onItem().transform(position -> {
                             dto.setPosition(PositionDTO.builder()
                                     .id(position.getId())

@@ -138,10 +138,9 @@ public class EmployeeRepository extends AsyncRepository {
     public Uni<Employee> update(UUID id, Employee doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("UPDATE %s SET reg_date=$1, author=$2, last_mod_date=$3, last_mod_user=$4, " +
-                "status=$5, birth_date=$6, name=$7, department_id=$8, organization_id=$9, position_id=$10, " +
-                "user_id=$11, rank=$12, loc_name=$13, phone=$14 WHERE id=$15", entityData.getTableName());
-        Tuple params = Tuple.of(nowTime, user.getId(), nowTime, user.getId());
-        Tuple allParams = params
+                "status=$5, birth_date=$6, department_id=$7, organization_id=$8, position_id=$9, " +
+                "user_id=$10, rank=$11, loc_name=$12, phone=$13 WHERE id=$14", entityData.getTableName());
+        Tuple params = Tuple.of(nowTime, user.getId(), nowTime, user.getId())
                 .addInteger(doc.getStatus())
                 .addLocalDate(doc.getBirthDate())
                 .addUUID(doc.getDepartment())
@@ -151,9 +150,9 @@ public class EmployeeRepository extends AsyncRepository {
                 .addInteger(doc.getRank())
                 .addJsonObject(getLocalizedName(doc.getLocalizedName()))
                 .addString(doc.getPhone());
-        allParams.addUUID(id);
+        params.addUUID(id);
         return client.withTransaction(tx -> tx.preparedQuery(sql)
-                .execute(allParams)
+                .execute(params)
                 .onItem().transformToUni(result -> {
                     if (result.rowCount() > 0) {
                         return findById(id);
@@ -166,6 +165,7 @@ public class EmployeeRepository extends AsyncRepository {
                     return Uni.createFrom().failure(new RuntimeException(String.format("Failed to update %s", EMPLOYEE), throwable));
                 }));
     }
+
 
 
     public Uni<Integer> patch(UUID id, Map<String, Object> changes, long user) {
