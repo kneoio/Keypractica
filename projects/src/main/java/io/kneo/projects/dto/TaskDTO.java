@@ -10,7 +10,6 @@ import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.projects.model.Task;
-import io.kneo.projects.model.cnst.TaskStatus;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -19,6 +18,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,9 +52,9 @@ public class TaskDTO extends AbstractDTO {
     LocalDate startDate;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonView(Views.DetailView.class)
-    LocalDate targetDate;
+    ZonedDateTime targetDate;
     @JsonView(Views.DetailView.class)
-    TaskStatus status;
+    int status;
     @JsonView(Views.DetailView.class)
     int priority;
     @JsonView(Views.DetailView.class)

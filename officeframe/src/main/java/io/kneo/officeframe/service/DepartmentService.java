@@ -16,7 +16,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,7 +59,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<Optional<DepartmentDTO>> getByIdentifier(String identifier) {
+    public Uni<DepartmentDTO> getByIdentifier(String identifier) {
         return null;
     }
 

@@ -18,11 +18,12 @@ import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static io.kneo.projects.repository.table.ProjectNameResolver.PROJECT;
@@ -137,22 +138,6 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         }
     }
 
-    @Override
-    public Uni<ProjectDTO> add(ProjectDTO dto, IUser user) {
-        Set<ConstraintViolation<ProjectDTO>> violations = validator.validate(dto);
-        if (violations.isEmpty()) {
-            return repository.insert(buildEntity(dto), user.getId())
-                    .onItem().transformToUni(project -> map(project));
-        } else {
-            return Uni.createFrom().failure(new ConstraintViolationException(violations));
-        }
-    }
-
-    @Override
-    public Uni<ProjectDTO> update(String id, ProjectDTO dto, IUser user) {
-        return repository.update(UUID.fromString(id), buildEntity(dto), user.getId())
-                .onItem().transformToUni(project -> map(project));
-    }
 
     private Uni<ProjectDTO> map(Project project) {
         Uni<String> managerNameUni = userService.getUserName(project.getManager());

@@ -48,7 +48,7 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
-    public Uni<Optional<TaskTypeDTO>> getByIdentifier(String identifier) {
+    public Uni<TaskTypeDTO> getByIdentifier(String identifier) {
         return null;
         //TODO shall be used in controller
     }

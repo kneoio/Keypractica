@@ -14,7 +14,6 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -51,7 +50,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
-    public Uni<Optional<PositionDTO>> getByIdentifier(String identifier) {
+    public Uni<PositionDTO> getByIdentifier(String identifier) {
         return null;
     }
 

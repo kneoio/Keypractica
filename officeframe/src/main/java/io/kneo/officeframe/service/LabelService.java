@@ -15,7 +15,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -71,7 +70,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     @Override
-    public Uni<Optional<LabelDTO>> getByIdentifier(String identifier) {
+    public Uni<LabelDTO> getByIdentifier(String identifier) {
         return null;
     }
 

@@ -21,12 +21,12 @@ import jakarta.inject.Inject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class EmployeeService extends AbstractService<Employee, EmployeeDTO> implements IRESTService<EmployeeDTO> {
+    private static final String CURRENT_KEYWORD = "current";
     private final EmployeeRepository repository;
     private final OrganizationRepository orgRepository;
     private final DepartmentRepository depRepository;
@@ -57,13 +57,6 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                            OrganizationService organizationService,
                            DepartmentService departmentService) {
         super(userRepository, userService);
-        assert repository != null : "EmployeeRepository is null";
-        assert orgRepository != null : "OrganizationRepository is null";
-        assert depRepository != null : "DepartmentRepository is null";
-        assert positionRepository != null : "PositionRepository is null";
-        assert positionService != null : "PositionService is null";
-        assert organizationService != null : "OrganizationService is null";
-        assert departmentService != null : "DepartmentService is null";
         this.repository = repository;
         this.orgRepository = orgRepository;
         this.depRepository = depRepository;
@@ -80,38 +73,29 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
                 .onItem().transformToUni(employees ->
                         Uni.combine().all().unis(
                                 employees.stream()
-                                        .map(doc -> {
-                                            Uni<PositionDTO> positionDTOUni;
-                                            if (doc.getPosition() == null) {
-                                                positionDTOUni = Uni.createFrom().nullItem();
-                                            } else {
-                                                assert positionService != null;
-                                                positionDTOUni = positionService.getDTO(doc.getPosition())
-                                                        .onFailure().recoverWithNull();
-                                            }
-
-                                            return positionDTOUni.onItem().transform(position ->
-                                                    EmployeeDTO.builder()
-                                                            .id(doc.getId())
-                                                            .userId(doc.getUser())
-                                                            .author(userRepository.getUserName(doc.getAuthor()))
-                                                            .regDate(doc.getRegDate())
-                                                            .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                                                            .lastModifiedDate(doc.getLastModifiedDate())
-                                                            .phone(doc.getPhone())
-                                                            .rank(doc.getRank())
-                                                            .position(position)
-                                                            .localizedName(doc.getLocalizedName())
-                                                            .identifier(doc.getIdentifier())
-                                                            .build()
-                                            );
-                                        })
+                                        .map(this::map)
                                         .collect(Collectors.toList())
-                        ).with(results -> results.stream()
+                        ).with(list -> list.stream()
                                 .map(result -> (EmployeeDTO) result)
                                 .collect(Collectors.toList()))
                 );
     }
+
+    public Uni<List<EmployeeDTO>> search(String keyword, LanguageCode languageCode) {
+        assert repository != null;
+        return repository.search(keyword)
+                .onItem().transformToUni(employeeList ->
+                        Uni.combine().all().unis(
+                                employeeList.stream()
+                                        .map(this::map)
+                                        .collect(Collectors.toList())
+                        ).with(list -> list.stream()
+                                .map(result -> (EmployeeDTO) result)
+                                .collect(Collectors.toList()))
+                );
+    }
+
+
 
     @Override
     public Uni<Integer> getAllCount() {
@@ -119,18 +103,15 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return repository.getAllCount();
     }
 
-    public Uni<List<Employee>> search(String keyword) {
-        assert repository != null;
-        return repository.search(keyword);
-    }
-
     @Override
-    public Uni<Optional<EmployeeDTO>> getByIdentifier(String identifier) {
-        return null;
+    public Uni<EmployeeDTO> getByIdentifier(String identifier) {
+        assert repository != null;
+        return map(repository.getByIdentifier(identifier));
     }
 
     public Uni<EmployeeDTO> getById(long id) {
-        return null;
+        assert repository != null;
+        return map(repository.getByUserId(id));
     }
 
     @Override
@@ -138,10 +119,10 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         Uni<Employee> uni;
         if ("current".equals(id)) {
             assert repository != null;
-            uni = repository.findByUserId(user.getId());
+            uni = repository.getByUserId(user.getId());
         } else {
             assert repository != null;
-            uni = repository.findById(UUID.fromString(id));
+            uni = repository.getById(UUID.fromString(id));
         }
         return map(uni);
     }
@@ -178,59 +159,68 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return null;
     }
 
+    public Uni<Integer> delete(String id, IUser user) {
+        assert repository != null;
+        return repository.delete(UUID.fromString(id));
+    }
+
+    private Uni<EmployeeDTO> map(Employee doc) {
+        return mapCommon(doc);
+    }
+
     private Uni<EmployeeDTO> map(Uni<Employee> employeeUni) {
-        return employeeUni.onItem().transformToUni(empl -> {
+        return employeeUni.onItem().transformToUni(this::mapCommon);
+    }
+
+
+    private Uni<EmployeeDTO> mapCommon(Employee doc) {
+        Uni<PositionDTO> positionDTOUni;
+        if (doc.getPosition() == null) {
+            positionDTOUni = Uni.createFrom().nullItem();
+        } else {
+            assert positionService != null;
+            positionDTOUni = positionService.getDTO(doc.getPosition()).onFailure().recoverWithNull();
+        }
+
+        return positionDTOUni.onItem().transformToUni(position -> {
             EmployeeDTO dto = EmployeeDTO.builder()
-                    .id(empl.getId())
-                    .userId(empl.getUser())
-                    .author(userRepository.getUserName(empl.getAuthor()))
-                    .regDate(empl.getRegDate())
-                    .lastModifier(userRepository.getUserName(empl.getLastModifier()))
-                    .lastModifiedDate(empl.getLastModifiedDate())
-                    .localizedName(empl.getLocalizedName())
-                    .phone(empl.getPhone())
-                    .rank(empl.getRank())
-                    .identifier(empl.getIdentifier())
-                    .birthDate(empl.getBirthDate())
+                    .id(doc.getId())
+                    .userId(doc.getUser())
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .phone(doc.getPhone())
+                    .rank(doc.getRank())
+                    .position(position)
+                    .localizedName(doc.getLocalizedName())
+                    .identifier(doc.getIdentifier())
                     .build();
 
             List<Uni<?>> unis = new ArrayList<>();
 
-            if (empl.getDepartment() != null) {
+            if (doc.getDepartment() != null) {
                 assert departmentService != null;
-                unis.add(departmentService.get(empl.getDepartment())
-                        .onItem().transform(department -> {
+                unis.add(departmentService.get(doc.getDepartment())
+                        .onItem().transformToUni(department -> {
                             dto.setDep(DepartmentDTO.builder()
                                     .id(department.getId())
                                     .identifier(department.getIdentifier())
                                     .localizedName(department.getLocalizedName())
                                     .build());
-                            return dto;
+                            return Uni.createFrom().item(dto);
                         }));
             }
 
-            if (empl.getOrganization() != null) {
-                assert organizationService != null;
-                unis.add(organizationService.get(empl.getOrganization())
-                        .onItem().transform(organization -> {
+            if (doc.getOrganization() != null) {
+                unis.add(organizationService.get(doc.getOrganization())
+                        .onItem().transformToUni(organization -> {
                             dto.setOrg(OrganizationDTO.builder()
                                     .id(organization.getId())
                                     .identifier(organization.getIdentifier())
                                     .localizedName(organization.getLocalizedName())
                                     .build());
-                            return dto;
-                        }));
-            }
-
-            if (empl.getPosition() != null) {
-                unis.add(positionService.get(empl.getPosition())
-                        .onItem().transform(position -> {
-                            dto.setPosition(PositionDTO.builder()
-                                    .id(position.getId())
-                                    .identifier(position.getIdentifier())
-                                    .localizedName(position.getLocalizedName())
-                                    .build());
-                            return dto;
+                            return Uni.createFrom().item(dto);
                         }));
             }
 
@@ -242,8 +232,6 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         });
     }
 
-    public Uni<Integer> delete(String id, IUser user) {
-        assert repository != null;
-        return repository.delete(UUID.fromString(id));
-    }
+
+
 }

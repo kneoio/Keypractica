@@ -18,7 +18,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -80,7 +79,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    public Uni<Optional<OrganizationDTO>> getByIdentifier(String identifier) {
+    public Uni<OrganizationDTO> getByIdentifier(String identifier) {
         return null;
     }
 
