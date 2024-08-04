@@ -63,10 +63,14 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     @Route(path = "/search/:keyword", methods = Route.HttpMethod.GET, produces = "application/json")
     public void search(RoutingContext rc) {
         String keyword = rc.pathParam("keyword");
-        ViewPage viewPage = new ViewPage();
-        service.search(keyword)
+        service.search(keyword, resolveLanguage(rc))
                 .onItem().transform(userList -> {
-                    viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+                    ViewPage viewPage = new ViewPage();
+                    int pageNum = 1;
+                    int pageSize = userList.size();
+                    int count = userList.size();
+                    View<EmployeeDTO> dtoEntries = new View<>(userList, count, pageNum, 1, pageSize);
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                     return viewPage;
                 })
                 .subscribe().with(

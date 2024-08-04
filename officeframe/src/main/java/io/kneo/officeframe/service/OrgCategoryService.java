@@ -14,7 +14,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -53,8 +52,8 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @Override
-    public Uni<Optional<OrgCategoryDTO>> getByIdentifier(String identifier) {
-        return Uni.createFrom().item(Optional.empty());
+    public Uni<OrgCategoryDTO> getByIdentifier(String identifier) {
+        return Uni.createFrom().item(null);
     }
 
     @Override

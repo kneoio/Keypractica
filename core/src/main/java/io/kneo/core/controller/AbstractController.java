@@ -250,31 +250,6 @@ public abstract class AbstractController<T, V> {
         }
     }
 
-    protected Uni<Response> create(AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            return service.add(dto, user)
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build())
-                    .onFailure().recoverWithItem(throwable -> {
-                        LOGGER.error(throwable.getMessage());
-                        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    });
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
-    }
-
-    protected Uni<Response> update(String id, AbstractService<T, V> service, V dto, ContainerRequestContext requestContext) throws UserNotFoundException, DocumentModificationAccessException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.update(id, dto, userOptional.get())
-                    .onItem().transform(count -> Response.ok(count).build());
-        } else {
-            return Uni.createFrom().failure(new UserNotFoundException(AnonymousUser.USER_NAME));
-        }
-    }
-
     public Uni<Response> delete(String uuid, AbstractService<T, V> service, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
         Optional<IUser> userOptional = getUserId(requestContext);
         if (userOptional.isPresent()) {

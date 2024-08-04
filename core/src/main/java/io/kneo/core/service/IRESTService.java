@@ -5,7 +5,6 @@ import io.kneo.core.model.user.IUser;
 import io.smallrye.mutiny.Uni;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface IRESTService<V> {
 
@@ -15,7 +14,7 @@ public interface IRESTService<V> {
 
     Uni<V> getDTO(String id, IUser user, LanguageCode language);
 
-    Uni<Optional<V>> getByIdentifier(String  identifier);
+    Uni<V> getByIdentifier(String  identifier);
 
     Uni<V> upsert(String id, V dto, IUser user);
 }

@@ -6,6 +6,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.SuperUser;
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
@@ -14,7 +15,6 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
-import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -65,15 +65,26 @@ public class EmployeeRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Employee> findById(UUID uuid) {
+    public Uni<Employee> getById(UUID uuid) {
         return findById(uuid, entityData, this::from);
     }
 
-    public Uni<Employee> findByUserId(long id) {
+    public Uni<Employee> getByUserId(long id) {
         return client.preparedQuery(String.format("SELECT * FROM %s se WHERE se.user_id = $1", entityData.getTableName()))
                 .execute(Tuple.of(id))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? from(iterator.next()) : null);
+                .onItem().transformToUni(rowSet -> {
+                    var iterator = rowSet.iterator();
+                    if (iterator.hasNext()) {
+                        return Uni.createFrom().item(from(iterator.next()));
+                    } else {
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(String.valueOf(id)));
+                    }
+                });
+    }
+
+
+    public Uni<Employee> getByIdentifier(String identifier) {
+        return null;
     }
 
     private Employee from(Row row) {
@@ -127,7 +138,7 @@ public class EmployeeRepository extends AsyncRepository {
                 .execute(allParams)
                 .onItem().transformToUni(result -> {
                     UUID id = result.iterator().next().getUUID("id");
-                    return findById(id);
+                    return getById(id);
                 })
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
@@ -155,7 +166,7 @@ public class EmployeeRepository extends AsyncRepository {
                 .execute(params)
                 .onItem().transformToUni(result -> {
                     if (result.rowCount() > 0) {
-                        return findById(id);
+                        return getById(id);
                     } else {
                         return Uni.createFrom().nullItem();
                     }

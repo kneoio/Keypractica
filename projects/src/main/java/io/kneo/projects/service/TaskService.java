@@ -5,6 +5,7 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.service.exception.DataValidationException;
@@ -16,9 +17,11 @@ import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.EmployeeService;
 import io.kneo.officeframe.service.LabelService;
 import io.kneo.officeframe.service.TaskTypeService;
-import io.kneo.projects.dto.*;
+import io.kneo.projects.dto.ProjectDTO;
+import io.kneo.projects.dto.TaskDTO;
+import io.kneo.projects.dto.TaskTemplateDTO;
+import io.kneo.projects.dto.TaskTypeDTO;
 import io.kneo.projects.model.Task;
-import io.kneo.projects.model.cnst.TaskStatus;
 import io.kneo.projects.repository.TaskRepository;
 import io.kneo.projects.repository.table.ProjectNameResolver;
 import io.smallrye.mutiny.Uni;
@@ -26,8 +29,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,17 +73,34 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         assert repository != null;
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, user.getId());
         return taskUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(e ->
-                                TaskDTO.builder()
-                                        .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()))
-                                        .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()))
-                                        .lastModifiedDate(e.getLastModifiedDate())
-                                        .build())
-                        .collect(Collectors.toList()));
+                .onItem().transformToUni(taskList ->
+                        Uni.combine().all().unis(
+                                taskList.stream()
+                                        .map(doc -> {
+                                            assert employeeService != null;
+                                            return employeeService.getById(doc.getAssignee())
+                                                    .onFailure(DocumentHasNotFoundException.class).recoverWithNull()
+                                                    .onItem().transform(assignee ->
+                                                            TaskDTO.builder()
+                                                                    .id(doc.getId())
+                                                                    .author(userRepository.getUserName(doc.getAuthor()))
+                                                                    .regDate(doc.getRegDate())
+                                                                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                                                                    .lastModifiedDate(doc.getLastModifiedDate())
+                                                                    .targetDate(doc.getTargetDate())
+                                                                    .priority(doc.getPriority())
+                                                                    .status(doc.getStatus())
+                                                                    .assignee(assignee)
+                                                                    .build()
+                                                    );
+                                        }).collect(Collectors.toList())
+                        ).with(list -> list.stream()
+                                .map(item -> (TaskDTO) item)
+                                .collect(Collectors.toList()))
+                );
     }
+
+
 
     public Uni<Integer> getAllCount(final IUser user) {
         assert repository != null;
@@ -104,25 +122,19 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                         .assignee(assignee)
                         .body(doc.getBody())
                         .startDate(LocalDate.from(doc.getStartDate()))
-                        .targetDate(Optional.ofNullable(doc.getTargetDate()).map(LocalDate::from).orElse(null))
-                        .status(TaskStatus.getType(doc.getStatus()))
+                        .targetDate(doc.getTargetDate())
+                        .status(doc.getStatus())
                         .priority(doc.getPriority())
                         .build());
     }
 
-
-
     @Override
     public Uni<TaskDTO> getDTO(String uuid, IUser user, LanguageCode code) {
-        return get(uuid, user);
-    }
-
-    public Uni<TaskDTO> get(String uuid, final IUser userID) {
         UUID id = UUID.fromString(uuid);
-        Uni<Optional<Task>> taskUni = repository.findById(id, userID.getId());
+        Uni<Optional<Task>> taskUni = repository.findById(id, user.getId());
 
         Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item ->
-                projectService.get(item.get().getProject(), userID)
+                projectService.get(item.get().getProject(), user)
         );
 
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
@@ -144,15 +156,15 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .lastModifiedDate(task.getLastModifiedDate())
                             .regNumber(task.getRegNumber())
                             .body(task.getBody())
-                         //   .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
+                            //   .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
                             .taskType(TaskTypeDTO.builder()
                                     .identifier(taskType.orElseThrow().getIdentifier())
                                     .localizedName(taskType.orElseThrow().getLocalizedName(LanguageCode.ENG))
                                     .build())
                             .project(project)
                             .startDate(LocalDate.from(task.getStartDate()))
-                            .targetDate(Optional.ofNullable(task.getTargetDate()).map(LocalDate::from).orElse(null))
-                            .status(TaskStatus.getType(task.getStatus()))
+                            .targetDate(task.getTargetDate())
+                            .status(task.getStatus())
                             .priority(task.getPriority())
                             .labels(labels)
                             .rls(rls).build();
@@ -168,29 +180,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         return Uni.createFrom().item(template);
     }
 
-    private static AssigneeDTO getAssigneeDTO(Optional<IUser> assigneeOptional, Task task) {
-        AssigneeDTO assigneeDTO = new AssigneeDTO();
-        if (assigneeOptional.isPresent()) {
-            IUser assignee = assigneeOptional.get();
-            assigneeDTO.setFullName(assignee.getUserName());
-            assigneeDTO.setId(assignee.getId());
-            assigneeDTO.setAvailable(assignee.isActive());
-        } else {
-            assigneeDTO.setId(task.getAssignee());
-            assigneeDTO.setAvailable(false);
-        }
-        return assigneeDTO;
-    }
-
-    public Uni<TaskDTO> add(TaskDTO dto, IUser user) {
-            return null;
-    }
-
-    public Uni<TaskDTO> update(String id, TaskDTO dto, IUser user) {
-        return null;
-    }
-
     public Uni<Integer> delete(String id, IUser user) {
+        assert repository != null;
         return repository.delete(UUID.fromString(id), user.getId());
     }
 
@@ -211,27 +202,9 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 .build();
         taskOpt.ifPresent(task -> doc.setParent(task.getParent()));
         if (dto.getTargetDate() != null) {
-            doc.setTargetDate(dto.getTargetDate().atStartOfDay(ZoneId.systemDefault()));
+            doc.setTargetDate(dto.getTargetDate());
         }
         return doc;
     }
-
-    private Uni<List<Label>> getLabelsUni(List<LabelDTO> labelDTOs) {
-        List<Uni<Label>> labelUnis = labelDTOs.stream()
-                .map(v ->
-                        labelService.findByIdentifier(v.getIdentifier())
-                                .onItem()
-                                .transform(item -> item)
-                )
-                .collect(Collectors.toList());
-
-        Uni<List<Optional<Label>>> combinedLabelUnis;
-        if (labelUnis.isEmpty()) {
-            return Uni.createFrom().item(Collections.emptyList());
-        } else {
-            return Uni.combine().all().unis(labelUnis).with(list -> (List<Label>) list);
-        }
-    }
-
 
 }
