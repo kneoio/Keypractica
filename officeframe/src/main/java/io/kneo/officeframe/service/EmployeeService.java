@@ -129,6 +129,10 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return null;
     }
 
+    public Uni<EmployeeDTO> getById(long id) {
+        return null;
+    }
+
     @Override
     public Uni<EmployeeDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Employee> uni;

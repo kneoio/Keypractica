@@ -26,7 +26,6 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 
 @RolesAllowed("**")
 @RouteBase(path = "/api/:org/projects")
@@ -44,9 +43,8 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
 
-        Optional<IUser> userOptional = getUserId(rc);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
+        try {
+            IUser user = getUser(rc);
 
             Uni.combine().all().unis(
                     service.getAllCount(user.getId()),
@@ -72,8 +70,8 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
                         rc.response().setStatusCode(500).end("Internal Server Error");
                     }
             );
-        } else {
-            rc.response().setStatusCode(403).end(String.format("%s is not allowed", getUserOIDCName(rc)));
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -94,56 +92,67 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
-        String id = rc.pathParam("id");
-        LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
+    public void getById(RoutingContext rc) {
+        try {
+            String id = rc.pathParam("id");
+            LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
 
-        service.getDTO(id, getUser(rc), languageCode).subscribe().with(
-                project -> {
-                    FormPage page = new FormPage();
-                    page.addPayload(PayloadType.DOC_DATA, project);
-                    page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-                    rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
-                },
-                failure -> {
-                    if (failure instanceof DocumentHasNotFoundException) {
-                        rc.response().setStatusCode(404).end("Project not found");
-                    } else {
-                        LOGGER.error("Error processing request: ", failure);
-                        rc.response().setStatusCode(500).end("Internal Server Error");
+            service.getDTO(id, getUser(rc), languageCode).subscribe().with(
+                    project -> {
+                        FormPage page = new FormPage();
+                        page.addPayload(PayloadType.DOC_DATA, project);
+                        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+                        rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
+                    },
+                    failure -> {
+                        if (failure instanceof DocumentHasNotFoundException) {
+                            rc.response().setStatusCode(404).end("Project not found");
+                        } else {
+                            LOGGER.error("Error processing request: ", failure);
+                            rc.response().setStatusCode(500).end("Internal Server Error");
+                        }
                     }
-                }
-        );
+            );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException {
-        String id = rc.pathParam("id");
-        JsonObject jsonObject = rc.body().asJsonObject();
-        ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-        service.upsert(id, dto, getUser(rc))
-                .subscribe().with(
-                        createdProjectId -> rc.response().setStatusCode(200).end(createdProjectId.toString()),
-                        failure -> {
-                            if (failure instanceof RuntimeException) {
-                                throw (RuntimeException) failure;
-                            } else {
-                                throw new RuntimeException(failure);
+    public void upsert(RoutingContext rc) {
+        try {
+            String id = rc.pathParam("id");
+            JsonObject jsonObject = rc.body().asJsonObject();
+            ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
+            service.upsert(id, dto, getUser(rc))
+                    .subscribe().with(
+                            createdProjectId -> rc.response().setStatusCode(200).end(createdProjectId.toString()),
+                            failure -> {
+                                if (failure instanceof RuntimeException) {
+                                    throw (RuntimeException) failure;
+                                } else {
+                                    throw new RuntimeException(failure);
+                                }
                             }
-                        }
-                );
-
+                    );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws DocumentModificationAccessException, UserNotFoundException {
-        String id = rc.pathParam("id");
-        service.delete(id, getUser(rc)).subscribe().with(
-                count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
-                failure -> {
-                    LOGGER.error(failure.getMessage(), failure);
-                    rc.response().setStatusCode(500).end("Internal Server Error");
-                }
-        );
+    public void delete(RoutingContext rc) {
+        try {
+            String id = rc.pathParam("id");
+            service.delete(id, getUser(rc)).subscribe().with(
+                    count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
+                    failure -> {
+                        LOGGER.error(failure.getMessage(), failure);
+                        rc.response().setStatusCode(500).end("Internal Server Error");
+                    }
+            );
+        } catch (UserNotFoundException | DocumentModificationAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -8,6 +8,7 @@ import io.kneo.core.dto.cnst.PayloadType;
 import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
@@ -18,142 +19,141 @@ import io.kneo.projects.dto.actions.TaskActionsFactory;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.model.cnst.TaskStatus;
 import io.kneo.projects.service.TaskService;
-import io.smallrye.mutiny.Uni;
+import io.quarkus.vertx.web.Route;
+import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.eclipse.microprofile.openapi.annotations.Operation;
-
-import java.util.List;
-import java.util.Optional;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@Path("/tasks")
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed("**")
+@RouteBase(path = "/api/:org/tasks")
 public final class TaskController extends AbstractSecuredController<Task, TaskDTO> {
-    @Inject
     TaskService service;
 
-    public TaskController(UserService userService) {
+    @Inject
+    public TaskController(UserService userService, TaskService service) {
         super(userService);
+        this.service = service;
     }
 
-    @GET
-    @Path("/")
-    @Operation(operationId = "getAllTasks")
-    public Uni<Response> getAll(@Valid @Min(0) @QueryParam("page") int page, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            Uni<Integer> countUni = service.getAllCount(user.getId());
-            Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, user.getPageSize()));
-            Uni<Integer> pageNumUni = Uni.createFrom().item(page);
-            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
-            Uni<List<TaskDTO>> unis = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset, user.getId()));
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getAll(RoutingContext rc) {
+        int page = Integer.parseInt(rc.request().getParam("page", "0"));
+        int size = Integer.parseInt(rc.request().getParam("size", "10"));
 
-            return Uni.combine().all().unis(unis, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((tasks, offset, pageNum, count, maxPage) -> {
-                ViewPage viewPage = new ViewPage();
-                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, TaskActionsFactory.getViewActions(user.getActivatedRoles()));
-                if (pageNum == 0) pageNum = 1;
-                View<TaskDTO> dtoEntries = new View<>(tasks, count, pageNum, maxPage, user.getPageSize());
-                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                return Response.ok(viewPage).build();
-            });
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+        try {
+            IUser user = getUser(rc);
+
+            service.getAllCount(user)
+                    .onItem().transformToUni(count -> {
+                        int maxPage = countMaxPage(count, size);
+                        int pageNum = (page == 0) ? 1 : page;
+                        int offset = RuntimeUtil.calcStartEntry(pageNum, size);
+                        LanguageCode languageCode = resolveLanguage(rc);
+                        return service.getAll(size, offset, user)
+                                .onItem().transform(dtoList -> {
+                                    ViewPage viewPage = new ViewPage();
+                                    viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, TaskActionsFactory.getViewActions(languageCode));
+                                    View<TaskDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
+                                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                                    return viewPage;
+                                });
+                    })
+                    .subscribe().with(
+                            viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                            rc::fail
+                    );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @GET
-    @Path("/status/{status}")
-    @Operation(operationId = "searchTasksByStatus")
+    @Route(path = "/status/:status", methods = Route.HttpMethod.GET, produces = "application/json")
     @JsonView(Views.ListView.class)
-    public Uni<Response> searchByStatus(@PathParam("status") TaskStatus status) {
-        ViewPage viewPage = new ViewPage();
-        return service.searchByStatus(status).onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-            return Response.ok(viewPage).build();
-        });
+    public void searchByStatus(RoutingContext rc) {
+        TaskStatus status = TaskStatus.valueOf(rc.pathParam("status"));
+        service.searchByStatus(status).subscribe().with(
+                tasks -> {
+                    ViewPage viewPage = new ViewPage();
+                    viewPage.addPayload(PayloadType.VIEW_DATA, tasks);
+                    rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
+                },
+                rc::fail
+        );
     }
 
-
-    @GET
-    @Path("/{id}")
-    @Operation(operationId = "getTaskById")
-    public Uni<Response> get(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
+    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getById(RoutingContext rc) {
+        try {
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-            return service.get(id, user)
-                    .onItem().transform(p -> {
-                        page.addPayload(PayloadType.DOC_DATA, p);
-                        return Response.ok(page).build();
+            service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+                    .onItem().transform(dto -> {
+                        page.addPayload(PayloadType.DOC_DATA, dto);
+                        return page;
                     })
-                    .onFailure().recoverWithItem(this::postNotFoundError)
-                    .onFailure().recoverWithItem(this::postError);
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+                    .subscribe().with(
+                            formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                            rc::fail
+                    );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @GET
-    @Path("/template")
-    @Operation(operationId = "getTaskTemplate")
-    public Uni<Response> getTemplate(@Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
-            FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-            return service.getTemplate(user)
-                    .onItem().transform(p -> {
-                        page.addPayload(PayloadType.TEMPLATE, p);
-                        return Response.ok(page).build();
-                    })
-                    .onFailure().recoverWithItem(this::postError);
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void create(RoutingContext rc) {
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            TaskDTO dto = jsonObject.mapTo(TaskDTO.class);
+            service.add(dto, getUser(rc)).subscribe().with(
+                    createdTaskId -> rc.response().setStatusCode(201).end(JsonObject.mapFrom(createdTaskId).encode()),
+                    rc::fail
+            );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @POST
-    @Path("/")
-    @Operation(operationId = "createTask", summary = "Create task")
-    public Uni<Response> create(@Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.add(dto, userOptional.get())
-                    .onItem().transform(id -> Response.status(Response.Status.CREATED).build());
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
+    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
+    public void update(RoutingContext rc) {
+        try {
+            String id = rc.pathParam("id");
+            JsonObject jsonObject = rc.body().asJsonObject();
+            TaskDTO dto = jsonObject.mapTo(TaskDTO.class);
+            service.update(id, dto, getUser(rc)).subscribe().with(
+                    updatedTask -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(updatedTask).encode()),
+                    failure -> {
+                        if (failure instanceof DocumentModificationAccessException) {
+                            rc.response().setStatusCode(404).end("Task not found or no modification access");
+                        } else {
+                            rc.fail(failure);
+                        }
+                    }
+            );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @PUT
-    @Path("/{id}")
-    @Operation(operationId = "updateTask")
-    public Uni<Response> update(@Pattern(regexp = UUID_PATTERN) @PathParam("id") String id, @Valid TaskDTO dto, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        return update(id, service, dto, requestContext);
+    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
+    public void delete(RoutingContext rc) {
+        try {
+            service.delete(rc.pathParam("id"), getUser(rc)).subscribe().with(
+                    count -> {
+                        if (count > 0) {
+                            rc.response().setStatusCode(204).end();
+                        } else {
+                            rc.fail(404);
+                        }
+                    },
+                    rc::fail
+            );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
-
-    @DELETE
-    @Path("/{id}")
-    @Operation(operationId = "deleteTaskById")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<Response> delete(@PathParam("id") String uuid, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        return delete(uuid, service, requestContext);
-    }
-
 }

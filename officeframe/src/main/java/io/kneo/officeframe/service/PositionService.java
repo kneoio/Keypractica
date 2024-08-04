@@ -75,7 +75,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     public Uni<PositionDTO> getDTO(UUID uuid) {
-        Uni<Position> uni = get(uuid);
+        Uni<Position> uni = repository.findById(uuid);
         return uni.onItem().transform(doc -> {
                 return PositionDTO.builder()
                         .author(userRepository.getUserName(doc.getAuthor()))

@@ -53,9 +53,6 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         //TODO shall be used in controller
     }
 
-    public Uni<Optional<TaskType>> findById(UUID uuid) {
-        return repository.findById(uuid);
-    }
     public Uni<Optional<TaskType>> findByIdentifier(String  identifier) {
         return repository.findByIdentifier(identifier);
     }
@@ -64,8 +61,20 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return repository.getAllCount();
     }
 
+    @Override
     public Uni<TaskTypeDTO> getDTO(String uuid, IUser user, LanguageCode language) {
-        return get(UUID.fromString(uuid));
+        Uni<TaskType> uni = repository.findById(UUID.fromString(uuid));
+        return uni.onItem().transform(doc -> {
+            return TaskTypeDTO.builder()
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .identifier(doc.getIdentifier())
+                    .localizedName(doc.getLocalizedName())
+                    .build();
+
+        });
     }
 
     @Override
@@ -92,6 +101,11 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     public IUser update(LabelDTO dto) {
+        return null;
+    }
+
+    @Deprecated
+    public Uni<? extends Optional<TaskType>> findById(UUID taskType) {
         return null;
     }
 }

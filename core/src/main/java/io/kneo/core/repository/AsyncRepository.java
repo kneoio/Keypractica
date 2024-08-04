@@ -7,13 +7,13 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.SimpleReferenceEntity;
 import io.kneo.core.model.embedded.RLS;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
-import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +65,14 @@ public class AsyncRepository {
     public <R> Uni<R> findById(UUID uuid, EntityData entityData, Function<Row, R> fromFunc) {
         return client.preparedQuery("SELECT * FROM " + entityData.getTableName() + " se WHERE se.id = $1")
                 .execute(Tuple.of(uuid))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? fromFunc.apply(iterator.next()) : null);
+                .onItem().transformToUni(rowSet -> {
+                    var iterator = rowSet.iterator();
+                    if (iterator.hasNext()) {
+                        return Uni.createFrom().item(fromFunc.apply(iterator.next()));
+                    } else {
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(uuid));
+                    }
+                });
     }
 
     public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {
