@@ -61,6 +61,10 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         return repository.getAllCount();
     }
 
+    public Uni<TaskType> getById(UUID uuid) {
+        return repository.findById(uuid);
+    }
+
     @Override
     public Uni<TaskTypeDTO> getDTO(String uuid, IUser user, LanguageCode language) {
         Uni<TaskType> uni = repository.findById(UUID.fromString(uuid));
@@ -78,23 +82,10 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
-    public Uni<TaskTypeDTO> add(TaskTypeDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<TaskTypeDTO> update(String id, TaskTypeDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 
-    public Uni<TaskTypeDTO> get(UUID uuid) {
-       return null;
-    }
 
     public Uni<Object> add(LabelDTO dto) {
         return null;

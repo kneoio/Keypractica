@@ -80,17 +80,17 @@ public class ProjectRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Optional<Project>> findById(UUID uuid, Long userID) {
+    public Uni<Project> findById(UUID uuid, Long userID) {
         return client.preparedQuery(String.format("SELECT theTable.*, rls.* FROM %s theTable JOIN %s rls ON theTable.id = rls.entity_id " +
                         "WHERE rls.reader = $1 AND theTable.id = $2", entityData.getTableName(), entityData.getRlsName()))
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
-                        return Optional.of(from(iterator.next()));
+                        return from(iterator.next());
                     } else {
                         LOGGER.warn(String.format("No %s found with id: " + uuid, entityData.getTableName()));
-                        return Optional.empty();
+                        return null;
                     }
                 });
     }
@@ -159,7 +159,7 @@ public class ProjectRepository extends AsyncRepository {
                                 .onItem().transform(unused -> id);
                     });
         }).onItem().transformToUni(id -> findById(id, user)
-                .onItem().transform(optionalProject -> optionalProject.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted project"))));
+                .onItem().transform(project -> project));
     }
 
     public Uni<Project> update(UUID id, Project doc, Long user) {
@@ -190,7 +190,7 @@ public class ProjectRepository extends AsyncRepository {
                                         return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                                     }
                                     return findById(id, user)
-                                            .onItem().transform(optionalProject -> optionalProject.orElseThrow(() -> new RuntimeException("Failed to retrieve updated project")));
+                                            .onItem().transform(project -> project);
                                 })
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t)));
                     } else {

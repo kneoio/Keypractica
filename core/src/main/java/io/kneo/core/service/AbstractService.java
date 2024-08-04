@@ -13,7 +13,6 @@ import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Uni;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,7 +36,7 @@ public abstract class AbstractService<T, V> {
     };
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;
 
-    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<Optional<T>> secureDataEntityUni, UUID id) {
+    protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<T> secureDataEntityUni, UUID id) {
         Uni<List<RLS>> rlsEntries = secureDataEntityUni.onItem().transformToUni(item ->
                 asyncRepository.getAllReaders(id, entityData)
         );

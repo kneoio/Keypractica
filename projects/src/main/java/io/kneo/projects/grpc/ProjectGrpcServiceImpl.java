@@ -24,7 +24,7 @@ public class ProjectGrpcServiceImpl implements ProjectGrpcService {
                 .description(request.getDescription())
                 .build();
 
-        return projectService.add(dto, getCurrentUser())
+        return projectService.upsert(String.valueOf(dto.getId()), dto, getCurrentUser())
                 .onItem().transform(uuid ->
                         ProjectResponse.newBuilder()
                                 .setId(uuid.toString())

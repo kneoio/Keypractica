@@ -68,22 +68,18 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) {
-        try {
-            FormPage page = new FormPage();
-            page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-            service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
-                    .onItem().transform(dto -> {
-                        page.addPayload(PayloadType.DOC_DATA, dto);
-                        return page;
-                    })
-                    .subscribe().with(
-                            formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
-                            rc::fail
-                    );
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public void getById(RoutingContext rc) throws UserNotFoundException {
+        FormPage page = new FormPage();
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+        service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+                .onItem().transform(dto -> {
+                    page.addPayload(PayloadType.DOC_DATA, dto);
+                    return page;
+                })
+                .subscribe().with(
+                        formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                        rc::fail
+                );
     }
 
     @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")

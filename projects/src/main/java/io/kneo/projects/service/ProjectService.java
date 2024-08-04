@@ -6,7 +6,6 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
-import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
@@ -22,7 +21,6 @@ import jakarta.validation.Validator;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -70,13 +68,13 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .collect(Collectors.toList()));
     }
 
-    public Uni<ProjectDTO> get(UUID id, IUser user) {
-        return get(id, user.getId(), false);
+    public Uni<ProjectDTO> getById(UUID id, IUser user) {
+        return getById(id, user.getId(), false);
     }
 
-    public Uni<ProjectDTO> get(UUID id, final long userID, boolean includeRLS) {
+    public Uni<ProjectDTO> getById(UUID id, final long userID, boolean includeRLS) {
         assert repository != null;
-        Uni<Optional<Project>> projectUni = repository.findById(id, userID);
+        Uni<Project> projectUni = repository.findById(id, userID);
 
         Uni<List<RLSDTO>> rlsDtoListUni;
 
@@ -86,13 +84,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
             rlsDtoListUni = Uni.createFrom().item(Collections.emptyList());
         }
 
-        return projectUni.flatMap(projectOptional -> {
-            if (projectOptional.isEmpty()) {
-                return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
-            }
-
-            Project doc = projectOptional.get();
-
+        return projectUni.flatMap(doc -> {
             return rlsDtoListUni.map(rlsList -> ProjectDTO.builder()
                     .id(doc.getId())
                     .author(userRepository.getUserName(doc.getAuthor()))
@@ -123,18 +115,20 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     @Override
     public Uni<ProjectDTO> getDTO(String uuid, IUser user, LanguageCode code) {
-        return get(UUID.fromString(uuid), user.getId(), true);
+        return getById(UUID.fromString(uuid), user.getId(), true);
     }
 
     @Override
     public Uni<ProjectDTO> upsert(String id, ProjectDTO dto, IUser user) {
         if (id == null) {
+            assert repository != null;
             return repository.insert(buildEntity(dto), AnonymousUser.ID)
                     .onItem().transformToUni(project -> map(project));
         } else {
             UUID uuid = UUID.fromString(id);
+            assert repository != null;
             return repository.update(uuid, buildEntity(dto), user.getId())
-                    .onItem().transformToUni(project -> map(project));
+                    .onItem().transformToUni(this::map);
         }
     }
 

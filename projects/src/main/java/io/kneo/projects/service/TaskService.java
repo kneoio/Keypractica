@@ -11,6 +11,7 @@ import io.kneo.core.service.UserService;
 import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.DateUtil;
 import io.kneo.core.util.NumberUtil;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.model.TaskType;
@@ -131,46 +132,56 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     @Override
     public Uni<TaskDTO> getDTO(String uuid, IUser user, LanguageCode code) {
         UUID id = UUID.fromString(uuid);
-        Uni<Optional<Task>> taskUni = repository.findById(id, user.getId());
+        assert repository != null;
+        Uni<Task> taskUni = repository.findById(id, user.getId());
 
-        Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item ->
-                projectService.get(item.get().getProject(), user)
-        );
+        Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item -> {
+            assert projectService != null;
+            return projectService.getById(item.getProject(), user)
+                    .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
+        });
 
-        Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeService.findById(item.get().getTaskType()));
+        Uni<TaskType> taskTypeUni = taskUni.onItem().transformToUni(item -> {
+            assert taskTypeService != null;
+            return taskTypeService.getById(item.getTaskType())
+                    .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
+        });
 
+        Uni<EmployeeDTO> assigneeUni = taskUni.onItem().transformToUni(item -> {
+            assert employeeService != null;
+            return employeeService.getById(item.getAssignee())
+                    .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
+        });
+
+        assert labelService != null;
         Uni<List<LabelDTO>> labelsUni = labelService.getLabels(id, ProjectNameResolver.create().getEntityNames(TASK).getLabelsName());
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
-
-        return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, labelsUni, rlsDtoListUni).with((taskOpt, project, taskType, labels, rls) -> {
-                    Task task = taskOpt.orElseThrow();
-                    return TaskDTO.builder()
-                            .id(task.getId())
-                            .author(userRepository.getUserName(task.getAuthor()))
-                            .regDate(task.getRegDate())
-                            .title(task.getTitle())
-                            .lastModifier(userRepository.getUserName(task.getLastModifier()))
-                            .lastModifiedDate(task.getLastModifiedDate())
-                            .regNumber(task.getRegNumber())
-                            .body(task.getBody())
-                            //   .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
-                            .taskType(TaskTypeDTO.builder()
-                                    .identifier(taskType.orElseThrow().getIdentifier())
-                                    .localizedName(taskType.orElseThrow().getLocalizedName(LanguageCode.ENG))
-                                    .build())
-                            .project(project)
-                            .startDate(LocalDate.from(task.getStartDate()))
-                            .targetDate(task.getTargetDate())
-                            .status(task.getStatus())
-                            .priority(task.getPriority())
-                            .labels(labels)
-                            .rls(rls).build();
-                }
-        );
-
+        return Uni.combine().all().unis(taskUni, projectUni, assigneeUni, taskTypeUni, labelsUni, rlsDtoListUni).combinedWith((task, project, assignee, taskType, labels, rls) -> {
+            return TaskDTO.builder()
+                    .id(task.getId())
+                    .author(userRepository.getUserName(task.getAuthor()))
+                    .regDate(task.getRegDate())
+                    .title(task.getTitle())
+                    .lastModifier(userRepository.getUserName(task.getLastModifier()))
+                    .lastModifiedDate(task.getLastModifiedDate())
+                    .regNumber(task.getRegNumber())
+                    .body(task.getBody())
+                    .assignee(assignee)
+                    .taskType(taskType != null ? TaskTypeDTO.builder()
+                            .identifier(taskType.getIdentifier())
+                            .localizedName(taskType.getLocalizedName(LanguageCode.ENG))
+                            .build() : null)
+                    .project(project)
+                    .startDate(LocalDate.from(task.getStartDate()))
+                    .targetDate(task.getTargetDate())
+                    .status(task.getStatus())
+                    .priority(task.getPriority())
+                    .labels(labels)
+                    .rls(rls)
+                    .build();
+        });
     }
 
     public Uni<TaskTemplateDTO> getTemplate(IUser user) {
