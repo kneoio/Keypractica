@@ -91,7 +91,6 @@ public class TaskRepository extends AsyncRepository {
                 .setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()))
                 .setRegNumber(row.getString("reg_number"))
                 .setAssignee(row.getLong("assignee"))
-                .setTitle(row.getString("title"))
                 .setBody(row.getString("body"))
                 .setProject(row.getUUID("project_id"))
                 .setParent(row.getUUID("parent_id"))

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.Views;
 import io.kneo.core.dto.rls.RLSDTO;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.model.cnst.TaskStatus;
@@ -36,7 +37,7 @@ public class TaskDTO extends AbstractDTO {
     String body;
     @NotNull(message = "Assignee must not be null")
     @JsonView(Views.DetailView.class)
-    AssigneeDTO assignee;
+    EmployeeDTO assignee;
     @NotNull(message = "Task type must not be null")
     @JsonView(Views.DetailView.class)
     TaskTypeDTO taskType;

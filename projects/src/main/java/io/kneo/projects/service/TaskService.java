@@ -13,6 +13,7 @@ import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.model.TaskType;
+import io.kneo.officeframe.service.EmployeeService;
 import io.kneo.officeframe.service.LabelService;
 import io.kneo.officeframe.service.TaskTypeService;
 import io.kneo.projects.dto.*;
@@ -37,6 +38,7 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 @ApplicationScoped
 public class TaskService extends AbstractService<Task, TaskDTO> {
     private final TaskRepository repository;
+    private final EmployeeService employeeService;
     private final LabelService labelService;
     private final ProjectService projectService;
     private final TaskTypeService taskTypeService;
@@ -44,6 +46,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     protected TaskService() {
         super(null, null);
         this.repository = null;
+        this.employeeService = null;
         this.labelService = null;
         this.projectService = null;
         this.taskTypeService = null;
@@ -53,52 +56,61 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     public TaskService(UserRepository userRepository,
                        UserService userService,
                        TaskRepository repository,
+                       EmployeeService employeeService,
                        LabelService labelService,
                        ProjectService projectService,
                        TaskTypeService taskTypeService) {
         super(userRepository, userService);
         this.repository = repository;
+        this.employeeService = employeeService;
         this.labelService = labelService;
         this.projectService = projectService;
         this.taskTypeService = taskTypeService;
     }
 
-    public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final long userID) {
-        Uni<List<Task>> taskUni = repository.getAll(limit, offset, userID);
+    public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final IUser user) {
+        assert repository != null;
+        Uni<List<Task>> taskUni = repository.getAll(limit, offset, user.getId());
         return taskUni
                 .onItem().transform(taskList -> taskList.stream()
-                        .map(this::map)
+                        .map(e ->
+                                TaskDTO.builder()
+                                        .id(e.getId())
+                                        .author(userRepository.getUserName(e.getAuthor()))
+                                        .regDate(e.getRegDate())
+                                        .lastModifier(userRepository.getUserName(e.getLastModifier()))
+                                        .lastModifiedDate(e.getLastModifiedDate())
+                                        .build())
                         .collect(Collectors.toList()));
     }
 
-    public Uni<Integer> getAllCount(final long userID) {
-        return repository.getAllCount(userID);
+    public Uni<Integer> getAllCount(final IUser user) {
+        assert repository != null;
+        return repository.getAllCount(user.getId());
     }
 
-    public Uni<List<TaskDTO>> searchByStatus(TaskStatus statusType) {
-        Uni<List<Task>> uni = repository.searchByCondition(String.format("status = '%s'", statusType.getCode()));
-        return uni
-                .onItem().transform(projectList -> projectList.stream()
-                        .map(this::map)
-                        .collect(Collectors.toList()));
+
+    private Uni<TaskDTO> map(Task doc) {
+        assert employeeService != null;
+        return employeeService.getById(doc.getAssignee())
+                .onItem().transform(assignee -> TaskDTO.builder()
+                        .id(doc.getId())
+                        .author(userRepository.getUserName(doc.getAuthor()))
+                        .regDate(doc.getRegDate())
+                        .title(doc.getTitle())
+                        .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                        .lastModifiedDate(doc.getLastModifiedDate())
+                        .regNumber(doc.getRegNumber())
+                        .assignee(assignee)
+                        .body(doc.getBody())
+                        .startDate(LocalDate.from(doc.getStartDate()))
+                        .targetDate(Optional.ofNullable(doc.getTargetDate()).map(LocalDate::from).orElse(null))
+                        .status(TaskStatus.getType(doc.getStatus()))
+                        .priority(doc.getPriority())
+                        .build());
     }
 
-    private TaskDTO map(Task doc) {
-        return TaskDTO.builder()
-                .id(doc.getId())
-                .author(userRepository.getUserName(doc.getAuthor()))
-                .regDate(doc.getRegDate())
-                .title(doc.getTitle())
-                .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                .lastModifiedDate(doc.getLastModifiedDate())
-                .regNumber(doc.getRegNumber())
-                .body(doc.getBody())
-                .startDate(LocalDate.from(doc.getStartDate()))
-                .targetDate(Optional.ofNullable(doc.getTargetDate()).map((LocalDate::from)).orElse(null))
-                .status(TaskStatus.getType(doc.getStatus()))
-                .priority(doc.getPriority())
-                .build();
-    }
+
 
     @Override
     public Uni<TaskDTO> getDTO(String uuid, IUser user, LanguageCode code) {
@@ -114,11 +126,11 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         );
 
         Uni<Optional<TaskType>> taskTypeUni = taskUni.onItem().transformToUni(item ->
-                taskTypeService.findById(item.get().getTaskType())        );
+                taskTypeService.findById(item.get().getTaskType()));
 
         Uni<List<LabelDTO>> labelsUni = labelService.getLabels(id, ProjectNameResolver.create().getEntityNames(TASK).getLabelsName());
 
-        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository,ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
+        Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
 
         return Uni.combine().all().unis(taskUni, projectUni, taskTypeUni, labelsUni, rlsDtoListUni).with((taskOpt, project, taskType, labels, rls) -> {
@@ -132,7 +144,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                             .lastModifiedDate(task.getLastModifiedDate())
                             .regNumber(task.getRegNumber())
                             .body(task.getBody())
-                            .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
+                         //   .assignee(getAssigneeDTO(userService.findById(task.getAssignee()), task))
                             .taskType(TaskTypeDTO.builder()
                                     .identifier(taskType.orElseThrow().getIdentifier())
                                     .localizedName(taskType.orElseThrow().getLocalizedName(LanguageCode.ENG))
@@ -171,33 +183,11 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
     public Uni<TaskDTO> add(TaskDTO dto, IUser user) {
-        Uni<List<Label>> combinedLabelUnis = getLabelsUni(dto.getLabels());
-        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
-        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
-        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
-        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
-
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).with((assignee, taskType, project, taskOpt, labels) -> {
-                    Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
-                    return repository.insert(doc, user.getId());
-                })
-                .flatMap(uni -> uni)
-                .onItem().transformToUni(task -> get(task.getId().toString(), user));
+            return null;
     }
 
     public Uni<TaskDTO> update(String id, TaskDTO dto, IUser user) {
-        Uni<List<Label>> combinedLabelUnis = getLabelsUni(dto.getLabels());
-        Uni<Optional<IUser>> assigneeUni = userService.get(dto.getAssignee().getId());
-        Uni<Optional<TaskType>> taskTypeUni = taskTypeService.findByIdentifier(dto.getTaskType().getIdentifier());
-        Uni<ProjectDTO> projectUni = projectService.get(dto.getProject().getId(), user);
-        Uni<Optional<Task>> taskUni = repository.findById(dto.getId(), user.getId());
-
-        return Uni.combine().all().unis(assigneeUni, taskTypeUni, projectUni, taskUni, combinedLabelUnis).with((assignee, taskType, project, taskOpt, labels) -> {
-                    Task doc = buildEntity(dto, assignee, labels, taskType, project, taskOpt);
-                    return repository.update(UUID.fromString(id), doc, user.getId());
-                })
-                .flatMap(uni -> uni)
-                .onItem().transformToUni(task -> get(task.getId().toString(), user));
+        return null;
     }
 
     public Uni<Integer> delete(String id, IUser user) {

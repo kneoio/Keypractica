@@ -2,8 +2,10 @@ package io.kneo.officeframe.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.repository.AsyncRepository;
+import io.kneo.core.repository.table.EntityData;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.model.TaskType;
+import io.kneo.officeframe.repository.table.OfficeFrameNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -12,19 +14,18 @@ import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static io.kneo.officeframe.repository.table.OfficeFrameNameResolver.TASK_TYPE;
+
 @ApplicationScoped
 public class TaskTypeRepository extends AsyncRepository {
-    private static final String TABLE_NAME = "ref__task_types";
-    private static final String ENTITY_NAME = "task_type";
-    private static final String BASE_REQUEST = String.format("SELECT * FROM %s t ", TABLE_NAME);
-    private static final Logger LOGGER = LoggerFactory.getLogger("TaskTypeRepository");
+    private static final EntityData entityData = OfficeFrameNameResolver.create().getEntityNames(TASK_TYPE);
+    private static final String BASE_REQUEST = String.format("SELECT * FROM %s t ", entityData.getTableName());
+
 
     @Inject
     public TaskTypeRepository(PgPool client, ObjectMapper mapper) {
@@ -40,14 +41,11 @@ public class TaskTypeRepository extends AsyncRepository {
     }
 
     public Uni<Integer> getAllCount() {
-        return getAllCount(TABLE_NAME);
+        return getAllCount(entityData.getTableName());
     }
 
-    public Uni<Optional<TaskType>> findById(UUID uuid) {
-        return client.preparedQuery(BASE_REQUEST + " WHERE t.id = $1")
-                .execute(Tuple.of(uuid))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+    public Uni<TaskType> findById(UUID uuid) {
+        return findById(uuid, entityData, this::from);
     }
 
     public Uni<Optional<TaskType>> findByIdentifier(String identifier) {
@@ -67,7 +65,7 @@ public class TaskTypeRepository extends AsyncRepository {
     private TaskType from(Row row) {
         TaskType doc = new TaskType();
         setDefaultFields(doc, row);
-        doc.setIdentifier(row.getString("identifier"));
+        doc.setIdentifier(row.getString(COLUMN_IDENTIFIER));
         setLocalizedNames(doc, row);
         return doc;
     }

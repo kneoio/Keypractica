@@ -155,7 +155,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
 
             dto.setOrgCategory(OrgCategoryDTO.builder()
                     .identifier(category.getIdentifier())
-                    .localizedName(category.getLocalizedName(LanguageCode.ENG))
+                    .localizedNames(category.getLocalizedName())
                     .id(category.getId())
                     .build());
 

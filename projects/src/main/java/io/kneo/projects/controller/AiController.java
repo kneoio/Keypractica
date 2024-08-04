@@ -24,14 +24,18 @@ public class AiController extends AbstractSecuredController<Object, PromptDTO> {
     }
 
     @Route(path = "/chat", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void chat(RoutingContext rc) throws UserNotFoundException {
-        JsonObject jsonObject = rc.body().asJsonObject();
-        PromptDTO promptDTO = jsonObject.mapTo(PromptDTO.class);
+    public void chat(RoutingContext rc) {
+        try {
+            JsonObject jsonObject = rc.body().asJsonObject();
+            PromptDTO promptDTO = jsonObject.mapTo(PromptDTO.class);
 
-        service.chat(promptDTO, getUser(rc))
-                .subscribe().with(
-                        response -> rc.response().setStatusCode(200).end(response),
-                        rc::fail
-                );
+            service.chat(promptDTO, getUser(rc))
+                    .subscribe().with(
+                            response -> rc.response().setStatusCode(200).end(response),
+                            rc::fail
+                    );
+        } catch (UserNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
