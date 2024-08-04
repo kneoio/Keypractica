@@ -158,7 +158,7 @@ public class OrganizationRepository extends AsyncRepository {
                     }
                     return findById(id);
                 })
-                .onItem().transform(optionalOrg -> optionalOrg);
+                .onItem().transform(organization -> organization);
     }
 
     public Uni<Integer> delete(UUID id) {

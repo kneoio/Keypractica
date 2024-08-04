@@ -149,16 +149,6 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         }
     }
 
-    @Override
-    public Uni<EmployeeDTO> add(EmployeeDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<EmployeeDTO> update(String id, EmployeeDTO dto, IUser user) {
-        return null;
-    }
-
     public Uni<Integer> delete(String id, IUser user) {
         assert repository != null;
         return repository.delete(UUID.fromString(id));

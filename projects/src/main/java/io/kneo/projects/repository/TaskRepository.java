@@ -66,17 +66,17 @@ public class TaskRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Optional<Task>> findById(UUID uuid, Long userID) {
+    public Uni<Task> findById(UUID uuid, Long userID) {
         return client.preparedQuery( String.format("SELECT pt.*, ptr.*  FROM %s pt JOIN %s ptr ON pt.id = ptr.entity_id " +
                         "WHERE ptr.reader = $1 AND pt.id = $2", entityData.getTableName(), entityData.getRlsName()))
                 .execute(Tuple.of(userID, uuid))
                 .onItem().transform(RowSet::iterator)
                 .onItem().transform(iterator -> {
                     if (iterator.hasNext()) {
-                        return Optional.of(from(iterator.next()));
+                        return from(iterator.next());
                     } else {
                         LOGGER.warn(String.format("No %s found with id: " + uuid, entityData.getTableName()));
-                        return Optional.empty();
+                        return null;
                     }
                 });
     }
@@ -164,7 +164,7 @@ public class TaskRepository extends AsyncRepository {
                         return Uni.combine().all().unis(unis).with(l -> id);
                     });
         }).onItem().transformToUni(id -> findById(id, user)
-                .onItem().transform(optionalTask -> optionalTask.orElseThrow(() -> new RuntimeException("Failed to retrieve inserted task"))));
+                .onItem().transform(task -> task));
     }
 
     public Uni<Task> update(UUID id, Task doc, Long user) {
@@ -227,7 +227,7 @@ public class TaskRepository extends AsyncRepository {
                                         .onFailure().recoverWithUni(t ->
                                                 Uni.createFrom().failure(t)))
                                 .onItem().transformToUni(rowCount -> findById(id, user)
-                                        .onItem().transform(optionalTask -> optionalTask.orElseThrow(() -> new RuntimeException("Failed to retrieve updated task"))));
+                                        .onItem().transform(task -> task));
                     } else {
                         return Uni.createFrom()
                                 .failure(new DocumentModificationAccessException("User does not have edit permission", user, id));
