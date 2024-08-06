@@ -130,10 +130,10 @@ public class AsyncRepository {
 
     protected static void setDefaultFields(DataEntity<UUID> entity, Row row) {
         entity.setId(row.getUUID("id"));
-        entity.setAuthor(row.getLong("author"));
-        entity.setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()));
-        entity.setLastModifier(row.getLong("last_mod_user"));
-        entity.setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()));
+        entity.setAuthor(row.getLong(COLUMN_AUTHOR));
+        entity.setRegDate(row.getLocalDateTime(COLUMN_REG_DATE).atZone(ZoneId.systemDefault()));
+        entity.setLastModifier(row.getLong(COLUMN_LAST_MOD_USER));
+        entity.setLastModifiedDate(row.getLocalDateTime(COLUMN_LAST_MOD_DATE).atZone(ZoneId.systemDefault()));
     }
 
     protected static void setLocalizedNames(SimpleReferenceEntity entity, Row row) {
@@ -184,7 +184,7 @@ public class AsyncRepository {
     @Deprecated
     protected EnumMap<LanguageCode, String> getLocalizedNameFromDb(Row row) {
         try {
-            JsonObject localizedNameJson = row.getJsonObject("loc_name");
+            JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
             return convertToEnumMap(localizedNameJson.getMap());
         } catch (Exception e) {
             return new EnumMap<>(LanguageCode.class);

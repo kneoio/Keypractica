@@ -9,6 +9,7 @@ import io.kneo.core.dto.Views;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
+import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.projects.model.Task;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;

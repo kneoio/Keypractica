@@ -64,18 +64,17 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<DepartmentDTO> getDTO(String id, IUser user, LanguageCode language) {
-        return repository.findById(UUID.fromString(id))
+    public Uni<DepartmentDTO> getDTO(UUID id, IUser user, LanguageCode language) {
+        return repository.findById(id)
                 .onItem().transform(this::mapToDTO);
     }
 
-    public Uni<DepartmentDTO> upsert(String id, DepartmentDTO dto, IUser user) {
+    public Uni<DepartmentDTO> upsert(UUID id, DepartmentDTO dto, IUser user, LanguageCode code) {
         Department doc = mapToEntity(dto);
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
         } else {
-            UUID uuid = UUID.fromString(id);
-            return map(repository.update(uuid, doc, user));
+            return map(repository.update(id, doc, user));
         }
     }
 

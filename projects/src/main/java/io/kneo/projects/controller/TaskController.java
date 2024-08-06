@@ -22,6 +22,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
 
+import java.util.UUID;
+
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @RouteBase(path = "/api/:org/tasks")
@@ -71,7 +73,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
     public void getById(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -88,7 +90,7 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
             JsonObject jsonObject = rc.body().asJsonObject();
             TaskDTO dto = jsonObject.mapTo(TaskDTO.class);
             String id = rc.pathParam("id");
-            service.upsert(id, dto, getUser(rc)).subscribe().with(
+            service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc)).subscribe().with(
                     createdTaskId -> rc.response().setStatusCode(201).end(JsonObject.mapFrom(createdTaskId).encode()),
                     rc::fail
             );

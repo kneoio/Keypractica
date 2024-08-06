@@ -10,7 +10,6 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
-import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.TaskTypeService;
@@ -20,6 +19,8 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+
+import java.util.UUID;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
@@ -63,9 +64,8 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void get(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
-        LanguageCode languageCode = resolveLanguage(rc);
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(rc.pathParam("id"), getUser(rc), languageCode)
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -77,21 +77,7 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
     }
 
     @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) {
-        JsonObject jsonObject = rc.body().asJsonObject();
-        LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
-        service.add(dto)
-                .subscribe().with(
-                        id -> rc.response().setStatusCode(201).end(),
-                        error -> {
-                            LOGGER.error(error.getMessage());
-                            rc.response().setStatusCode(500).end();
-                        }
-                );
-    }
-
-    @Route(path = "", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) {
+    public void upsert(RoutingContext rc) {
 
     }
 

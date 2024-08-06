@@ -25,6 +25,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
 import java.util.List;
+import java.util.UUID;
 
 @RolesAllowed("**")
 @RouteBase(path = "/api/:org/projects")
@@ -96,7 +97,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             String id = rc.pathParam("id");
             LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
 
-            service.getDTO(id, getUser(rc), languageCode).subscribe().with(
+            service.getDTO(UUID.fromString(id), getUser(rc), languageCode).subscribe().with(
                     project -> {
                         FormPage page = new FormPage();
                         page.addPayload(PayloadType.DOC_DATA, project);
@@ -123,7 +124,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             String id = rc.pathParam("id");
             JsonObject jsonObject = rc.body().asJsonObject();
             ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-            service.upsert(id, dto, getUser(rc))
+            service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
                     .subscribe().with(
                             createdProjectId -> rc.response().setStatusCode(200).end(createdProjectId.toString()),
                             failure -> {

@@ -64,8 +64,8 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
 
-    public Uni<LabelDTO> getDTO(String uuid, IUser user, LanguageCode language) {
-        Uni<Label> labelUni = repository.findById(UUID.fromString(uuid));
+    public Uni<LabelDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
+        Uni<Label> labelUni = repository.findById(uuid);
         return labelUni.onItem().transform(this::map);
     }
 

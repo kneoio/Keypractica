@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
@@ -81,7 +82,7 @@ public abstract class AbstractController<T, V> {
     protected void getById(IRESTService<V> service, RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -92,16 +93,16 @@ public abstract class AbstractController<T, V> {
                 );
     }
 
-    protected void upsert(IRESTService<V> service, String id, RoutingContext rc) throws UserNotFoundException {
+    protected void upsert(IRESTService<V> service, UUID id, RoutingContext rc) throws UserNotFoundException {
         JsonObject jsonObject = rc.body().asJsonObject();
 
         ObjectMapper mapper = new ObjectMapper();
         V dto = mapper.convertValue(jsonObject, new TypeReference<V>() {});
 
-        service.upsert(id, dto, getUser(rc))
+        service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         doc -> {
-                            int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
+                            int statusCode = (id == null ) ? 201 : 200;
                             rc.response()
                                     .setStatusCode(statusCode)
                                     .end(JsonObject.mapFrom(doc).encode());
@@ -151,7 +152,7 @@ public abstract class AbstractController<T, V> {
             IUser user = userOptional.get();
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
-            return service.getDTO(id, user, LanguageCode.ENG)
+            return service.getDTO(UUID.fromString(id), user, LanguageCode.ENG)
                     .onItem().transform(p -> {
                         page.addPayload(PayloadType.DOC_DATA, p);
                         return Response.ok(page).build();
@@ -178,7 +179,7 @@ public abstract class AbstractController<T, V> {
     protected Uni<Response> getDocument(AbstractService<T, V> service, String id) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, AnonymousUser.build(), LanguageCode.ENG)
+        return service.getDTO(UUID.fromString(id), AnonymousUser.build(), LanguageCode.ENG)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();

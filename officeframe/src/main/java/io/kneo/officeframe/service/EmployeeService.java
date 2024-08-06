@@ -115,19 +115,19 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     @Override
-    public Uni<EmployeeDTO> getDTO(String id, IUser user, LanguageCode language) {
+    public Uni<EmployeeDTO> getDTO(UUID id, IUser user, LanguageCode language) {
         Uni<Employee> uni;
         if ("current".equals(id)) {
             assert repository != null;
             uni = repository.getByUserId(user.getId());
         } else {
             assert repository != null;
-            uni = repository.getById(UUID.fromString(id));
+            uni = repository.getById(id);
         }
         return map(uni);
     }
 
-    public Uni<EmployeeDTO> upsert(String id, EmployeeDTO dto, IUser user) {
+    public Uni<EmployeeDTO> upsert(UUID id, EmployeeDTO dto, IUser user, LanguageCode code) {
         Employee doc = new Employee();
         doc.setIdentifier(dto.getIdentifier());
         doc.setPhone(dto.getPhone());
@@ -143,9 +143,8 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             assert repository != null;
             return map(repository.insert(doc, user));
         } else {
-            UUID uuid = UUID.fromString(id);
             assert repository != null;
-            return map(repository.update(uuid, doc, user));
+            return map(repository.update(id, doc, user));
         }
     }
 

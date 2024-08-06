@@ -46,7 +46,18 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
         return uni
                 .onItem().transform(projectList -> projectList.stream()
-                        .map(this::plainMap)
+                        .map(project -> {
+                            return ProjectDTO.builder()
+                                    .id(project.getId())
+                                    .author(userRepository.getUserName(project.getAuthor()))
+                                    .regDate(project.getRegDate())
+                                    .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                                    .lastModifiedDate(project.getLastModifiedDate())
+                                    .name(project.getName())
+                                    .finishDate(project.getFinishDate())
+                                    .status(project.getStatus())
+                                    .build();
+                        })
                         .collect(Collectors.toList()));
     }
 
@@ -59,22 +70,20 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<ProjectDTO> getDTO(String uuid, IUser user, LanguageCode code) {
-        UUID id = UUID.fromString(uuid);
+    public Uni<ProjectDTO> getDTO(UUID uuid, IUser user, LanguageCode code) {
         assert repository != null;
-        Uni<Project> projectUni = repository.findById(id, user.getId());
+        Uni<Project> projectUni = repository.findById(uuid, user.getId());
         return projectUni.onItem().transformToUni(this::map);
     }
 
     @Override
-    public Uni<ProjectDTO> upsert(String id, ProjectDTO dto, IUser user) {
+    public Uni<ProjectDTO> upsert(UUID id, ProjectDTO dto, IUser user, LanguageCode code) {
         assert repository != null;
-        UUID uuid = UUID.fromString(id);
         if (id == null) {
             return repository.insert(buildEntity(dto), user.getId())
                     .onItem().transformToUni(this::map);
         } else {
-            return repository.update(uuid, buildEntity(dto), user)
+            return repository.update(id, buildEntity(dto), user)
                     .onItem().transformToUni(this::map);
         }
     }
@@ -122,22 +131,8 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return doc;
     }
 
-    @Override
     public Uni<Integer> delete(String id, IUser user) {
-        UUID uuid = UUID.fromString(id);
-        return null;
-    }
-
-    private ProjectDTO plainMap(Project project) {
-        return ProjectDTO.builder()
-                .id(project.getId())
-                .author(userRepository.getUserName(project.getAuthor()))
-                .regDate(project.getRegDate())
-                .lastModifier(userRepository.getUserName(project.getLastModifier()))
-                .lastModifiedDate(project.getLastModifiedDate())
-                .name(project.getName())
-                .finishDate(project.getFinishDate())
-                .status(project.getStatus())
-                .build();
+        assert repository != null;
+        return repository.delete(UUID.fromString(id), user);
     }
 }

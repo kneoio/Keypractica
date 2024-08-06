@@ -34,6 +34,7 @@ import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Path("/roles")
 @Produces(MediaType.APPLICATION_JSON)
@@ -56,9 +57,9 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
             Uni<Integer> countUni = service.getAllCount();
             Uni<Integer> maxPageUni = countUni.onItem().transform(c -> RuntimeUtil.countMaxPage(c, user.getPageSize()));
             Uni<Integer> pageNumUni = Uni.createFrom().item(params.page);
-            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).combinedWith(RuntimeUtil::calcStartEntry);
+            Uni<Integer> offsetUni = Uni.combine().all().unis(pageNumUni, Uni.createFrom().item(user.getPageSize())).with(RuntimeUtil::calcStartEntry);
             Uni<List<RoleDTO>> listUni = offsetUni.onItem().transformToUni(offset -> service.getAll(user.getPageSize(), offset));
-            return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).combinedWith((dtoList, offset, pageNum, count, maxPage) -> {
+            return Uni.combine().all().unis(listUni, offsetUni, pageNumUni, countUni, maxPageUni).with((dtoList, offset, pageNum, count, maxPage) -> {
                 ViewPage viewPage = new ViewPage();
                 viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultViewActions(LanguageCode.ENG));
                 if (pageNum == 0) pageNum = 1;
@@ -76,7 +77,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
     public Uni<Response> getById(@PathParam("id") String id)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        return service.getDTO(id, AnonymousUser.build(), LanguageCode.ENG)
+        return service.getDTO(UUID.fromString(id), AnonymousUser.build(), LanguageCode.ENG)
                 .onItem().transform(p -> {
                     page.addPayload(PayloadType.DOC_DATA, p);
                     return Response.ok(page).build();

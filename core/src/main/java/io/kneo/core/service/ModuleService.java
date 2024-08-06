@@ -77,8 +77,8 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
     @Override
-    public Uni<ModuleDTO> getDTO(String id, IUser user, LanguageCode language) {
-        Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
+    public Uni<ModuleDTO> getDTO(UUID id, IUser user, LanguageCode language) {
+        Uni<Optional<Module>> uni = repository.findById(id);
         return mapToDTO( uni);
     }
 

@@ -29,6 +29,7 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         this.repository = null;
     }
 
+
     @Inject
     public RoleService(UserRepository userRepository, UserService userService, RoleRepository repository) {
         super(userRepository, userService);
@@ -54,9 +55,10 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         return repository.getAllCount();
     }
 
+
     @Override
-    public Uni<RoleDTO> getDTO(String id, IUser user, LanguageCode language) {
-        Uni<Role> uni = repository.findById(UUID.fromString(id));
+    public Uni<RoleDTO> getDTO(UUID id, IUser user, LanguageCode language) {
+        Uni<Role> uni = repository.findById(id);
         return uni.onItem().transform(optional -> {
             RoleDTO dto = new RoleDTO();
             setDefaultFields(dto, optional);

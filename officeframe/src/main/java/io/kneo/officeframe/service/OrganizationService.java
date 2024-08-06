@@ -26,7 +26,6 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     private final OrganizationRepository repository;
     private final OrgCategoryRepository orgCategoryRepository;
 
-
     @Inject
     public OrganizationService(UserRepository userRepository,
                                UserService userService,
@@ -83,7 +82,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         return null;
     }
 
-    @SuppressWarnings("ConstantConditions")
+
     public Uni<Organization> get(String id) {
         return repository.findById(UUID.fromString(id));
     }
@@ -93,13 +92,12 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    @SuppressWarnings("ConstantConditions")
-    public Uni<OrganizationDTO> getDTO(String id, IUser user, LanguageCode language) {
-        return map(repository.findById(UUID.fromString(id)));
+    public Uni<OrganizationDTO> getDTO(UUID id, IUser user, LanguageCode language) {
+        return map(repository.findById(id));
     }
 
     @Override
-    public Uni<OrganizationDTO> upsert(String id, OrganizationDTO dto, IUser user) {
+    public Uni<OrganizationDTO> upsert(UUID id, OrganizationDTO dto, IUser user, LanguageCode code) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
@@ -110,14 +108,11 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
         } else {
-            UUID uuid = UUID.fromString(id);
-            return map(repository.update(uuid, doc, user));
+            return map(repository.update(id, doc, user));
         }
     }
 
-
     @Override
-    @SuppressWarnings("ConstantConditions")
     public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id))
                 .onItem().transform(count -> count);

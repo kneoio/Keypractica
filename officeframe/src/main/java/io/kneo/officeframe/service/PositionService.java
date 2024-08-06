@@ -54,8 +54,8 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         return null;
     }
 
-    public Uni<PositionDTO> getDTO(String uuid, IUser user, LanguageCode language) {
-        return getDTO(UUID.fromString(uuid));
+    public Uni<PositionDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
+        return getDTO(uuid);
     }
 
     @Override

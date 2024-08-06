@@ -21,6 +21,8 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
+import java.util.UUID;
+
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @RolesAllowed("**")
@@ -79,7 +81,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
     public void get(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(rc.pathParam("id"), getUser(rc), resolveLanguage(rc))
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -110,7 +112,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
         JsonObject jsonObject = rc.body().asJsonObject();
         LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
         String id = rc.pathParam("id");
-        service.upsert(id, dto, getUser(rc))
+        service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         label -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(label).encode()),
                         rc::fail
