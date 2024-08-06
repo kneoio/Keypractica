@@ -68,16 +68,6 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
     }
 
     @Override
-    public Uni<RoleDTO> add(RoleDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<RoleDTO> update(String id, RoleDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }

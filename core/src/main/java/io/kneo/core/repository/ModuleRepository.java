@@ -33,7 +33,7 @@ public class ModuleRepository extends AsyncRepository {
 
     @Inject
     public ModuleRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
     public Uni<List<Module>> getAll(final int limit, final int offset) {

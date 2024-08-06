@@ -13,18 +13,17 @@ import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.actions.TaskActionsFactory;
+import io.kneo.projects.dto.filter.TaskFilter;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.service.TaskService;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@RolesAllowed("**")
 @RouteBase(path = "/api/:org/tasks")
 public final class TaskController extends AbstractSecuredController<Task, TaskDTO> {
     TaskService service;
@@ -35,21 +34,22 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
         this.service = service;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void getAll(RoutingContext rc) {
-        int page = Integer.parseInt(rc.request().getParam("page", "0"));
+        int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
+        TaskFilter filter = rc.body().asJsonObject().mapTo(TaskFilter.class);
 
         try {
             IUser user = getUser(rc);
 
-            service.getAllCount(user)
+            service.getAllCount(user, filter)
                     .onItem().transformToUni(count -> {
                         int maxPage = countMaxPage(count, size);
                         int pageNum = (page == 0) ? 1 : page;
                         int offset = RuntimeUtil.calcStartEntry(pageNum, size);
                         LanguageCode languageCode = resolveLanguage(rc);
-                        return service.getAll(size, offset, user)
+                        return service.getAll(size, offset, user, filter)
                                 .onItem().transform(dtoList -> {
                                     ViewPage viewPage = new ViewPage();
                                     viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, TaskActionsFactory.getViewActions(languageCode));

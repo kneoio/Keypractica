@@ -32,7 +32,7 @@ public class EmployeeRepository extends AsyncRepository {
 
     @Inject
     public EmployeeRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

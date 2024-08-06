@@ -33,7 +33,7 @@ public class LanguageRepository extends AsyncRepository {
 
     @Inject
     public LanguageRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

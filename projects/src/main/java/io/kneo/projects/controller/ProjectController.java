@@ -9,7 +9,6 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
@@ -151,7 +150,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
                         rc.response().setStatusCode(500).end("Internal Server Error");
                     }
             );
-        } catch (UserNotFoundException | DocumentModificationAccessException e) {
+        } catch (UserNotFoundException e) {
             throw new RuntimeException(e);
         }
     }

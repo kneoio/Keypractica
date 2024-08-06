@@ -6,10 +6,10 @@ import java.util.UUID;
 
 @Getter
 public class DocumentModificationAccessException extends Exception {
-    private final long user;
+    private final String user;
     private String docId;
 
-    public DocumentModificationAccessException(String s, long user, UUID id) {
+    public DocumentModificationAccessException(String s, String user, UUID id) {
         super(s);
         this.user = user;
         try {

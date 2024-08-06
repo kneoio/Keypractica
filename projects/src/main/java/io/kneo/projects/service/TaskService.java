@@ -8,7 +8,6 @@ import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
-import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.DateUtil;
 import io.kneo.core.util.NumberUtil;
 import io.kneo.officeframe.dto.EmployeeDTO;
@@ -22,6 +21,7 @@ import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.TaskDTO;
 import io.kneo.projects.dto.TaskTemplateDTO;
 import io.kneo.projects.dto.TaskTypeDTO;
+import io.kneo.projects.dto.filter.TaskFilter;
 import io.kneo.projects.model.Task;
 import io.kneo.projects.repository.TaskRepository;
 import io.kneo.projects.repository.table.ProjectNameResolver;
@@ -31,7 +31,6 @@ import jakarta.inject.Inject;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -70,7 +69,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         this.taskTypeService = taskTypeService;
     }
 
-    public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final IUser user) {
+    public Uni<List<TaskDTO>> getAll(final int limit, final int offset, final IUser user, TaskFilter filters) {
         assert repository != null;
         Uni<List<Task>> taskUni = repository.getAll(limit, offset, user.getId());
         return taskUni
@@ -103,7 +102,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
 
 
-    public Uni<Integer> getAllCount(final IUser user) {
+    public Uni<Integer> getAllCount(final IUser user, TaskFilter filters) {
         assert repository != null;
         return repository.getAllCount(user.getId());
     }
@@ -137,7 +136,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
         Uni<ProjectDTO> projectUni = taskUni.onItem().transformToUni(item -> {
             assert projectService != null;
-            return projectService.getById(item.getProject(), user)
+            return projectService.getDTO(item.getProject().toString(), user, code)
                     .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
         });
 
@@ -158,7 +157,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
         Uni<List<RLSDTO>> rlsDtoListUni = getRLSDTO(repository, ProjectNameResolver.create().getEntityNames(TASK), taskUni, id);
 
-        return Uni.combine().all().unis(taskUni, projectUni, assigneeUni, taskTypeUni, labelsUni, rlsDtoListUni).combinedWith((task, project, assignee, taskType, labels, rls) -> {
+        return Uni.combine().all().unis(taskUni, projectUni, assigneeUni, taskTypeUni, labelsUni, rlsDtoListUni)
+                .with((task, project, assignee, taskType, labels, rls) -> {
             return TaskDTO.builder()
                     .id(task.getId())
                     .author(userRepository.getUserName(task.getAuthor()))
@@ -193,25 +193,25 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
     public Uni<Integer> delete(String id, IUser user) {
         assert repository != null;
-        return repository.delete(UUID.fromString(id), user.getId());
+        return repository.delete(UUID.fromString(id), user);
     }
 
-    private Task buildEntity(TaskDTO dto, Optional<IUser> assignee, List<Label> labels, Optional<TaskType> taskType, ProjectDTO project, Optional<Task> taskOpt) {
+    private Task buildEntity(TaskDTO dto, IUser assignee, List<Label> labels, TaskType taskType, ProjectDTO project, Task taskOpt) {
         Task doc = new Task.Builder()
                 .setRegNumber(String.valueOf(NumberUtil.getRandomNumber(100000, 999999)))
                 .setBody(dto.getBody())
-                .setAssignee(assignee.orElseThrow().getId())
+                .setAssignee(assignee.getId())
                 .setPriority(dto.getPriority())
                 .setCancellationComment(dto.getCancellationComment())
                 .setTitle(dto.getTitle())
                 .setLabels(labels.stream()
                         .map(DataEntity::getId)
                         .collect(Collectors.toList()))
-                .setTaskType(taskType.orElseThrow(() -> new DataValidationException("Task type is not correct")).getId())
+                .setTaskType(taskType.getId())
                 .setProject(project.getId())
                 .setStartDate(DateUtil.getStartOfDayOrNow(dto.getStartDate()))
                 .build();
-        taskOpt.ifPresent(task -> doc.setParent(task.getParent()));
+       // doc.setParent(task.getParent());
         if (dto.getTargetDate() != null) {
             doc.setTargetDate(dto.getTargetDate());
         }

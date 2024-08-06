@@ -24,7 +24,7 @@ public class PositionRepository extends AsyncRepository {
 
     @Inject
     public PositionRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
     public Uni<List<Position>> getAll(final int limit, final int offset) {

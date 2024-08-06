@@ -2,6 +2,7 @@
 package io.kneo.projects.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,8 +17,9 @@ import java.util.List;
 @Getter
 @SuperBuilder
 @NoArgsConstructor
+@Deprecated
 public class TaskTemplateDTO {
-    List<AssigneeDTO> availableAssignee;
+    List<EmployeeDTO> availableAssignee;
     List<TaskTypeDTO> availableTaskType;
     List<ProjectDTO> availableProject;
     LocalDate targetDate;

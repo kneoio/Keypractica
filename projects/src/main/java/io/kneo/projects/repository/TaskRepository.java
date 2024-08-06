@@ -1,6 +1,7 @@
 package io.kneo.projects.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -30,14 +31,13 @@ import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
 @ApplicationScoped
 public class TaskRepository extends AsyncRepository {
     private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(TASK);
-    @Inject
-    private  RLSRepository rlsRepository;
+
     private static final String BASE_REQUEST = """
             SELECT pt.*, ptr.*  FROM prj__tasks pt JOIN prj__task_readers ptr ON pt.id = ptr.entity_id\s""";
 
     @Inject
-    public TaskRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+    public TaskRepository(PgPool client, ObjectMapper mapper, RLSRepository rlsRepository) {
+        super(client, mapper, rlsRepository);
     }
 
 
@@ -167,8 +167,8 @@ public class TaskRepository extends AsyncRepository {
                 .onItem().transform(task -> task));
     }
 
-    public Uni<Task> update(UUID id, Task doc, Long user) {
-        return rlsRepository.findById(entityData.getRlsName(), user, id)
+    public Uni<Task> update(UUID id, Task doc, IUser user) {
+        return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[0] == 1) {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
@@ -193,7 +193,7 @@ public class TaskRepository extends AsyncRepository {
                                 .addLocalDateTime(doc.getStartDate().toLocalDateTime())
                                 .addString(doc.getCancellationComment())
                                 .addLocalDateTime(nowTime)
-                                .addLong(user);
+                                .addLong(user.getId());
                         allParams.addUUID(id);
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
                                         .execute(allParams)
@@ -226,37 +226,17 @@ public class TaskRepository extends AsyncRepository {
                                         })
                                         .onFailure().recoverWithUni(t ->
                                                 Uni.createFrom().failure(t)))
-                                .onItem().transformToUni(rowCount -> findById(id, user)
+                                .onItem().transformToUni(rowCount -> findById(id, user.getId())
                                         .onItem().transform(task -> task));
                     } else {
                         return Uni.createFrom()
-                                .failure(new DocumentModificationAccessException("User does not have edit permission", user, id));
+                                .failure(new DocumentModificationAccessException("User does not have edit permission", user.getUserName(), id));
                     }
                 });
     }
 
-    public Uni<Integer> delete(UUID id, long user) {
-        return rlsRepository.findById(entityData.getRlsName(), user, id)
-                .onItem().transformToUni(permissions -> {
-                    if (permissions[1] == 1) {
-                        String sql = String.format("DELETE FROM %s WHERE id=$1;", entityData.getTableName());
-                        return client.withTransaction(tx -> tx.preparedQuery(sql)
-                                .execute(Tuple.of(id))
-                                .onItem().transformToUni(rowSet -> {
-                                    int rowCount = rowSet.rowCount();
-                                    if (rowCount == 0) {
-                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
-                                    }
-                                    return Uni.createFrom().item(rowCount);
-                                })
-                                .onFailure().recoverWithUni(t ->
-                                        Uni.createFrom().failure(t)));
-
-                    } else {
-                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have delete permission", user, id));
-                    }
-                });
+    public Uni<Integer> delete(UUID uuid, IUser user) {
+        return delete(uuid, entityData, user);
     }
-
 
 }

@@ -51,7 +51,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
     @Override
-    public Uni<Optional<ModuleDTO>> getByIdentifier(String identifier) {
+    public Uni<ModuleDTO> getByIdentifier(String identifier) {
         return null;
     }
 
@@ -80,16 +80,6 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     public Uni<ModuleDTO> getDTO(String id, IUser user, LanguageCode language) {
         Uni<Optional<Module>> uni = repository.findById(UUID.fromString(id));
         return mapToDTO( uni);
-    }
-
-    @Override
-    public Uni<ModuleDTO> add(ModuleDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<ModuleDTO> update(String id, ModuleDTO dto, IUser user) {
-        return null;
     }
 
     @Override

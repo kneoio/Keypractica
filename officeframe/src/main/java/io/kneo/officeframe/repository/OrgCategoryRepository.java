@@ -23,7 +23,7 @@ public class OrgCategoryRepository extends AsyncRepository {
 
     @Inject
     public OrgCategoryRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
     public Uni<List<OrgCategory>> getAll(final int limit, final int offset) {

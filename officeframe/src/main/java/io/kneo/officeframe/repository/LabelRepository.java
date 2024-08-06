@@ -27,7 +27,7 @@ public class LabelRepository extends AsyncRepository {
 
     @Inject
     public LabelRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

@@ -34,6 +34,7 @@ public abstract class AbstractService<T, V> {
     public Uni<V> upsert(String id, V dto, IUser user) {
          return Uni.createFrom().failure(new RuntimeException("The upsert is not implemented"));
     };
+
     public abstract Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException;
 
     protected Uni<List<RLSDTO>> getRLSDTO(AsyncRepository asyncRepository, EntityData entityData, Uni<T> secureDataEntityUni, UUID id) {

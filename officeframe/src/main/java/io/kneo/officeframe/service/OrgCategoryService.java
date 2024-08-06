@@ -74,15 +74,6 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
                 .build();
     }
 
-    @Override
-    public Uni<OrgCategoryDTO> add(OrgCategoryDTO dto, IUser user) {
-        return Uni.createFrom().nullItem();
-    }
-
-    @Override
-    public Uni<OrgCategoryDTO> update(String id, OrgCategoryDTO dto, IUser user) {
-        return null;
-    }
 
     @Override
     public Uni<Integer> delete(String id, IUser user) {

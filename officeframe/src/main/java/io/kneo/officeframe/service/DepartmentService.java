@@ -80,16 +80,6 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<DepartmentDTO> add(DepartmentDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<DepartmentDTO> update(String id, DepartmentDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return repository.delete(UUID.fromString(id))
                 .onItem().transform(count -> count);

@@ -7,7 +7,10 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.DataEntity;
 import io.kneo.core.model.SimpleReferenceEntity;
 import io.kneo.core.model.embedded.RLS;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
+import io.kneo.core.repository.rls.RLSRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
@@ -37,15 +40,16 @@ public class AsyncRepository {
 
     protected PgPool client;
     protected ObjectMapper mapper;
-
+    protected RLSRepository rlsRepository;
 
     public AsyncRepository() {
 
     }
 
-    public AsyncRepository(PgPool client, ObjectMapper mapper) {
+    public AsyncRepository(PgPool client, ObjectMapper mapper, RLSRepository rlsRepository) {
         this.client = client;
         this.mapper = mapper;
+        this.rlsRepository = rlsRepository;
     }
 
     protected Uni<Integer> getAllCount(long userID, String mainTable, String aclTable) {
@@ -99,6 +103,29 @@ public class AsyncRepository {
                     LOGGER.error(throwable.getMessage());
                     return Uni.createFrom().failure(new RuntimeException(String.format("Failed to delete %s", table), throwable));
                 }));
+    }
+
+    public Uni<Integer> delete(UUID id,  EntityData entityData, IUser user) {
+        return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
+                .onItem().transformToUni(permissions -> {
+                    if (permissions[1] == 1) {
+                        String sql = String.format("DELETE FROM %s WHERE id=$1;", entityData.getTableName());
+                        return client.withTransaction(tx -> tx.preparedQuery(sql)
+                                .execute(Tuple.of(id))
+                                .onItem().transformToUni(rowSet -> {
+                                    int rowCount = rowSet.rowCount();
+                                    if (rowCount == 0) {
+                                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                                    }
+                                    return Uni.createFrom().item(rowCount);
+                                })
+                                .onFailure().recoverWithUni(t ->
+                                        Uni.createFrom().failure(t)));
+
+                    } else {
+                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have delete permission", user.getUserName(), id));
+                    }
+                });
     }
 
     protected static void setDefaultFields(DataEntity<UUID> entity, Row row) {

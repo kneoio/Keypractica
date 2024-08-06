@@ -38,7 +38,7 @@ public class UserRepository extends AsyncRepository {
 
     @Inject
     public UserRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
     void onStart(@Observes StartupEvent ev) {

@@ -3,6 +3,7 @@ package io.kneo.projects.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.embedded.RLS;
+import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
@@ -34,13 +35,9 @@ public class ProjectRepository extends AsyncRepository {
     private static final EntityData entityData = ProjectNameResolver.create().getEntityNames(PROJECT);
 
     @Inject
-    private RLSRepository rlsRepository;
-
-    @Inject
-    public ProjectRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+    public ProjectRepository(PgPool client, ObjectMapper mapper, RLSRepository rlsRepository) {
+        super(client, mapper, rlsRepository);
     }
-
 
     public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
         String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
@@ -162,8 +159,8 @@ public class ProjectRepository extends AsyncRepository {
                 .onItem().transform(project -> project));
     }
 
-    public Uni<Project> update(UUID id, Project doc, Long user) {
-        return rlsRepository.findById(entityData.getRlsName(), user, id)
+    public Uni<Project> update(UUID id, Project doc, IUser user) {
+        return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[0] == 1) {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
@@ -189,19 +186,18 @@ public class ProjectRepository extends AsyncRepository {
                                     if (rowCount == 0) {
                                         return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                                     }
-                                    return findById(id, user)
+                                    return findById(id, user.getId())
                                             .onItem().transform(project -> project);
                                 })
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t)));
                     } else {
-                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have edit permission", user, id));
+                        return Uni.createFrom().failure(new DocumentModificationAccessException("User does not have edit permission", user.getUserName(), id));
                     }
                 });
     }
 
-
-    public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, entityData.getTableName());
+    public Uni<Integer> delete(UUID uuid, IUser user) {
+        return delete(uuid, entityData, user);
     }
 
 

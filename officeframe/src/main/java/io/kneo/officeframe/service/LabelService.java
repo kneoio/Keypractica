@@ -115,16 +115,6 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     @Override
-    public Uni<LabelDTO> add(LabelDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<LabelDTO> update(String id, LabelDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
