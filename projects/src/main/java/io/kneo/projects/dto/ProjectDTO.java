@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonView;
 import io.kneo.core.dto.AbstractDTO;
 import io.kneo.core.dto.Views;
-import io.kneo.core.dto.document.UserDTO;
 import io.kneo.core.dto.rls.RLSDTO;
 import io.kneo.core.localization.LanguageCode;
+import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.projects.model.cnst.ProjectStatusType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -35,11 +35,11 @@ public class ProjectDTO extends AbstractDTO {
     private LocalDate finishDate;
 
     @JsonView(Views.DetailView.class)
-    private UserDTO manager;
+    private EmployeeDTO manager;
     @JsonView(Views.DetailView.class)
-    private UserDTO coder;
+    private EmployeeDTO coder;
     @JsonView(Views.DetailView.class)
-    private UserDTO tester;
+    private EmployeeDTO tester;
 
     @JsonView(Views.DetailView.class)
     private List<RLSDTO> rls = new ArrayList<>();

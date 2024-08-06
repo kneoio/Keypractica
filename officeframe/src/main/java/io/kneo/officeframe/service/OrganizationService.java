@@ -115,17 +115,6 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         }
     }
 
-    @Override
-    @SuppressWarnings("ConstantConditions")
-    public Uni<OrganizationDTO> add(OrganizationDTO dto, IUser user) {
-       return null;
-    }
-
-    @Override
-    @SuppressWarnings("ConstantConditions")
-    public Uni<OrganizationDTO> update(String id, OrganizationDTO dto, IUser user) {
-        return null;
-    }
 
     @Override
     @SuppressWarnings("ConstantConditions")

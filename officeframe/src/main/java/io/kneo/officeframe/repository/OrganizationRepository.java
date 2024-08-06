@@ -34,7 +34,7 @@ public class OrganizationRepository extends AsyncRepository {
 
     @Inject
     public OrganizationRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

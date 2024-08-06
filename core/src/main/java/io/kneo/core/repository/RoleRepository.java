@@ -37,7 +37,7 @@ public class RoleRepository extends AsyncRepository {
 
     @Inject
     public RoleRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
     public Uni<List<Role>> getAll(final int limit, final int offset) {

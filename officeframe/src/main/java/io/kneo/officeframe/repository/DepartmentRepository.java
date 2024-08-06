@@ -27,7 +27,7 @@ public class DepartmentRepository extends AsyncRepository {
 
     @Inject
     public DepartmentRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

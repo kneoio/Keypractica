@@ -29,7 +29,7 @@ public class TaskTypeRepository extends AsyncRepository {
 
     @Inject
     public TaskTypeRepository(PgPool client, ObjectMapper mapper) {
-        super(client, mapper);
+        super(client, mapper, null);
     }
 
 

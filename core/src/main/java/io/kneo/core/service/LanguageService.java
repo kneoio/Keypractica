@@ -48,7 +48,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
     }
 
     @Override
-    public Uni<Optional<LanguageDTO>> getByIdentifier(String identifier) {
+    public Uni<LanguageDTO> getByIdentifier(String identifier) {
         return null;
     }
 
@@ -96,16 +96,6 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
                     .localizedName(language.getLocalizedName())
                     .build();
         });
-    }
-
-    @Override
-    public Uni<LanguageDTO> add(LanguageDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<LanguageDTO> update(String id, LanguageDTO dto, IUser user) {
-        return null;
     }
 
     @Override

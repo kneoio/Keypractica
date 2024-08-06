@@ -59,16 +59,6 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
-    public Uni<PositionDTO> add(PositionDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
-    public Uni<PositionDTO> update(String id, PositionDTO dto, IUser user) {
-        return null;
-    }
-
-    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
