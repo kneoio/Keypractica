@@ -1,5 +1,6 @@
 package io.kneo.projects.grpc;
 
+import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AiAgentUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.grpc.stubs.project.ProjectGrpcService;
@@ -24,7 +25,7 @@ public class ProjectGrpcServiceImpl implements ProjectGrpcService {
                 .description(request.getDescription())
                 .build();
 
-        return projectService.upsert(String.valueOf(dto.getId()), dto, getCurrentUser())
+        return projectService.upsert(dto.getId(), dto, getCurrentUser(), LanguageCode.ENG)
                 .onItem().transform(uuid ->
                         ProjectResponse.newBuilder()
                                 .setId(uuid.toString())

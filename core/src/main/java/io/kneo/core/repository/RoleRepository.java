@@ -69,9 +69,9 @@ public class RoleRepository extends AsyncRepository {
     private Role from(Row row) {
         EnumMap<LanguageCode, String> map;
         try {
-            Object o =  row.getJsonObject("loc_name");
+            Object o =  row.getJsonObject(COLUMN_LOCALIZED_NAME);
             if (o != null) {
-                map = mapper.readValue(row.getJsonObject("loc_name").toString(), new TypeReference<>() {
+                map = mapper.readValue(row.getJsonObject(COLUMN_LOCALIZED_NAME).toString(), new TypeReference<>() {
                 });
             } else {
                 map = new EnumMap<>(LanguageCode.class);

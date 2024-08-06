@@ -105,7 +105,7 @@ public class TaskRepository extends AsyncRepository {
                 .build();
     }
 
-    public Uni<Task> insert(Task doc, Long user) {
+    public Uni<Task> insert(Task doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s" +
                 "(reg_date, author, last_mod_date, last_mod_user, assignee, body, target_date, priority, start_date, status, title, parent_id, project_id, task_type_id, reg_number, status_date, cancel_comment)" +
@@ -163,7 +163,7 @@ public class TaskRepository extends AsyncRepository {
                         }
                         return Uni.combine().all().unis(unis).with(l -> id);
                     });
-        }).onItem().transformToUni(id -> findById(id, user)
+        }).onItem().transformToUni(id -> findById(id, user.getId())
                 .onItem().transform(task -> task));
     }
 

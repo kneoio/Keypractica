@@ -4,6 +4,7 @@ package io.kneo.projects.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.dto.LabelDTO;
+import io.kneo.officeframe.dto.TaskTypeDTO;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

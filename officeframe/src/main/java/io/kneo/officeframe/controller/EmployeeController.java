@@ -22,6 +22,8 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
+import java.util.UUID;
+
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 @RolesAllowed("**")
@@ -83,7 +85,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
     public void getById(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(rc.pathParam("id"), getUser(rc), LanguageCode.ENG)
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -99,7 +101,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
         JsonObject jsonObject = rc.body().asJsonObject();
         EmployeeDTO dto = jsonObject.mapTo(EmployeeDTO.class);
         String id = rc.pathParam("id");
-        service.upsert(id, dto, getUser(rc))
+        service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         doc -> {
                             int statusCode = (id == null || id.isEmpty()) ? 201 : 200;

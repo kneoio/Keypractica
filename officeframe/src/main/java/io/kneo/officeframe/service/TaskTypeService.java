@@ -7,7 +7,6 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
-import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.repository.TaskTypeRepository;
@@ -66,8 +65,8 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
-    public Uni<TaskTypeDTO> getDTO(String uuid, IUser user, LanguageCode language) {
-        Uni<TaskType> uni = repository.findById(UUID.fromString(uuid));
+    public Uni<TaskTypeDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
+        Uni<TaskType> uni = repository.findById(uuid);
         return uni.onItem().transform(doc -> {
             return TaskTypeDTO.builder()
                     .author(userRepository.getUserName(doc.getAuthor()))
@@ -82,16 +81,12 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
+    public Uni<TaskTypeDTO> upsert(UUID id, TaskTypeDTO dto, IUser user, LanguageCode code) {
+        return null;
+    }
+
+    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
-        return null;
-    }
-
-
-    public Uni<Object> add(LabelDTO dto) {
-        return null;
-    }
-
-    public IUser update(LabelDTO dto) {
         return null;
     }
 

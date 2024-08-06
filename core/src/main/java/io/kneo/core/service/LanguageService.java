@@ -82,8 +82,8 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
     }
 
     @Override
-    public Uni<LanguageDTO> getDTO(String id, IUser user, LanguageCode code) {
-        Uni<Optional<Language>> uni = repository.findById(UUID.fromString(id));
+    public Uni<LanguageDTO> getDTO(UUID id, IUser user, LanguageCode code) {
+        Uni<Optional<Language>> uni = repository.findById(id);
         return uni.onItem().transform(languageOpt -> {
             Language language = languageOpt.orElseThrow();
             return LanguageDTO.builder()
