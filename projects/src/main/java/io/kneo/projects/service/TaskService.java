@@ -123,7 +123,6 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
         doc.setBody(dto.getBody());
         doc.setCancellationComment(dto.getCancellationComment());
         doc.setPriority(dto.getPriority());
-        doc.setRegNumber(dto.getRegNumber());
         doc.setTargetDate(dto.getTargetDate());
         doc.setTitle(dto.getTitle());
 
@@ -140,6 +139,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
 
             Uni<Task> taskUni;
             if (id == null) {
+                doc.setRegNumber(dto.getRegNumber());
                 taskUni = repository.insert(doc, user);
             } else {
                 taskUni = repository.update(id, doc, user);
