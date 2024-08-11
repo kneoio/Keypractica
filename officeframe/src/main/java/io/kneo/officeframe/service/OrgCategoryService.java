@@ -57,7 +57,6 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @Override
-    @SuppressWarnings("ConstantConditions")
     public Uni<OrgCategoryDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
         Uni<OrgCategory> categoryUni = repository.findById(uuid);
         return categoryUni.onItem().transform(this::map);

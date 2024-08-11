@@ -8,6 +8,7 @@ import io.vertx.ext.web.RoutingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.ConnectException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -29,6 +30,10 @@ public class GlobalErrorHandler implements Handler<RoutingContext> {
             context.response().setStatusCode(403)
                     .putHeader("Content-Type", "application/json")
                     .end(Json.encode(Map.of("error", failure.getMessage())));
+        } else if (failure.getCause() instanceof ConnectException) {
+            context.response().setStatusCode(500)
+                    .putHeader("Content-Type", "application/json")
+                    .end(Json.encode(Map.of("error", "API server error")));
         } else if (failure instanceof NoSuchElementException) {
             LOGGER.error("Global error handler: " + failure);
             failure.printStackTrace();

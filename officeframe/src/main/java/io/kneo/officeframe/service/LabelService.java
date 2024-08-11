@@ -29,44 +29,33 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     public Uni<List<LabelDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<Label>> taskUni = repository.getAll(limit, offset);
-        return taskUni
-                .onItem().transform(taskList -> taskList.stream()
+        return repository.getAll(limit, offset)
+                .onItem().transform(labels -> labels.stream()
                         .map(this::mapToDTO)
                         .collect(Collectors.toList()));
     }
-
 
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
     }
 
     public Uni<List<LabelDTO>> getOfCategory(String categoryName, LanguageCode languageCode) {
-        Uni<List<Label>> listUni = repository.getOfCategory(categoryName);
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
+        return repository.getOfCategory(categoryName)
+                .onItem().transform(labels -> labels.stream()
                         .map(this::mapToDTO)
                         .collect(Collectors.toList()));
     }
 
     public Uni<List<LabelDTO>> getLabels(UUID id, String type) {
-        Uni<List<Label>> labelsUni = repository.findForDocument(id, type);
-        return labelsUni.onItem().transformToUni(labels ->
-                Uni.createFrom().item(
-                        labels.stream().map(e ->
-                                        LabelDTO.builder()
-                                                .identifier(e.getIdentifier())
-                                                .color(e.getColor())
-                                                .category(e.getCategory())
-                                                .hidden(e.isHidden())
-                                                .build())
-                                .collect(Collectors.toList())));
+        return repository.findForDocument(id, type)
+                .onItem().transform(labels -> labels.stream()
+                        .map(this::mapToDTO)
+                        .collect(Collectors.toList()));
     }
 
-
     public Uni<LabelDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
-        Uni<Label> labelUni = repository.findById(uuid);
-        return labelUni.onItem().transform(this::map);
+        return repository.findById(uuid)
+                .onItem().transform(this::mapToDTO);
     }
 
     public Uni<Label> getById(UUID uuid) {
@@ -78,13 +67,28 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         return null;
     }
 
-    public Uni<LabelDTO> getDTOByIdentifier(String identifier, IUser user) {
-        Uni<Label> labelUni = repository.findByIdentifier(identifier);
-        return labelUni.onItem().transform(this::map);
+    @Override
+    public Uni<LabelDTO> upsert(UUID id, LabelDTO dto, IUser user, LanguageCode code) {
+        Label doc = new Label();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setParent(dto.getParent());
+        doc.setCategory(dto.getCategory());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setHidden(dto.isHidden());
+        doc.setColor(dto.getColor());
+
+        if (id == null) {
+            return repository.insert(doc, user)
+                    .onItem().transform(this::mapToDTO);
+        } else {
+            return repository.update(id, doc, user)
+                    .onItem().transform(this::mapToDTO);
+        }
     }
 
-    private LabelDTO map(Label label) {
+    private LabelDTO mapToDTO(Label label) {
         return LabelDTO.builder()
+                .id(label.getId())
                 .author(userRepository.getUserName(label.getAuthor()))
                 .regDate(label.getRegDate())
                 .lastModifier(userRepository.getUserName(label.getLastModifier()))
@@ -98,30 +102,8 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
                 .build();
     }
 
-    private LabelDTO mapToDTO(Label doc) {
-        return LabelDTO.builder()
-                .id(doc.getId())
-                .author(userRepository.getUserName(doc.getAuthor()))
-                .regDate(doc.getRegDate())
-                .lastModifier(userRepository.getUserName(doc.getLastModifier()))
-                .lastModifiedDate(doc.getLastModifiedDate())
-                .identifier(doc.getIdentifier())
-                .color(doc.getColor())
-                .category(doc.getCategory())
-                .parent(doc.getParent())
-                .hidden(doc.isHidden())
-                .localizedName(doc.getLocalizedName())
-                .build();
-    }
-
-    public Uni<Label> findByIdentifier(String identifier) {
-        return repository.findByIdentifier(identifier);
-    }
-
     @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }
 }
-
-

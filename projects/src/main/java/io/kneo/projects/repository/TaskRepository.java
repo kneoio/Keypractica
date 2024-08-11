@@ -101,7 +101,7 @@ public class TaskRepository extends AsyncRepository {
             doc.setTargetDate(targetDateTime.atZone(ZoneId.systemDefault()));
         }
         doc.setTaskType(row.getUUID("task_type_id"));
-       // doc.setTitle(row.getString("title"));
+        doc.setTitle(row.getString("title"));
         return doc;
     }
 
@@ -179,34 +179,29 @@ public class TaskRepository extends AsyncRepository {
 
                         Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
 
-                        // Safely add targetDate to params
                         if (doc.getTargetDate() != null) {
                             params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
                         } else {
                             params.addLocalDateTime(null);
                         }
 
-                        // Safely add priority
                         params.addInteger(doc.getPriority());
-
-                        // Safely add startDate to params
                         if (doc.getStartDate() != null) {
                             params.addLocalDateTime(doc.getStartDate().toLocalDateTime());
                         } else {
                             params.addLocalDateTime(null);
                         }
 
-                        // Add the remaining parameters in order
                         params.addInteger(doc.getStatus())
                                 .addString(doc.getTitle())
                                 .addUUID(doc.getParent())
                                 .addUUID(doc.getProject())
                                 .addUUID(doc.getTaskType())
-                                .addLocalDateTime(nowTime) // status_date
+                                .addLocalDateTime(nowTime)
                                 .addString(doc.getCancellationComment())
-                                .addLocalDateTime(nowTime) // last_mod_date
-                                .addLong(user.getId()) // last_mod_user
-                                .addUUID(id); // id in WHERE clause
+                                .addLocalDateTime(nowTime)
+                                .addLong(user.getId())
+                                .addUUID(id);
 
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
                                         .execute(params)

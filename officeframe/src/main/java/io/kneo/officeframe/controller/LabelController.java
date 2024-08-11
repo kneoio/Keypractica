@@ -100,7 +100,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
     public void getByIdentifier(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTOByIdentifier(rc.pathParam("id"), getUser(rc))
+        service.getDTOByIdentifier(rc.pathParam("id"))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
@@ -111,8 +111,8 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
+    @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void upsert(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
         JsonObject jsonObject = rc.body().asJsonObject();
         LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
         String id = rc.pathParam("id");
