@@ -77,7 +77,7 @@ public class EmployeeRepository extends AsyncRepository {
                     if (iterator.hasNext()) {
                         return Uni.createFrom().item(from(iterator.next()));
                     } else {
-                        return Uni.createFrom().failure(new DocumentHasNotFoundException(String.valueOf(id)));
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException("Employee: "  + id));
                     }
                 });
     }
@@ -90,7 +90,7 @@ public class EmployeeRepository extends AsyncRepository {
     private Employee from(Row row) {
         Employee doc = new Employee();
         setDefaultFields(doc, row);
-        doc.setUser(row.getLong("user_id"));
+        doc.setUserId(row.getLong("user_id"));
         doc.setOrganization(row.getUUID("organization_id"));
         doc.setDepartment(row.getUUID("department_id"));
         doc.setPosition(row.getUUID("position_id"));
@@ -129,7 +129,7 @@ public class EmployeeRepository extends AsyncRepository {
                 .addUUID(doc.getDepartment())
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())
-                .addLong(doc.getUser())
+                .addLong(doc.getUserId())
                 .addInteger(doc.getRank())
                 .addJsonObject(getLocalizedName(doc.getLocalizedName()))
                 .addString(doc.getPhone());
@@ -157,7 +157,7 @@ public class EmployeeRepository extends AsyncRepository {
                 .addUUID(doc.getDepartment())
                 .addUUID(doc.getOrganization())
                 .addUUID(doc.getPosition())
-                .addLong(doc.getUser())
+                .addLong(doc.getUserId())
                 .addInteger(doc.getRank())
                 .addJsonObject(getLocalizedName(doc.getLocalizedName()))
                 .addString(doc.getPhone());

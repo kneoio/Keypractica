@@ -107,7 +107,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
         service.upsert(UUID.fromString(id), dto, getUser(rc), LanguageCode.ENG)
                 .subscribe().with(
                         organization -> {
-                            int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
+                            int statusCode = id.isEmpty() ? 201 : 200;
                             rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(organization).encode());
                         },
                         rc::fail

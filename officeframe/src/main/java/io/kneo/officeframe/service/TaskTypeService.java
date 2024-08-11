@@ -47,13 +47,19 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     @Override
-    public Uni<TaskTypeDTO> getByIdentifier(String identifier) {
-        return null;
-        //TODO shall be used in controller
-    }
+    public Uni<TaskTypeDTO> getDTOByIdentifier(String identifier) {
+        Uni<TaskType> uni = repository.findByIdentifier(identifier);
+        return uni.onItem().transform(doc -> {
+            return TaskTypeDTO.builder()
+                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .regDate(doc.getRegDate())
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifiedDate(doc.getLastModifiedDate())
+                    .identifier(doc.getIdentifier())
+                    .localizedName(doc.getLocalizedName())
+                    .build();
 
-    public Uni<Optional<TaskType>> findByIdentifier(String  identifier) {
-        return repository.findByIdentifier(identifier);
+        });
     }
 
     public Uni<Integer> getAllCount() {
@@ -62,6 +68,10 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
 
     public Uni<TaskType> getById(UUID uuid) {
         return repository.findById(uuid);
+    }
+
+    public Uni<TaskType> getByIdentifier(String uuid) {
+        return repository.findByIdentifier(uuid);
     }
 
     @Override

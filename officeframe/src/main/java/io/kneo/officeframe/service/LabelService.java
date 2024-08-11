@@ -69,8 +69,12 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         return labelUni.onItem().transform(this::map);
     }
 
+    public Uni<Label> getById(UUID uuid) {
+        return repository.findById(uuid);
+    }
+
     @Override
-    public Uni<LabelDTO> getByIdentifier(String identifier) {
+    public Uni<LabelDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
 

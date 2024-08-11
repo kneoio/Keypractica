@@ -78,7 +78,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    public Uni<OrganizationDTO> getByIdentifier(String identifier) {
+    public Uni<OrganizationDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
 

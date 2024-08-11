@@ -76,6 +76,11 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         return projectUni.onItem().transformToUni(this::map);
     }
 
+    public Uni<Project> getById(UUID uuid, IUser user) {
+        assert repository != null;
+        return repository.findById(uuid, user.getId());
+    }
+
     @Override
     public Uni<ProjectDTO> upsert(UUID id, ProjectDTO dto, IUser user, LanguageCode code) {
         assert repository != null;
@@ -91,11 +96,11 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
 
     private Uni<ProjectDTO> map(Project project) {
         assert employeeService != null;
-        Uni<EmployeeDTO> managerUni = employeeService.getById(project.getManager())
+        Uni<EmployeeDTO> managerUni = employeeService.getDTOByUserId(project.getManager(), LanguageCode.ENG)
                 .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
-        Uni<EmployeeDTO> coderUni = employeeService.getById(project.getCoder())
+        Uni<EmployeeDTO> coderUni = employeeService.getDTOByUserId(project.getCoder(), LanguageCode.ENG)
                 .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
-        Uni<EmployeeDTO> testerUni = employeeService.getById(project.getTester())
+        Uni<EmployeeDTO> testerUni = employeeService.getDTOByUserId(project.getTester(), LanguageCode.ENG)
                 .onFailure(DocumentHasNotFoundException.class).recoverWithNull();
 
         return Uni.combine().all().unis(managerUni, coderUni, testerUni)

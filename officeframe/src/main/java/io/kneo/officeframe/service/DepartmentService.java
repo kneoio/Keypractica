@@ -59,7 +59,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     @Override
-    public Uni<DepartmentDTO> getByIdentifier(String identifier) {
+    public Uni<DepartmentDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
 

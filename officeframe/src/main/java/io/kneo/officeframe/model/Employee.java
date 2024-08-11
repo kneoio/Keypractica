@@ -15,7 +15,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class Employee extends SimpleReferenceEntity {
-    private long user;
+    private long userId;
     private LocalDate birthDate;
     private String phone;
     private UUID organization;

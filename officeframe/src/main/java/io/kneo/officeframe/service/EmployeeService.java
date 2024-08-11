@@ -104,14 +104,14 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
     }
 
     @Override
-    public Uni<EmployeeDTO> getByIdentifier(String identifier) {
+    public Uni<EmployeeDTO> getDTOByIdentifier(String identifier) {
         assert repository != null;
         return map(repository.getByIdentifier(identifier));
     }
 
-    public Uni<EmployeeDTO> getById(long id) {
+    public Uni<Employee> getByUserId(long id) {
         assert repository != null;
-        return map(repository.getByUserId(id));
+        return repository.getByUserId(id);
     }
 
     @Override
@@ -125,6 +125,11 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             uni = repository.getById(id);
         }
         return map(uni);
+    }
+
+    public Uni<EmployeeDTO> getDTOByUserId(long id, LanguageCode language) {
+        assert repository != null;
+        return map(repository.getByUserId(id));
     }
 
     public Uni<EmployeeDTO> upsert(UUID id, EmployeeDTO dto, IUser user, LanguageCode code) {
@@ -174,7 +179,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return positionDTOUni.onItem().transformToUni(position -> {
             EmployeeDTO dto = EmployeeDTO.builder()
                     .id(doc.getId())
-                    .userId(doc.getUser())
+                    .userId(doc.getUserId())
                     .author(userRepository.getUserName(doc.getAuthor()))
                     .regDate(doc.getRegDate())
                     .lastModifier(userRepository.getUserName(doc.getLastModifier()))

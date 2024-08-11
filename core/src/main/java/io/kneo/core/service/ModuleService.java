@@ -51,7 +51,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
     @Override
-    public Uni<ModuleDTO> getByIdentifier(String identifier) {
+    public Uni<ModuleDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
 

@@ -52,7 +52,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     }
 
     @Override
-    public Uni<OrgCategoryDTO> getByIdentifier(String identifier) {
+    public Uni<OrgCategoryDTO> getDTOByIdentifier(String identifier) {
         return Uni.createFrom().item(null);
     }
 
