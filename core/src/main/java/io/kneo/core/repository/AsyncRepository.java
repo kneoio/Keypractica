@@ -79,6 +79,19 @@ public class AsyncRepository {
                 });
     }
 
+    public <R> Uni<R> findByIdentifier(String identifier, EntityData entityData, Function<Row, R> fromFunc) {
+        return client.preparedQuery("SELECT * FROM " + entityData.getTableName() + " t WHERE t.identifier = $1")
+                .execute(Tuple.of(identifier))
+                .onItem().transformToUni(rowSet -> {
+                    var iterator = rowSet.iterator();
+                    if (iterator.hasNext()) {
+                        return Uni.createFrom().item(fromFunc.apply(iterator.next()));
+                    } else {
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(entityData.getTableName() + " " + identifier));
+                    }
+                });
+    }
+
     public Uni<List<RLS>> getAllReaders(UUID uuid, EntityData entityData) {
         String sql = String.format("SELECT reader, reading_time, can_edit, can_delete FROM %s t, %s rls WHERE t.id = rls.entity_id AND t.id = $1", entityData.getTableName(), entityData.getRlsName());
         return client.preparedQuery(sql)

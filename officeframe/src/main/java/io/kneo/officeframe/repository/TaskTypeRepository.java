@@ -48,11 +48,8 @@ public class TaskTypeRepository extends AsyncRepository {
         return findById(uuid, entityData, this::from);
     }
 
-    public Uni<Optional<TaskType>> findByIdentifier(String identifier) {
-        return client.preparedQuery(BASE_REQUEST + " WHERE t.identifier = $1")
-                .execute(Tuple.of(identifier))
-                .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ? Optional.of(from(iterator.next())) : Optional.empty());
+    public Uni<TaskType> findByIdentifier(String identifier) {
+        return findByIdentifier(identifier, entityData, this::from);
     }
 
     public Uni<Optional<TaskType>> findByUserId(long id) {

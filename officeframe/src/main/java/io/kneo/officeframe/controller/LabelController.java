@@ -68,7 +68,11 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
         service.getOfCategory(rc.pathParam("category_name"), languageCode)
                 .onItem().transform(dtoList -> {
                     ViewPage viewPage = new ViewPage();
-                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoList);
+                    int pageNum = 1;
+                    int pageSize = dtoList.size();
+                    int count = dtoList.size();
+                    View<LabelDTO> dtoEntries = new View<>(dtoList, count, pageNum, 1, pageSize);
+                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
                     return viewPage;
                 })
                 .subscribe().with(

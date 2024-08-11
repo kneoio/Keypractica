@@ -50,7 +50,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
-    public Uni<PositionDTO> getByIdentifier(String identifier) {
+    public Uni<PositionDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
 

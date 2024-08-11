@@ -23,7 +23,6 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static io.kneo.projects.repository.table.ProjectNameResolver.TASK;
@@ -83,26 +82,27 @@ public class TaskRepository extends AsyncRepository {
 
 
     private Task from(Row row) {
-        return new Task.Builder()
-                .setId(row.getUUID("id"))
-                .setAuthor(row.getLong("author"))
-                .setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()))
-                .setLastModifier(row.getLong("last_mod_user"))
-                .setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()))
-                .setRegNumber(row.getString("reg_number"))
-                .setAssignee(row.getLong("assignee"))
-                .setBody(row.getString("body"))
-                .setProject(row.getUUID("project_id"))
-                .setParent(row.getUUID("parent_id"))
-                .setTaskType(row.getUUID("task_type_id"))
-                .setTargetDate(Optional.ofNullable(row.getLocalDateTime("target_date"))
-                        .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
-                .setStartDate(Optional.ofNullable(row.getLocalDateTime("start_date"))
-                        .map(dateTime -> ZonedDateTime.from(dateTime.atZone(ZoneId.systemDefault()))).orElse(null))
-                .setStatus(row.getInteger("status"))
-                .setPriority(row.getInteger("priority"))
-                .setCancellationComment(row.getString("cancel_comment"))
-                .build();
+        Task doc = new Task();
+        setDefaultFields(doc, row);
+        doc.setStatus(row.getInteger("status"));
+        doc.setBody(row.getString("body"));
+        doc.setAssignee(row.getLong("assignee"));
+        doc.setParent(row.getUUID("parent_id"));
+        doc.setCancellationComment(row.getString("cancel_comment"));
+        doc.setPriority(row.getInteger("priority"));
+        doc.setProject(row.getUUID("project_id"));
+        doc.setRegNumber(row.getString("reg_number"));
+        LocalDateTime startDateTime = row.getLocalDateTime("start_date");
+        if (startDateTime != null) {
+            doc.setStartDate(startDateTime.atZone(ZoneId.systemDefault()));
+        }
+        LocalDateTime targetDateTime = row.getLocalDateTime("target_date");
+        if (targetDateTime != null) {
+            doc.setTargetDate(targetDateTime.atZone(ZoneId.systemDefault()));
+        }
+        doc.setTaskType(row.getUUID("task_type_id"));
+       // doc.setTitle(row.getString("title"));
+        return doc;
     }
 
     public Uni<Task> insert(Task doc, IUser user) {
@@ -174,29 +174,42 @@ public class TaskRepository extends AsyncRepository {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
                         String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
                                 "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +
-                                "status_date=$11, cancel_comment=$12, last_mod_date=$13, last_mod_user=$14" +
+                                "status_date=$11, cancel_comment=$12, last_mod_date=$13, last_mod_user=$14 " +
                                 "WHERE id=$15;", entityData.getTableName());
+
                         Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
+
+                        // Safely add targetDate to params
                         if (doc.getTargetDate() != null) {
                             params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
                         } else {
                             params.addLocalDateTime(null);
                         }
-                        Tuple allParams = params
-                                .addInteger(doc.getPriority())
-                                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
-                                .addInteger(doc.getStatus())
+
+                        // Safely add priority
+                        params.addInteger(doc.getPriority());
+
+                        // Safely add startDate to params
+                        if (doc.getStartDate() != null) {
+                            params.addLocalDateTime(doc.getStartDate().toLocalDateTime());
+                        } else {
+                            params.addLocalDateTime(null);
+                        }
+
+                        // Add the remaining parameters in order
+                        params.addInteger(doc.getStatus())
                                 .addString(doc.getTitle())
                                 .addUUID(doc.getParent())
                                 .addUUID(doc.getProject())
                                 .addUUID(doc.getTaskType())
-                                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                                .addLocalDateTime(nowTime) // status_date
                                 .addString(doc.getCancellationComment())
-                                .addLocalDateTime(nowTime)
-                                .addLong(user.getId());
-                        allParams.addUUID(id);
+                                .addLocalDateTime(nowTime) // last_mod_date
+                                .addLong(user.getId()) // last_mod_user
+                                .addUUID(id); // id in WHERE clause
+
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
-                                        .execute(allParams)
+                                        .execute(params)
                                         .onItem().transformToUni(rowSet -> {
                                             int rowCount = rowSet.rowCount();
                                             if (rowCount == 0) {
@@ -234,6 +247,8 @@ public class TaskRepository extends AsyncRepository {
                     }
                 });
     }
+
+
 
     public Uni<Integer> delete(UUID uuid, IUser user) {
         return delete(uuid, entityData, user);

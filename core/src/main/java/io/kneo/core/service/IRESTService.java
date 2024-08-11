@@ -15,7 +15,7 @@ public interface IRESTService<V> {
 
     Uni<V> getDTO(UUID id, IUser user, LanguageCode language);
 
-    Uni<V> getByIdentifier(String  identifier);
+    Uni<V> getDTOByIdentifier(String  identifier);
 
     Uni<V> upsert(UUID id, V dto, IUser user, LanguageCode code);
 }
