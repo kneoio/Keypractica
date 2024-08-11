@@ -210,7 +210,7 @@ public class TaskRepository extends AsyncRepository {
                                             if (rowCount == 0) {
                                                 return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
                                             }
-                                            if (doc.getLabels() != null && !doc.getLabels().isEmpty()) {
+                                            if (!doc.getLabels().isEmpty()) {
                                                 String deleteLabelsSql = "DELETE FROM prj__task_labels WHERE id=$1";
                                                 Uni<Void> deleteLabelsUni = tx.preparedQuery(deleteLabelsSql)
                                                         .execute(Tuple.of(id))
