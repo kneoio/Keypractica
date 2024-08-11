@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.time.ZonedDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,13 +46,12 @@ public class TaskDTO extends AbstractDTO {
     ProjectDTO project;
     @JsonView(Views.DetailView.class)
     Task parent;
-    @NotNull(message = "Start date must not be null")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonView(Views.DetailView.class)
-    ZonedDateTime startDate;
+    LocalDate startDate;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd.MM.yyyy")
     @JsonView(Views.DetailView.class)
-    ZonedDateTime targetDate;
+    LocalDate targetDate;
     @JsonView(Views.DetailView.class)
     int status;
     @JsonView(Views.DetailView.class)
