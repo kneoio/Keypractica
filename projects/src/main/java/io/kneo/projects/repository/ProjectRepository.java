@@ -39,8 +39,8 @@ public class ProjectRepository extends AsyncRepository {
         super(client, mapper, rlsRepository);
     }
 
-    public Uni<List<Project>> getAll(final int limit, final int offset, final long userID) {
-        String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + userID;
+    public Uni<List<Project>> getAll(final int limit, final int offset, final IUser user) {
+        String sql = "SELECT * FROM prj__projects p, prj__project_readers ppr WHERE p.id = ppr.entity_id AND ppr.reader = " + user.getId();
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
@@ -51,8 +51,8 @@ public class ProjectRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Integer> getAllCount(long userID) {
-        return getAllCount(userID, entityData.getTableName(), entityData.getRlsName());
+    public Uni<Integer> getAllCount(IUser user) {
+        return getAllCount(user.getId(), entityData.getTableName(), entityData.getRlsName());
     }
 
     public Uni<List<Project>> search(String keyword) {

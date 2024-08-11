@@ -18,8 +18,8 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -92,13 +92,13 @@ public class TaskRepository extends AsyncRepository {
         doc.setPriority(row.getInteger("priority"));
         doc.setProject(row.getUUID("project_id"));
         doc.setRegNumber(row.getString("reg_number"));
-        LocalDateTime startDateTime = row.getLocalDateTime("start_date");
+        LocalDate startDateTime = row.getLocalDate("start_date");
         if (startDateTime != null) {
-            doc.setStartDate(startDateTime.atZone(ZoneId.systemDefault()));
+            doc.setStartDate(startDateTime);
         }
-        LocalDateTime targetDateTime = row.getLocalDateTime("target_date");
+        LocalDate targetDateTime = row.getLocalDate("target_date");
         if (targetDateTime != null) {
-            doc.setTargetDate(targetDateTime.atZone(ZoneId.systemDefault()));
+            doc.setTargetDate(targetDateTime);
         }
         doc.setTaskType(row.getUUID("task_type_id"));
         doc.setTitle(row.getString("title"));
@@ -115,20 +115,20 @@ public class TaskRepository extends AsyncRepository {
                 .addLong(doc.getAssignee())
                 .addString(doc.getBody());
         if (doc.getTargetDate() != null) {
-            allParams.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+            allParams.addLocalDate(doc.getTargetDate());
         } else {
             allParams.addLocalDateTime(null);
         }
         allParams = params
                 .addInteger(doc.getPriority())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addLocalDate(doc.getStartDate())
                 .addInteger(doc.getStatus())
                 .addString(doc.getTitle())
                 .addUUID(doc.getParent())
                 .addUUID(doc.getProject())
                 .addUUID(doc.getTaskType())
                 .addString(doc.getRegNumber())
-                .addLocalDateTime(doc.getStartDate().toLocalDateTime())
+                .addLocalDate(doc.getStartDate())
                 .addString(doc.getCancellationComment());
         String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", entityData.getRlsName());
         String labelsSql = "INSERT INTO prj__task_labels(id, label_id) VALUES($1, $2)";
@@ -180,14 +180,14 @@ public class TaskRepository extends AsyncRepository {
                         Tuple params = Tuple.of(doc.getAssignee(), doc.getBody());
 
                         if (doc.getTargetDate() != null) {
-                            params.addLocalDateTime(doc.getTargetDate().toLocalDateTime());
+                            params.addLocalDate(doc.getTargetDate());
                         } else {
                             params.addLocalDateTime(null);
                         }
 
                         params.addInteger(doc.getPriority());
                         if (doc.getStartDate() != null) {
-                            params.addLocalDateTime(doc.getStartDate().toLocalDateTime());
+                            params.addLocalDate(doc.getStartDate());
                         } else {
                             params.addLocalDateTime(null);
                         }

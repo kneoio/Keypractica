@@ -183,6 +183,8 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                         .lastModifier(userRepository.getUserName(task.getLastModifier()))
                         .lastModifiedDate(task.getLastModifiedDate())
                         .regNumber(task.getRegNumber())
+                        .startDate(task.getStartDate())
+                        .targetDate(task.getTargetDate())
                         .body(task.getBody())
                         .assignee(assignee)
                         .taskType(taskType)

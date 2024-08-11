@@ -41,9 +41,9 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         this.employeeService = employeeService;
     }
 
-    public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final long userID) {
+    public Uni<List<ProjectDTO>> getAll(final int limit, final int offset, final IUser user) {
         assert repository != null;
-        Uni<List<Project>> uni = repository.getAll(limit, offset, userID);
+        Uni<List<Project>> uni = repository.getAll(limit, offset, user);
         return uni
                 .onItem().transform(projectList -> projectList.stream()
                         .map(project -> {
@@ -61,8 +61,9 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .collect(Collectors.toList()));
     }
 
-    public Uni<Integer> getAllCount(final long userID) {
-        return repository.getAllCount(userID);
+    public Uni<Integer> getAllCount(final IUser user) {
+        assert repository != null;
+        return repository.getAllCount(user);
     }
 
     public Uni<List<Project>> search(String keyword) {

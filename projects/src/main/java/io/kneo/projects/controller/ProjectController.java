@@ -47,8 +47,8 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             IUser user = getUser(rc);
 
             Uni.combine().all().unis(
-                    service.getAllCount(user.getId()),
-                    service.getAll(size, (page - 1) * size, user.getId())
+                    service.getAllCount(user),
+                    service.getAll(size, (page - 1) * size, user)
             ).asTuple().subscribe().with(
                     tuple -> {
                         int count = tuple.getItem1();
