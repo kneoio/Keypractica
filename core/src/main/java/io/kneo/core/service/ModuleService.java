@@ -120,7 +120,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return repository.update(doc);
     }
 
-    public Uni<Void> delete (String id) {
+    public Uni<Integer> delete (String id) {
         return repository.delete(UUID.fromString(id));
     }
 

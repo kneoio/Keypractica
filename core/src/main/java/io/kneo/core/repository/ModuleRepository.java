@@ -6,6 +6,8 @@ import io.kneo.core.model.UserModule;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.cnst.Tables;
+import io.kneo.core.repository.table.EntityData;
+import io.kneo.core.repository.table.TableNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
@@ -25,11 +27,11 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static io.kneo.core.repository.cnst.Tables.MODULES_TABLE_NAME;
-import static io.kneo.core.repository.cnst.Tables.USER_MODULES_TABLE_NAME;
+import static io.kneo.core.repository.cnst.Tables.*;
 
 @ApplicationScoped
 public class ModuleRepository extends AsyncRepository {
+    private static final EntityData entityData = TableNameResolver.create().getEntityNames(MODULES_ENTITY_NAME);
 
     @Inject
     public ModuleRepository(PgPool client, ObjectMapper mapper) {
@@ -157,8 +159,8 @@ public class ModuleRepository extends AsyncRepository {
         return doc;
     }
 
-    public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, MODULES_TABLE_NAME);
+    public Uni<Integer> delete(UUID uuid) {
+        return delete(uuid, entityData);
     }
 
 

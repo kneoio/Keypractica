@@ -6,7 +6,6 @@ import io.kneo.core.model.Language;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.LanguageRepository;
 import io.kneo.core.repository.UserRepository;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -83,9 +82,8 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
 
     @Override
     public Uni<LanguageDTO> getDTO(UUID id, IUser user, LanguageCode code) {
-        Uni<Optional<Language>> uni = repository.findById(id);
-        return uni.onItem().transform(languageOpt -> {
-            Language language = languageOpt.orElseThrow();
+        Uni<Language> uni = repository.findById(id);
+        return uni.onItem().transform(language -> {
             return LanguageDTO.builder()
                     .id(language.getId())
                     .author(userService.getName(language.getAuthor()))
@@ -99,13 +97,42 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
     }
 
     @Override
-    public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
-        return null;
+    public Uni<LanguageDTO> upsert(UUID id, LanguageDTO dto, IUser user, LanguageCode code) {
+        Language doc = new Language();
+        doc.setCode(dto.getCode());
+        doc.setIdentifier(String.valueOf(dto.getCode()));
+        doc.setOn(true);
+        doc.setPosition(dto.getPosition());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setLocalizedName(dto.getLocalizedName());
+        if (id == null) {
+            return map(repository.insert(doc, user));
+        } else {
+            return map(repository.update(id, doc, user));
+        }
     }
 
-
-    public Uni<Void> delete(String id) {
+    @Override
+    public Uni<Integer> delete(String id, IUser user) {
         return repository.delete(UUID.fromString(id));
     }
+
+    private Uni<LanguageDTO> map(Uni<Language> uni) {
+        return uni.onItem().transform(this::mapToDTO);
+    }
+
+    private LanguageDTO mapToDTO(Language doc) {
+        return LanguageDTO.builder()
+                .id(doc.getId())
+                .author(userRepository.getUserName(doc.getAuthor()))
+                .regDate(doc.getRegDate())
+                .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                .lastModifiedDate(doc.getLastModifiedDate())
+                .code(doc.getCode())
+                .position(doc.getPosition())
+                .localizedName(doc.getLocalizedName())
+                .build();
+    }
+
 
 }

@@ -107,18 +107,24 @@ public class AsyncRepository {
                 .collect().asList();
     }
 
-    protected Uni<Void> delete(UUID uuid, String table) {
-        String sql = String.format("DELETE FROM %s WHERE id = $1", table);
+    protected Uni<Integer> delete(UUID uuid, EntityData entityData) {
+        String sql = String.format("DELETE FROM %s WHERE id = $1", entityData.getTableName());
         return client.withTransaction(tx -> tx.preparedQuery(sql)
                 .execute(Tuple.of(uuid))
-                .onItem().ignore().andContinueWithNull()
+                .onItem().transformToUni(rowSet -> {
+                    int rowCount = rowSet.rowCount();
+                    if (rowCount == 0) {
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(uuid));
+                    }
+                    return Uni.createFrom().item(rowCount);
+                })
                 .onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to delete %s", table), throwable));
+                    return Uni.createFrom().failure(new RuntimeException(String.format("Failed to delete %s", entityData.getTableName()), throwable));
                 }));
     }
 
-    public Uni<Integer> delete(UUID id,  EntityData entityData, IUser user) {
+    public Uni<Integer> delete(UUID id, EntityData entityData, IUser user) {
         return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[1] == 1) {
