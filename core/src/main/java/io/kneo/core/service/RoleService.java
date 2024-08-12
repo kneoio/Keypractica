@@ -89,10 +89,12 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
                 .setIdentifier(dto.getIdentifier())
                 .setLocalizedName(dto.getLocalizedName())
                 .build();
+        assert repository != null;
         return repository.update(doc, AnonymousUser.ID);
     }
 
-    public Uni<Void> delete(String id) {
+    public Uni<Integer> delete(String id) {
+        assert repository != null;
         return repository.delete(UUID.fromString(id));
     }
 }

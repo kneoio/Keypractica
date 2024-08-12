@@ -12,7 +12,6 @@ import java.util.UUID;
 @Getter
 @Setter
 public class Language extends SimpleReferenceEntity {
-    protected String name;
     private LanguageCode code = LanguageCode.UNKNOWN;
     private boolean isOn;
     private int position;

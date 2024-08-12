@@ -2,6 +2,7 @@ package io.kneo.core.model;
 
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.server.Environment;
+import lombok.Getter;
 import lombok.Setter;
 
 import java.util.EnumMap;
@@ -9,12 +10,9 @@ import java.util.UUID;
 
 @Setter
 public class SimpleReferenceEntity extends DataEntity<UUID> {
+    @Getter
     protected String identifier;
     protected EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
-
-    public String getIdentifier() {
-        return identifier;
-    }
 
     public EnumMap<LanguageCode, String> getLocalizedName() {
         for (LanguageCode code : Environment.AVAILABLE_LANGUAGES) {

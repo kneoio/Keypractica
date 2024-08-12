@@ -3,6 +3,8 @@ package io.kneo.core.repository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Language;
+import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.core.repository.table.TableNameResolver;
 import io.smallrye.mutiny.Multi;
@@ -14,8 +16,6 @@ import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
@@ -28,7 +28,6 @@ import static io.kneo.core.repository.table.TableNameResolver.LANGUAGE_ENTITY_NA
 
 @ApplicationScoped
 public class LanguageRepository extends AsyncRepository {
-    private static final Logger LOGGER = LoggerFactory.getLogger("LanguageRepository");
     private static final EntityData entityData = TableNameResolver.create().getEntityNames(LANGUAGE_ENTITY_NAME);
 
     @Inject
@@ -39,7 +38,7 @@ public class LanguageRepository extends AsyncRepository {
 
     public Uni<List<Language>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM _langs";
-        if (limit > 0 ) {
+        if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
 
@@ -63,11 +62,11 @@ public class LanguageRepository extends AsyncRepository {
                 .collect().asList();
     }
 
-    public Uni<Optional<Language>> findById(UUID uuid) {
+    public Uni<Language> findById(UUID uuid) {
         return client.preparedQuery("SELECT * FROM _langs WHERE id = $1")
                 .execute(Tuple.of(uuid))
                 .onItem().transform(RowSet::iterator)
-                .onItem().transform(iterator -> iterator.hasNext() ?  Optional.of(from(iterator.next())) : Optional.empty());
+                .onItem().transform(iterator -> from(iterator.next()));
     }
 
     public Uni<Optional<Language>> findByCode(LanguageCode code) {
@@ -88,37 +87,39 @@ public class LanguageRepository extends AsyncRepository {
     }
 
 
-    public Uni<UUID> insert(Language doc, Long user) {
+    public Uni<Language> insert(Language doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = "INSERT INTO _langs (author, code, reg_date, position, last_mod_date, last_mod_user, loc_name, is_on) VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id";
-        Tuple params = Tuple.of(user, doc.getCode(), nowTime, doc.getPosition(), nowTime, user);
+        Tuple params = Tuple.of(user.getId(), doc.getCode(), nowTime, doc.getPosition(), nowTime, user.getId());
         Tuple finalParams = params.addJsonObject(JsonObject.mapFrom(doc.getLocalizedName())).addBoolean(doc.isOn());
 
-        return client.withTransaction(tx -> tx.preparedQuery(sql)
+        return client.preparedQuery(sql)
                 .execute(finalParams)
-                .onItem().transform(result -> result.iterator().next().getUUID("id"))
-           .onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().failure(new RuntimeException("Failed to insert language", throwable));
-                }));
+                .onItem().transformToUni(result -> {
+                    UUID id = result.iterator().next().getUUID("id");
+                    return findById(id).onItem()
+                            .transform(optionalOrg -> optionalOrg);
+                });
     }
 
-    public Uni<Integer> update(Language doc, long user) {
+    public Uni<Language> update(UUID id, Language doc, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = "UPDATE _langs SET code=$1, position=$2, last_mod_date=$3, last_mod_user=$4, is_on=$5, loc_name=$6 WHERE id=$7";
-        Tuple params = Tuple.of(doc.getCode(), doc.getPosition(), nowTime, user, doc.isOn(), JsonObject.mapFrom(doc.getLocalizedName()));
-        Tuple finalParams = params.addUUID(doc.getId());
-        return client.withTransaction(tx -> tx.preparedQuery(sql)
+        Tuple params = Tuple.of(doc.getCode(), doc.getPosition(), nowTime, user.getId(), doc.isOn(), JsonObject.mapFrom(doc.getLocalizedName()));
+        Tuple finalParams = params.addUUID(id);
+        return client.preparedQuery(sql)
                 .execute(finalParams)
-                .onItem().transform(result -> result.rowCount() > 0 ? 1 : 0)
-                .onFailure().recoverWithUni(throwable -> {
-                    LOGGER.error(throwable.getMessage());
-                    return Uni.createFrom().item(0);
-                }));
+                .onItem().transformToUni(rowSet -> {
+                    if (rowSet.rowCount() == 0) {
+                        return Uni.createFrom().failure(new DocumentHasNotFoundException(id));
+                    }
+                    return findById(id);
+                })
+                .onItem().transform(entity -> entity);
     }
 
-    public Uni<Void> delete(UUID uuid) {
-       return delete(uuid, "_langs");
+    public Uni<Integer> delete(UUID uuid) {
+        return delete(uuid, entityData);
     }
 
 

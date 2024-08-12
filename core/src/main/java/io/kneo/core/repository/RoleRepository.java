@@ -120,8 +120,8 @@ public class RoleRepository extends AsyncRepository {
                 }));
     }
 
-    public Uni<Void> delete(UUID uuid) {
-        return delete(uuid, entityData.getTableName());
+    public Uni<Integer> delete(UUID uuid) {
+        return delete(uuid, entityData);
     }
 
 
