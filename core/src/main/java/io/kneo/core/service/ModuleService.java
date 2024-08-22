@@ -117,10 +117,12 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         Module doc = new Module.Builder()
                 .setIdentifier(dto.getIdentifier())
                 .build();
+        assert repository != null;
         return repository.update(doc);
     }
 
     public Uni<Integer> delete (String id) {
+        assert repository != null;
         return repository.delete(UUID.fromString(id));
     }
 

@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: oidc_kneox_db
+      POSTGRES_USER: k_user
+      POSTGRES_PASSWORD: k_passw
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d/
+    ports:
+      - "6543:5432"
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.1
+    container_name: keycloak
+    environment:
+      DB_VENDOR: postgres
+      DB_ADDR: postgres
+      DB_DATABASE: oidc_kneox_db
+      DB_USER: k_user
+      DB_PASSWORD: k_passw
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin_password
+    ports:
+      - "9087:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - ./init-scripts:/opt/keycloak/data/import/
+    command: ["start-dev", "--import-realm"]
+
+volumes:
+  postgres_data:
