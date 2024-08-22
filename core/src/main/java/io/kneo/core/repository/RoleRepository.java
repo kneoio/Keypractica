@@ -1,7 +1,5 @@
 package io.kneo.core.repository;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.Role;
@@ -20,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.EnumMap;
 import java.util.List;
@@ -42,7 +39,7 @@ public class RoleRepository extends AsyncRepository {
 
     public Uni<List<Role>> getAll(final int limit, final int offset) {
         String sql = "SELECT * FROM _roles";
-        if (limit > 0 ) {
+        if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
         return client.query(sql)
@@ -67,28 +64,19 @@ public class RoleRepository extends AsyncRepository {
     }
 
     private Role from(Row row) {
-        EnumMap<LanguageCode, String> map;
-        try {
-            Object o =  row.getJsonObject(COLUMN_LOCALIZED_NAME);
-            if (o != null) {
-                map = mapper.readValue(row.getJsonObject(COLUMN_LOCALIZED_NAME).toString(), new TypeReference<>() {
-                });
-            } else {
-                map = new EnumMap<>(LanguageCode.class);
-            }
-        } catch (JsonProcessingException e) {
-            LOGGER.error(e.getMessage());
-            throw new RuntimeException(e);
+        Role doc = new Role();
+        setDefaultFields(doc, row);
+        doc.setIdentifier(row.getString(COLUMN_IDENTIFIER));
+        //doc.setRoleType(row.getString("role_type"));
+
+        JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
+        if (localizedNameJson != null) {
+            EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
+            localizedNameJson.getMap().forEach((key, value) -> localizedName.put(LanguageCode.valueOf(key), (String) value));
+            doc.setLocalizedName(localizedName);
         }
-        return new Role.Builder()
-                .setId(row.getUUID("id"))
-                .setAuthor(row.getLong("author"))
-                .setRegDate(row.getLocalDateTime("reg_date").atZone(ZoneId.systemDefault()))
-                .setLastModifier(row.getLong("last_mod_user"))
-                .setLastModifiedDate(row.getLocalDateTime("last_mod_date").atZone(ZoneId.systemDefault()))
-                .setIdentifier(row.getString("identifier"))
-                .setLocalizedName(map)
-                .build();
+
+        return doc;
     }
 
     public Uni<UUID> insert(Role doc, Long user) {
