@@ -32,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -96,12 +95,13 @@ public abstract class AbstractController<T, V> {
         JsonObject jsonObject = rc.body().asJsonObject();
 
         ObjectMapper mapper = new ObjectMapper();
-        V dto = mapper.convertValue(jsonObject, new TypeReference<V>() {});
+        V dto = mapper.convertValue(jsonObject, new TypeReference<V>() {
+        });
 
         service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         doc -> {
-                            int statusCode = (id == null ) ? 201 : 200;
+                            int statusCode = (id == null) ? 201 : 200;
                             rc.response()
                                     .setStatusCode(statusCode)
                                     .end(JsonObject.mapFrom(doc).encode());
@@ -112,9 +112,7 @@ public abstract class AbstractController<T, V> {
 
     @Deprecated
     protected Uni<Response> getAll(IRESTService<V> service, ContainerRequestContext requestContext, int page, int size) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-
-        IUser user = userOptional.get();
+        IUser user = getUserId(requestContext);
         String languageHeader = requestContext.getHeaderString("Accept-Language");
         Uni<Integer> countUni = service.getAllCount();
         Uni<Integer> maxPageUni = countUni.onItem().transform(c -> countMaxPage(c, size));
@@ -146,9 +144,8 @@ public abstract class AbstractController<T, V> {
 
     @Deprecated
     protected Uni<Response> getById(IRESTService<V> service, String id, ContainerRequestContext requestContext) throws UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            IUser user = userOptional.get();
+        IUser user = getUserId(requestContext);
+        if (user != null) {
             FormPage page = new FormPage();
             page.addPayload(PayloadType.CONTEXT_ACTIONS, ActionsFactory.getDefaultFormActions(LanguageCode.ENG));
             return service.getDTO(UUID.fromString(id), user, LanguageCode.ENG)
@@ -188,7 +185,7 @@ public abstract class AbstractController<T, V> {
     }
 
     @Deprecated
-    protected Optional<IUser> getUserId(ContainerRequestContext requestContext) throws UserNotFoundException {
+    protected IUser getUserId(ContainerRequestContext requestContext) throws UserNotFoundException {
         try {
             DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
             return userService.findByLogin(securityIdentity.getClaim(USER_NAME_CLAIM));
@@ -214,7 +211,7 @@ public abstract class AbstractController<T, V> {
                 throw new UserNotFoundException("Username not found in user principal");
             }
 
-            IUser user = userService.findByLogin(username).get();
+            IUser user = userService.findByLogin(username);
             if (user == null) {
                 throw new UserNotFoundException(username);
             }
@@ -230,7 +227,7 @@ public abstract class AbstractController<T, V> {
     }
 
     @Deprecated
-    protected Optional<IUser> getUserId(RoutingContext rc) {
+    protected IUser getUserId(RoutingContext rc) {
         try {
             User vertxUser = rc.user();
             if (vertxUser != null) {
@@ -240,24 +237,21 @@ public abstract class AbstractController<T, V> {
                     return userService.findByLogin(username);
                 }
             }
-            return Optional.empty();
+            return null;
         } catch (NullPointerException e) {
             LOGGER.warn("Failed to get user ID: {}", e.getMessage());
-            return Optional.empty();
+            return null;
         } catch (Exception e) {
             LOGGER.error("Error while getting user ID: ", e);
-            return Optional.empty();
+            return null;
         }
     }
 
     public Uni<Response> delete(String uuid, AbstractService<T, V> service, @Context ContainerRequestContext requestContext) throws DocumentModificationAccessException, UserNotFoundException {
-        Optional<IUser> userOptional = getUserId(requestContext);
-        if (userOptional.isPresent()) {
-            return service.delete(uuid, userOptional.get())
-                    .onItem().transform(count -> Response.ok(count).build());
-        } else {
-            return Uni.createFrom().item(Response.status(Response.Status.UNAUTHORIZED).build());
-        }
+        IUser userOptional = getUserId(requestContext);
+        return service.delete(uuid, userOptional)
+                .onItem().transform(count -> Response.ok(count).build());
+
     }
 
     protected Response postError(Throwable e) {

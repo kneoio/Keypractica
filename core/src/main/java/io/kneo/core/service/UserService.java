@@ -60,7 +60,7 @@ public class UserService {
         return repository.findByIdentifier(identifier);
     }
 
-    public Optional<IUser> findByLogin(String login) {
+    public IUser findByLogin(String login) {
         return repository.findByLogin(login);
     }
 

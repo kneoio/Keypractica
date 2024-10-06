@@ -28,7 +28,7 @@ public class PositionRepository extends AsyncRepository {
     }
 
     public Uni<List<Position>> getAll(final int limit, final int offset) {
-        String sql = String.format("SELECT * FROM %s ORDER BY rank", entityData.getTableName());
+        String sql = String.format("SELECT * FROM %s", entityData.getTableName());
         if (limit > 0) {
             sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
         }
