@@ -10,7 +10,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d/
     ports:
-      - "6543:5432"
+      - "8572:5432"
 
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.1

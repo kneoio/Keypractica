@@ -2,7 +2,6 @@ CREATE DATABASE kneox_db;
 
 \connect kneox_db;
 
--- Table: _users
 CREATE TABLE _users (
     id BIGSERIAL PRIMARY KEY,
     author BIGINT NOT NULL,
@@ -19,7 +18,6 @@ CREATE TABLE _users (
     time_zone VARCHAR(50)
 );
 
--- Table: _modules
 CREATE TABLE _modules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author BIGINT NOT NULL,
@@ -32,7 +30,6 @@ CREATE TABLE _modules (
     loc_descr JSONB
 );
 
--- Table: _user_modules
 CREATE TABLE _user_modules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id BIGINT NOT NULL REFERENCES _users(id) ON DELETE CASCADE,
@@ -40,7 +37,6 @@ CREATE TABLE _user_modules (
     is_on BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Table: _roles
 CREATE TABLE _roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author BIGINT NOT NULL,
@@ -52,7 +48,6 @@ CREATE TABLE _roles (
     loc_descr JSONB
 );
 
--- Table: _user_roles
 CREATE TABLE _user_roles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id BIGINT NOT NULL REFERENCES _users(id) ON DELETE CASCADE,
@@ -60,7 +55,6 @@ CREATE TABLE _user_roles (
     is_on BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- Table: _langs
 CREATE TABLE _langs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author BIGINT NOT NULL,

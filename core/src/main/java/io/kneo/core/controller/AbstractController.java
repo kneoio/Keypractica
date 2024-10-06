@@ -25,7 +25,6 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
@@ -289,11 +288,4 @@ public abstract class AbstractController<T, V> {
             return LanguageCode.ENG;
         }
     }
-
-
-    public static class Parameters {
-        @QueryParam("page")
-        public int page;
-    }
-
 }

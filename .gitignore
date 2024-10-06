@@ -15,3 +15,10 @@
 /publickey.der
 /ansible/inventory.ini
 /ansible/ansible_env/
+/ansible/*.log
+
+/ci_cd/application-prod.properties
+/ci_cd/copy_script.sh
+/ci_cd/copy_script.ps1
+/ci_cd/deployment-config.properties
+/run_tunnel.sh

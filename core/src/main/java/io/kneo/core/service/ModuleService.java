@@ -3,7 +3,6 @@ package io.kneo.core.service;
 import io.kneo.core.dto.document.ModuleDTO;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Module;
-import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.ModuleRepository;
 import io.kneo.core.repository.UserRepository;
@@ -104,13 +103,8 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         });
     }
 
-    public Uni<UUID> add(ModuleDTO dto) {
-        Module doc = new Module.Builder()
-                .setIdentifier(dto.getIdentifier())
-                .setLocalizedName(dto.getLocalizedName())
-                .setLocalizedDescription(dto.getLocalizedDescription())
-                .build();
-        return repository.insert(doc, AnonymousUser.ID);
+    public Uni<ModuleDTO> upsert(UUID id, ModuleDTO dto, IUser user, LanguageCode code) {
+        return null;
     }
 
     public Module update(ModuleDTO dto) {
