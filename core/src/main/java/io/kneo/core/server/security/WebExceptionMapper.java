@@ -1,3 +1,5 @@
+package io.kneo.core.server.security;
+
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.exception.DataValidationException;
