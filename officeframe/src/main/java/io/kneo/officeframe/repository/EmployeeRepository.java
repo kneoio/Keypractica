@@ -94,7 +94,7 @@ public class EmployeeRepository extends AsyncRepository {
         doc.setOrganization(row.getUUID("organization_id"));
         doc.setDepartment(row.getUUID("department_id"));
         doc.setPosition(row.getUUID("position_id"));
-        doc.setIdentifier(row.getString("identifier"));
+    //    doc.setIdentifier(row.getString("identifier"));
         doc.setPhone(row.getString("phone"));
         doc.setBirthDate(row.getLocalDate("birth_date"));
         doc.setStatus(row.getInteger("status"));

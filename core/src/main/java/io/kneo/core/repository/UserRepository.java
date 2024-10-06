@@ -47,8 +47,8 @@ public class UserRepository extends AsyncRepository {
                 .await().indefinitely();
         userAltCache.putAll(userCache.values().stream()
                 .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
-       /* userAltCache.putAll(userCache.values().stream()
-                .collect(Collectors.toMap(IUser::getEmail, Function.identity())));*/
+        userAltCache.putAll(userCache.values().stream()
+                .collect(Collectors.toMap(IUser::getEmail, Function.identity())));
     }
 
     public Uni<List<IUser>> getAll() {
@@ -100,7 +100,7 @@ public class UserRepository extends AsyncRepository {
     }
 
     public Optional<IUser> findById(long id) {
-         return Optional.ofNullable(userCache.get(id));
+        return Optional.ofNullable(userCache.get(id));
         //TODO it needs to initialize the cache
     }
 
@@ -113,12 +113,8 @@ public class UserRepository extends AsyncRepository {
         //TODO it needs to initialize the cache
     }
 
-    public Optional<IUser> findByLogin(String userName) {
-        if (userName == null) {
-            return Optional.empty();
-        } else {
-            return Optional.ofNullable(userAltCache.get(userName));
-        }
+    public IUser findByLogin(String userName) {
+        return userAltCache.get(userName);
         //TODO it needs to initialize the cache
     }
 
