@@ -1,4 +1,4 @@
-- hosts: all
+- hosts: gcp_vm
   become: yes
   tasks:
     - name: Ensure core utilities are installed
@@ -11,10 +11,33 @@
         name: maven
         state: present
 
-    - name: Stop the Keypractica service
+    - name: Download Adoptium JDK 21
+      ansible.builtin.get_url:
+        url: https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21+35/OpenJDK21U-jdk_x64_linux_hotspot_21_35.tar.gz
+        dest: /tmp/OpenJDK21.tar.gz
+
+    - name: Extract Adoptium JDK 21
+      ansible.builtin.unarchive:
+        src: /tmp/OpenJDK21.tar.gz
+        dest: /opt/
+        remote_src: yes
+
+    - name: Symlink Java 21
+      ansible.builtin.file:
+        src: /opt/jdk-21+35/bin/java
+        dest: /usr/bin/java
+        state: link
+
+    - name: Ensure Git is installed
+      ansible.builtin.apt:
+        name: git
+        state: present
+
+    - name: Stop the Keypractica service (if it exists)
       ansible.builtin.systemd:
         name: keypractica
         state: stopped
+      failed_when: false
 
     - name: Update the Keypractica project from GitHub
       ansible.builtin.git:
@@ -23,12 +46,50 @@
         version: master
         force: yes
 
+    - name: Ensure target directory exists before build
+      ansible.builtin.file:
+        path: /home/keypractica/be_server/target
+        state: directory
+
     - name: Build the project using Maven
-      ansible.builtin.shell:
-        cmd: '/opt/apache-maven-3.9.3/bin/mvn package -Dquarkus.package.type=uber-jar -DskipTests'
-        chdir: '/home/keypractica/be_server'
-        environment:
-          MAVEN_OPTS: '--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED'
+      ansible.builtin.shell: |
+        cd /home/keypractica/be_server && MAVEN_OPTS="--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED" mvn clean package -Dquarkus.package.type=uber-jar -DskipTests
+      args:
+        chdir: /home/keypractica/be_server
+      register: maven_output
+      ignore_errors: yes
+
+    - name: Fail if the build fails
+      ansible.builtin.fail:
+        msg: "Maven build failed. See logs: {{ maven_output.stdout }}"
+      when: maven_output.rc != 0
+
+    - name: Create systemd service file for Keypractica
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/keypractica.service
+        content: |
+          [Unit]
+          Description=Keypractica Service
+          After=network.target
+
+          [Service]
+          User=aida
+          ExecStart=/usr/bin/java -jar /home/keypractica/be_server/target/quarkus-app.jar -Dquarkus.http.port=38707
+          SuccessExitStatus=143
+          Restart=always
+          RestartSec=10
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd to apply the new service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+
+    - name: Enable Keypractica service
+      ansible.builtin.systemd:
+        name: keypractica
+        enabled: yes
 
     - name: Start Keypractica service
       ansible.builtin.systemd:

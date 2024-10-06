@@ -1,9 +1,9 @@
-package io.kneo.core.server.security;
-
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.exception.DataValidationException;
 import io.kneo.core.util.NumberUtil;
+import io.quarkus.security.ForbiddenException;
+import io.quarkus.security.UnauthorizedException;
 import io.vertx.pgclient.PgException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -56,6 +56,16 @@ public class WebExceptionMapper implements ExceptionMapper<Exception> {
                 json = "{\"error\": \"System exception\", \"message\": \"Connection error occurred.\", \"code\": " + errorNumber + "}";
                 status = Response.Status.INTERNAL_SERVER_ERROR;
             }
+            case UnauthorizedException ue -> {
+                LOGGER.warn("Unauthorized access attempt: {}", ue.getMessage());
+                json = "{\"error\": \"Unauthorized\", \"message\": \"You must be logged in to access this resource.\"}";
+                status = Response.Status.UNAUTHORIZED;
+            }
+            case ForbiddenException fe -> {
+                LOGGER.warn("Forbidden access attempt: {}", fe.getMessage());
+                json = "{\"error\": \"Forbidden\", \"message\": \"You do not have the required permissions to access this resource.\"}";
+                status = Response.Status.FORBIDDEN;
+            }
             case null, default -> {
                 int errorNumber = NumberUtil.getRandomNumber(10000, 99000);
                 LOGGER.error("General exception: {}, code: {}", exception.getMessage(), errorNumber, exception);
@@ -63,8 +73,6 @@ public class WebExceptionMapper implements ExceptionMapper<Exception> {
                 status = Response.Status.INTERNAL_SERVER_ERROR;
             }
         }
-
-
 
         return Response.status(status)
                 .entity(json)

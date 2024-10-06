@@ -36,37 +36,39 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
         this.service = service;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void getAll(RoutingContext rc) {
+    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getAll(RoutingContext rc) throws UserNotFoundException {
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
-        TaskFilter filter = rc.body().asJsonObject().mapTo(TaskFilter.class);
+        TaskFilter filter = TaskFilter.builder()
+                .status(rc.request().getParam("status"))
+                .priority(rc.request().getParam("priority"))
+                .assignee(rc.request().getParam("assignee"))
+                .startDate(rc.request().getParam("startDate"))
+                .endDate(rc.request().getParam("endDate"))
+                .build();
 
-        try {
-            IUser user = getUser(rc);
+        IUser user = getUser(rc);
 
-            service.getAllCount(user, filter)
-                    .onItem().transformToUni(count -> {
-                        int maxPage = countMaxPage(count, size);
-                        int pageNum = (page == 0) ? 1 : page;
-                        int offset = RuntimeUtil.calcStartEntry(pageNum, size);
-                        LanguageCode languageCode = resolveLanguage(rc);
-                        return service.getAll(size, offset, user, filter)
-                                .onItem().transform(dtoList -> {
-                                    ViewPage viewPage = new ViewPage();
-                                    viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, TaskActionsFactory.getViewActions(languageCode));
-                                    View<TaskDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
-                                    viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
-                                    return viewPage;
-                                });
-                    })
-                    .subscribe().with(
-                            viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
-                            rc::fail
-                    );
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        service.getAllCount(user, filter)
+                .onItem().transformToUni(count -> {
+                    int maxPage = countMaxPage(count, size);
+                    int pageNum = (page == 0) ? 1 : page;
+                    int offset = RuntimeUtil.calcStartEntry(pageNum, size);
+                    LanguageCode languageCode = resolveLanguage(rc);
+                    return service.getAll(size, offset, user, filter)
+                            .onItem().transform(dtoList -> {
+                                ViewPage viewPage = new ViewPage();
+                                viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, TaskActionsFactory.getViewActions(languageCode));
+                                View<TaskDTO> dtoEntries = new View<>(dtoList, count, pageNum, maxPage, size);
+                                viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                                return viewPage;
+                            });
+                })
+                .subscribe().with(
+                        viewPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode()),
+                        rc::fail
+                );
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
