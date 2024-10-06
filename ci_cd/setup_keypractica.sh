@@ -3,34 +3,34 @@
 # Ensure script is run as root
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
-  exit
-fi
-
-# Load deployment-related variables from deployment-config.properties
-DEPLOYMENT_PROPERTIES_FILE="/home/keypractica/deployment-config.properties"
-if [ -f "$DEPLOYMENT_PROPERTIES_FILE" ]; then
-  # Load specific lines from the deployment properties file
-  JDK_URL=$(grep '^JDK_URL=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  JDK_DEST=$(grep '^JDK_DEST=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  JDK_INSTALL_DIR=$(grep '^JDK_INSTALL_DIR=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  REPO_DIR=$(grep '^REPO_DIR=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  SERVICE_FILE=$(grep '^SERVICE_FILE=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  USER=$(grep '^USER=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-  DAEMON_MODE=$(grep '^DAEMON_MODE=' $DEPLOYMENT_PROPERTIES_FILE | cut -d'=' -f2-)
-else
-  echo "Deployment properties file not found: $DEPLOYMENT_PROPERTIES_FILE"
   exit 1
 fi
+
+# Check for the -d flag (daemon mode)
+DAEMON_MODE=false
+while getopts "d" option; do
+  case $option in
+    d) DAEMON_MODE=true ;;
+    *) echo "Usage: $0 [-d] (run as a service)"; exit 1 ;;
+  esac
+done
+
+# Debugging output to verify if daemon mode is recognized
+echo "Daemon mode: $DAEMON_MODE"
 
 # Update and install core utilities
 echo "Updating package list and installing core utilities..."
 apt update && apt install -y coreutils maven git
 
 # Download Adoptium JDK 21
-echo "Downloading Adoptium JDK 21 from $JDK_URL..."
+JDK_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21+35/OpenJDK21U-jdk_x64_linux_hotspot_21_35.tar.gz"
+JDK_DEST="/tmp/OpenJDK21.tar.gz"
+JDK_INSTALL_DIR="/opt/jdk-21+35"
+
+echo "Downloading Adoptium JDK 21..."
 curl -L $JDK_URL -o $JDK_DEST
 
-echo "Extracting JDK to $JDK_INSTALL_DIR..."
+echo "Extracting JDK..."
 tar -xzf $JDK_DEST -C /opt/
 
 echo "Creating symlink for Java..."
@@ -41,6 +41,7 @@ echo "Stopping Keypractica service if it exists..."
 systemctl stop keypractica || true
 
 # Clone/update the Keypractica project
+REPO_DIR="/home/keypractica/be_server"
 if [ -d "$REPO_DIR" ]; then
   echo "Updating Keypractica project from GitHub..."
   git -C $REPO_DIR pull origin master
@@ -70,10 +71,11 @@ fi
 echo "Using JAR file: $JAR_FILE"
 
 # Option to run as service or in the current terminal
-if [ "$DAEMON_MODE" = "true" ]; then
+if [ "$DAEMON_MODE" = true ]; then
   echo "Setting up to run as a systemd service..."
 
   # Create systemd service file
+  SERVICE_FILE="/etc/systemd/system/keypractica.service"
   echo "Creating systemd service for Keypractica..."
   cat << EOF > $SERVICE_FILE
 [Unit]
@@ -81,7 +83,7 @@ Description=Keypractica Service
 After=network.target
 
 [Service]
-User=$USER
+User=aida
 ExecStart=/usr/bin/java -Dquarkus.profile=prod -Dquarkus.config.locations=file:/home/keypractica/application-prod.properties -jar $JAR_FILE
 SuccessExitStatus=143
 Restart=always
