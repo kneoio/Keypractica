@@ -69,12 +69,12 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
                 .onItem().transform(this::mapToDTO);
     }
 
-    public Uni<DepartmentDTO> upsert(UUID id, DepartmentDTO dto, IUser user, LanguageCode code) {
+    public Uni<DepartmentDTO> upsert(String id, DepartmentDTO dto, IUser user, LanguageCode code) {
         Department doc = mapToEntity(dto);
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
         } else {
-            return map(repository.update(id, doc, user));
+            return map(repository.update(UUID.fromString(id), doc, user));
         }
     }
 

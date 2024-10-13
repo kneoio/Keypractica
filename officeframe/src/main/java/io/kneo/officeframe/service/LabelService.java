@@ -68,7 +68,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     }
 
     @Override
-    public Uni<LabelDTO> upsert(UUID id, LabelDTO dto, IUser user, LanguageCode code) {
+    public Uni<LabelDTO> upsert(String id, LabelDTO dto, IUser user, LanguageCode code) {
         Label doc = new Label();
         doc.setIdentifier(dto.getIdentifier());
         doc.setParent(dto.getParent());
@@ -81,7 +81,7 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
             return repository.insert(doc, user)
                     .onItem().transform(this::mapToDTO);
         } else {
-            return repository.update(id, doc, user)
+            return repository.update(UUID.fromString(id), doc, user)
                     .onItem().transform(this::mapToDTO);
         }
     }

@@ -116,7 +116,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
         JsonObject jsonObject = rc.body().asJsonObject();
         LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
         String id = rc.pathParam("id");
-        service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
+        service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         label -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(label).encode()),
                         rc::fail

@@ -27,7 +27,7 @@ public abstract class AbstractService<T, V> {
 
     public abstract Uni<V> getDTO(UUID id, IUser user, LanguageCode language);
 
-    public Uni<V> upsert(UUID id, V dto, IUser user, LanguageCode code) {
+    public Uni<V> upsert(String id, V dto, IUser user, LanguageCode code) {
          return Uni.createFrom().failure(new RuntimeException("The upsert is not implemented"));
     };
 

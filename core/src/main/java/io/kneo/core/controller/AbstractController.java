@@ -91,7 +91,7 @@ public abstract class AbstractController<T, V> {
                 );
     }
 
-    protected void upsert(IRESTService<V> service, UUID id, RoutingContext rc) throws UserNotFoundException {
+    protected void upsert(IRESTService<V> service, String id, RoutingContext rc) throws UserNotFoundException {
         JsonObject jsonObject = rc.body().asJsonObject();
 
         ObjectMapper mapper = new ObjectMapper();

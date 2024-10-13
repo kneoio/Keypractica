@@ -83,7 +83,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
     }
 
     @Override
-    public Uni<ProjectDTO> upsert(UUID id, ProjectDTO dto, IUser user, LanguageCode code) {
+    public Uni<ProjectDTO> upsert(String id, ProjectDTO dto, IUser user, LanguageCode code) {
         assert repository != null;
         if (id == null) {
             return repository.insert(buildEntity(dto), user.getId())

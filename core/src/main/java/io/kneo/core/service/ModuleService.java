@@ -103,7 +103,7 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         });
     }
 
-    public Uni<ModuleDTO> upsert(UUID id, ModuleDTO dto, IUser user, LanguageCode code) {
+    public Uni<ModuleDTO> upsert(String id, ModuleDTO dto, IUser user, LanguageCode code) {
         return null;
     }
 

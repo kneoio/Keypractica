@@ -132,7 +132,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
         return map(repository.getByUserId(id));
     }
 
-    public Uni<EmployeeDTO> upsert(UUID id, EmployeeDTO dto, IUser user, LanguageCode code) {
+    public Uni<EmployeeDTO> upsert(String id, EmployeeDTO dto, IUser user, LanguageCode code) {
         Employee doc = new Employee();
         doc.setIdentifier(dto.getIdentifier());
         doc.setPhone(dto.getPhone());
@@ -149,7 +149,7 @@ public class EmployeeService extends AbstractService<Employee, EmployeeDTO> impl
             return map(repository.insert(doc, user));
         } else {
             assert repository != null;
-            return map(repository.update(id, doc, user));
+            return map(repository.update(UUID.fromString(id), doc, user));
         }
     }
 

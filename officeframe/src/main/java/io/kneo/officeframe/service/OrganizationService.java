@@ -97,7 +97,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     @Override
-    public Uni<OrganizationDTO> upsert(UUID id, OrganizationDTO dto, IUser user, LanguageCode code) {
+    public Uni<OrganizationDTO> upsert(String id, OrganizationDTO dto, IUser user, LanguageCode code) {
         Organization doc = new Organization();
         doc.setIdentifier(dto.getIdentifier());
         doc.setOrgCategory(dto.getOrgCategory().getId());
@@ -108,7 +108,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
         } else {
-            return map(repository.update(id, doc, user));
+            return map(repository.update(UUID.fromString(id), doc, user));
         }
     }
 
