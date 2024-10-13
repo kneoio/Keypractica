@@ -104,7 +104,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
     }
 
     @Override
-    public Uni<TaskDTO> upsert(UUID id, TaskDTO dto, IUser user, LanguageCode code) {
+    public Uni<TaskDTO> upsert(String id, TaskDTO dto, IUser user, LanguageCode code) {
         assert projectService != null;
         assert employeeService != null;
         assert labelService != null;

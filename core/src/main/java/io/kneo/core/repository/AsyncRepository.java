@@ -156,6 +156,16 @@ public class AsyncRepository {
     }
 
     protected static void setLocalizedNames(SimpleReferenceEntity entity, Row row) {
+        setLocalizedNames(entity, row, COLUMN_LOCALIZED_NAME);
+        JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
+        if (localizedNameJson != null) {
+            EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
+            localizedNameJson.getMap().forEach((key, value) -> localizedName.put(LanguageCode.valueOf(key), (String) value));
+            entity.setLocalizedName(localizedName);
+        }
+    }
+
+    protected static void setLocalizedNames(SimpleReferenceEntity entity, Row row, String fieldName) {
         JsonObject localizedNameJson = row.getJsonObject(COLUMN_LOCALIZED_NAME);
         if (localizedNameJson != null) {
             EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);

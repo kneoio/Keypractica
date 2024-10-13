@@ -1,0 +1,119 @@
+package io.kneo.qtracker.service;
+
+import io.kneo.core.localization.LanguageCode;
+import io.kneo.core.model.user.IUser;
+import io.kneo.core.repository.UserRepository;
+import io.kneo.core.service.AbstractService;
+import io.kneo.core.service.UserService;
+import io.kneo.qtracker.dto.OwnerDTO;
+import io.kneo.qtracker.model.Owner;
+import io.kneo.qtracker.repository.OwnerRepository;
+import io.smallrye.mutiny.Uni;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.validation.Validator;
+
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@ApplicationScoped
+public class OwnerService extends AbstractService<Owner, OwnerDTO> {
+    private final OwnerRepository repository;
+
+    Validator validator;
+
+    protected OwnerService() {
+        super(null, null);
+        this.repository = null;
+    }
+
+    @Inject
+    public OwnerService(UserRepository userRepository, UserService userService, Validator validator, OwnerRepository repository) {
+        super(userRepository, userService);
+        this.validator = validator;
+        this.repository = repository;
+    }
+
+    public Uni<List<OwnerDTO>> getAll(final int limit, final int offset, final IUser user) {
+        assert repository != null;
+        Uni<List<Owner>> uni = repository.getAll(limit, offset, user);
+        return uni
+                .onItem().transform(ownerList -> ownerList.stream()
+                        .map(owner -> OwnerDTO.builder()
+                                .id(owner.getId())
+                                .author(userRepository.getUserName(owner.getAuthor()))
+                                .regDate(owner.getRegDate())
+                                .lastModifier(userRepository.getUserName(owner.getLastModifier()))
+                                .lastModifiedDate(owner.getLastModifiedDate())
+                                .email(owner.getEmail())
+                                .telegramName(owner.getTelegramName())
+                                .phone(owner.getPhone())
+                                .build())
+                        .collect(Collectors.toList()));
+    }
+
+    public Uni<Integer> getAllCount(final IUser user) {
+        assert repository != null;
+        return repository.getAllCount(user);
+    }
+
+    @Override
+    public Uni<OwnerDTO> getDTO(UUID uuid, IUser user, LanguageCode code) {
+        assert repository != null;
+        Uni<Owner> ownerUni = repository.findById(uuid, user.getId());
+        return ownerUni.onItem().transformToUni(this::map);
+    }
+
+    public Uni<Owner> getById(UUID uuid, IUser user) {
+        assert repository != null;
+        return repository.findById(uuid, user.getId());
+    }
+
+    @Override
+    public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code) {
+        assert repository != null;
+        if (id == null) {
+            return repository.insert(buildEntity(dto), user)
+                    .onItem().transformToUni(this::map);
+        } else {
+            return repository.update(UUID.fromString(id), buildEntity(dto), user)
+                    .onItem().transformToUni(this::map);
+        }
+    }
+
+    private Uni<OwnerDTO> map(Owner doc) {
+        return Uni.createFrom().item(() -> OwnerDTO.builder()
+                .id(doc.getId())
+                .author(userRepository.getUserName(doc.getAuthor()))
+                .regDate(doc.getRegDate())
+                .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                .lastModifiedDate(doc.getLastModifiedDate())
+                .localizedName(doc.getLocalizedName())
+                .email(doc.getEmail())
+                .telegramName(doc.getTelegramName())
+                .phone(doc.getPhone())
+                .localizedName(doc.getLocalizedName())
+                .country(doc.getCountry())
+                .currency(doc.getCurrency())
+                .birthDate(doc.getBirthDate())
+                .build());
+    }
+
+    private Owner buildEntity(OwnerDTO dto) {
+        Owner doc = new Owner();
+        doc.setEmail(dto.getEmail());
+        doc.setTelegramName(dto.getTelegramName());
+        doc.setLocalizedName(dto.getLocalizedName());
+        doc.setPhone(dto.getPhone());
+        doc.setCountry(dto.getCountry());
+        doc.setCurrency(dto.getCurrency());
+        doc.setBirthDate(dto.getBirthDate());
+        return doc;
+    }
+
+    public Uni<Integer> delete(String id, IUser user) {
+        assert repository != null;
+        return repository.delete(UUID.fromString(id), user);
+    }
+}

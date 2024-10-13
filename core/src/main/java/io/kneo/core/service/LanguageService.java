@@ -97,7 +97,7 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
     }
 
     @Override
-    public Uni<LanguageDTO> upsert(UUID id, LanguageDTO dto, IUser user, LanguageCode code) {
+    public Uni<LanguageDTO> upsert(String id, LanguageDTO dto, IUser user, LanguageCode code) {
         Language doc = new Language();
         doc.setCode(dto.getCode());
         doc.setIdentifier(String.valueOf(dto.getCode()));
@@ -108,9 +108,10 @@ public class LanguageService extends AbstractService<Language, LanguageDTO> impl
         if (id == null) {
             return map(repository.insert(doc, user));
         } else {
-            return map(repository.update(id, doc, user));
+            return map(repository.update(UUID.fromString(id), doc, user));
         }
     }
+
 
     @Override
     public Uni<Integer> delete(String id, IUser user) {

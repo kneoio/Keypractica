@@ -104,7 +104,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
         JsonObject jsonObject = rc.body().asJsonObject();
         OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
         String id = rc.pathParam("id");
-        service.upsert(UUID.fromString(id), dto, getUser(rc), LanguageCode.ENG)
+        service.upsert(id, dto, getUser(rc), LanguageCode.ENG)
                 .subscribe().with(
                         organization -> {
                             int statusCode = id.isEmpty() ? 201 : 200;

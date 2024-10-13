@@ -83,7 +83,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
         ModuleDTO dto = rc.body().asJsonObject().mapTo(ModuleDTO.class);
         LanguageCode languageCode = resolveLanguage(rc);
 
-        service.upsert(UUID.fromString(id), dto, getUser(rc), languageCode)
+        service.upsert(id, dto, getUser(rc), languageCode)
                 .subscribe().with(
                         updated -> rc.response().setStatusCode(200).end(),
                         rc::fail

@@ -97,7 +97,7 @@ public class DepartmentController extends AbstractSecuredController<Department, 
 
     @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsert(RoutingContext rc) throws UserNotFoundException {
-        upsert(service, UUID.fromString(rc.pathParam("id")), rc);
+        upsert(service, rc.pathParam("id"), rc);
     }
 
 

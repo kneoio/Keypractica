@@ -101,7 +101,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
         JsonObject jsonObject = rc.body().asJsonObject();
         EmployeeDTO dto = jsonObject.mapTo(EmployeeDTO.class);
         String id = rc.pathParam("id");
-        service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
+        service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
                 .subscribe().with(
                         doc -> {
                             int statusCode = (id == null || id.isEmpty()) ? 201 : 200;
