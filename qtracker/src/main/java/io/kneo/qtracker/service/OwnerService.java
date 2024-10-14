@@ -3,6 +3,7 @@ package io.kneo.qtracker.service;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.qtracker.dto.OwnerDTO;
@@ -48,6 +49,7 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
                                 .lastModifiedDate(owner.getLastModifiedDate())
                                 .email(owner.getEmail())
                                 .telegramName(owner.getTelegramName())
+                                .whatsappName(owner.getWhatsappName())
                                 .phone(owner.getPhone())
                                 .build())
                         .collect(Collectors.toList()));
@@ -71,7 +73,7 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
     }
 
     @Override
-    public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code) {
+    public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code) throws DocumentModificationAccessException {
         assert repository != null;
         if (id == null) {
             return repository.insert(buildEntity(dto), user)
@@ -92,6 +94,7 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
                 .localizedName(doc.getLocalizedName())
                 .email(doc.getEmail())
                 .telegramName(doc.getTelegramName())
+                .whatsappName(doc.getWhatsappName())
                 .phone(doc.getPhone())
                 .localizedName(doc.getLocalizedName())
                 .country(doc.getCountry())
@@ -104,6 +107,7 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
         Owner doc = new Owner();
         doc.setEmail(dto.getEmail());
         doc.setTelegramName(dto.getTelegramName());
+        doc.setWhatsappName(dto.getWhatsappName());
         doc.setLocalizedName(dto.getLocalizedName());
         doc.setPhone(dto.getPhone());
         doc.setCountry(dto.getCountry());

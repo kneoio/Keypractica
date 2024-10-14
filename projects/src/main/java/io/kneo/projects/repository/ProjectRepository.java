@@ -162,7 +162,7 @@ public class ProjectRepository extends AsyncRepository {
     public Uni<Project> update(UUID id, Project doc, IUser user) {
         return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
-                    if (permissions[0] == 1) {
+                    if (permissions[0]) {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
                         String sql = String.format("UPDATE %s " +
                                 "SET last_mod_date=$1, last_mod_user=$2, name=$3, status=$4, finish_date=$5, " +

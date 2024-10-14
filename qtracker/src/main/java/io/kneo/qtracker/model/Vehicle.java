@@ -7,24 +7,21 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.UUID;
 
 @Setter
 @Getter
 @NoArgsConstructor
-public class Owner extends SecureDataEntity<UUID> {
-    private long userId;
+public class Vehicle extends SecureDataEntity<UUID> {
+    private UUID ownerId;
+    private String vin;
+    private int vehicleType;
+    private String brand;
+    private String model;
+    private int fuelType;
     private int status;
-    private String email;
-    private String telegramName;
-    private String whatsappName;
     private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
-    private String phone;
-    private String country;
-    private String currency;
-    private LocalDate birthDate;
 
     public EnumMap<LanguageCode, String> getLocalizedName() {
         for (LanguageCode code : Environment.AVAILABLE_LANGUAGES) {

@@ -8,15 +8,13 @@ import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentHasNotFoundException;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
-import io.kneo.qtracker.dto.OwnerDTO;
-import io.kneo.qtracker.dto.actions.OwnerActionsFactory;
-import io.kneo.qtracker.model.Owner;
-import io.kneo.qtracker.service.OwnerService;
+import io.kneo.qtracker.dto.ConsumingDTO;
+import io.kneo.qtracker.dto.actions.ConsumingActionsFactory;
+import io.kneo.qtracker.model.Consuming;
+import io.kneo.qtracker.service.ConsumingService;
 import io.quarkus.vertx.web.Route;
 import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
@@ -29,13 +27,13 @@ import java.util.List;
 import java.util.UUID;
 
 @RolesAllowed("**")
-@RouteBase(path = "/api/:org/owners")
-public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> {
+@RouteBase(path = "/api/:org/consumings")
+public class ConsumingController extends AbstractSecuredController<Consuming, ConsumingDTO> {
 
     @Inject
-    OwnerService service;
+    ConsumingService service;
 
-    public OwnerController(UserService userService) {
+    public ConsumingController(UserService userService) {
         super(userService);
     }
 
@@ -51,54 +49,43 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
         ).asTuple().subscribe().with(
                 tuple -> {
                     int count = tuple.getItem1();
-                    List<OwnerDTO> owners = tuple.getItem2();
+                    List<ConsumingDTO> consumings = tuple.getItem2();
 
                     int maxPage = RuntimeUtil.countMaxPage(count, size);
 
                     ViewPage viewPage = new ViewPage();
-                    View<OwnerDTO> dtoEntries = new View<>(owners, count, page, maxPage, size);
+                    View<ConsumingDTO> dtoEntries = new View<>(consumings, count, page, maxPage, size);
                     viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
 
-                    ActionBox actions = OwnerActionsFactory.getViewActions(user.getActivatedRoles());
+                    ActionBox actions = ConsumingActionsFactory.getViewActions(user.getActivatedRoles());
                     viewPage.addPayload(PayloadType.CONTEXT_ACTIONS, actions);
 
                     rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
                 },
-                failure -> {
-                    LOGGER.error("Error processing request: ", failure);
-                    rc.response().setStatusCode(500).end("Internal Server Error");
-                }
+                rc::fail
         );
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) throws UserNotFoundException {
-        String id = rc.pathParam("id");
-        LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
-
-        service.getDTO(UUID.fromString(id), getUser(rc), languageCode).subscribe().with(
-                owner -> {
-                    FormPage page = new FormPage();
-                    page.addPayload(PayloadType.DOC_DATA, owner);
-                    page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-                    rc.response().setStatusCode(200).end(JsonObject.mapFrom(page).encode());
-                },
-                failure -> {
-                    if (failure instanceof DocumentHasNotFoundException) {
-                        rc.response().setStatusCode(404).end("Owner not found");
-                    } else {
-                        LOGGER.error("Error processing request: ", failure);
-                        rc.response().setStatusCode(500).end("Internal Server Error");
-                    }
-                }
-        );
+        FormPage page = new FormPage();
+        page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
+        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
+                .onItem().transform(dto -> {
+                    page.addPayload(PayloadType.DOC_DATA, dto);
+                    return page;
+                })
+                .subscribe().with(
+                        formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
+                        rc::fail
+                );
     }
 
     @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
+    public void upsert(RoutingContext rc) throws UserNotFoundException {
         String id = rc.pathParam("id");
         JsonObject jsonObject = rc.body().asJsonObject();
-        OwnerDTO dto = jsonObject.mapTo(OwnerDTO.class);
+        ConsumingDTO dto = jsonObject.mapTo(ConsumingDTO.class);
         service.upsert(id, dto, getUser(rc), LanguageCode.ENG)
                 .subscribe().with(
                         doc -> {
@@ -110,18 +97,17 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
-        try {
-            String id = rc.pathParam("id");
-            service.delete(id, getUser(rc)).subscribe().with(
-                    count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),
-                    failure -> {
-                        LOGGER.error(failure.getMessage(), failure);
-                        rc.response().setStatusCode(500).end("Internal Server Error");
-                    }
-            );
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public void delete(RoutingContext rc) throws UserNotFoundException {
+        service.delete(rc.pathParam("id"), getUser(rc))
+                .subscribe().with(
+                        count -> {
+                            if (count > 0) {
+                                rc.response().setStatusCode(200).end();
+                            } else {
+                                rc.fail(404);
+                            }
+                        },
+                        rc::fail
+                );
     }
 }

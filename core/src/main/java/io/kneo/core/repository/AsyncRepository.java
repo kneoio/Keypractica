@@ -127,7 +127,7 @@ public class AsyncRepository {
     public Uni<Integer> delete(UUID id, EntityData entityData, IUser user) {
         return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
-                    if (permissions[1] == 1) {
+                    if (permissions[1]) {
                         String sql = String.format("DELETE FROM %s WHERE id=$1;", entityData.getTableName());
                         return client.withTransaction(tx -> tx.preparedQuery(sql)
                                 .execute(Tuple.of(id))

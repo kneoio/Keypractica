@@ -8,6 +8,7 @@ import io.kneo.core.service.IRESTService;
 import io.kneo.core.service.UserService;
 import io.kneo.officeframe.dto.OrgCategoryDTO;
 import io.kneo.officeframe.model.OrgCategory;
+import io.kneo.officeframe.model.Position;
 import io.kneo.officeframe.repository.OrgCategoryRepository;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,6 +61,18 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
     public Uni<OrgCategoryDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
         Uni<OrgCategory> categoryUni = repository.findById(uuid);
         return categoryUni.onItem().transform(this::map);
+    }
+
+    @Override
+    public Uni<OrgCategoryDTO> upsert(String id, OrgCategoryDTO dto, IUser user, LanguageCode code) {
+        Position doc = new Position();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setLocalizedName(dto.getLocalizedName());
+        if (id == null) {
+            return null;
+        } else {
+            return null;
+        }
     }
 
     private OrgCategoryDTO map(OrgCategory category) {
