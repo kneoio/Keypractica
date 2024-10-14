@@ -59,6 +59,18 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     @Override
+    public Uni<PositionDTO> upsert(String id, PositionDTO dto, IUser user, LanguageCode code) {
+        Position doc = new Position();
+        doc.setIdentifier(dto.getIdentifier());
+        doc.setLocalizedName(dto.getLocalizedName());
+        if (id == null) {
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
         return null;
     }

@@ -142,7 +142,7 @@ public class TaskService extends AbstractService<Task, TaskDTO> {
                 doc.setRegNumber(dto.getRegNumber());
                 taskUni = repository.insert(doc, user);
             } else {
-                taskUni = repository.update(id, doc, user);
+                taskUni = repository.update(UUID.fromString(id), doc, user);
             }
 
             return map(taskUni, user, LanguageCode.ENG);

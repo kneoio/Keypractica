@@ -83,7 +83,6 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();

@@ -1,10 +1,12 @@
 package io.kneo.core.server.security;
 
 import io.kneo.core.repository.exception.DocumentHasNotFoundException;
+import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.vertx.core.Handler;
 import io.vertx.core.json.Json;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.pgclient.PgException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,10 +32,20 @@ public class GlobalErrorHandler implements Handler<RoutingContext> {
             context.response().setStatusCode(403)
                     .putHeader("Content-Type", "application/json")
                     .end(Json.encode(Map.of("error", failure.getMessage())));
+        } else if (failure instanceof DocumentModificationAccessException) {
+            context.response().setStatusCode(404)
+                    .putHeader("Content-Type", "application/json")
+                    .end(Json.encode(Map.of("error", failure.getMessage())));
         } else if (failure.getCause() instanceof ConnectException) {
             context.response().setStatusCode(500)
                     .putHeader("Content-Type", "application/json")
                     .end(Json.encode(Map.of("error", "API server error")));
+        } else if (failure instanceof PgException || failure.getCause() instanceof PgException) {
+            LOGGER.error("Global error handler: " + failure);
+            failure.printStackTrace();
+            context.response().setStatusCode(500)
+                    .putHeader("Content-Type", "application/json")
+                    .end(Json.encode(Map.of("error", "API server database error")));
         } else if (failure instanceof NoSuchElementException) {
             LOGGER.error("Global error handler: " + failure);
             failure.printStackTrace();

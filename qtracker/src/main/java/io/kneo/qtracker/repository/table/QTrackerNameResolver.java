@@ -3,17 +3,17 @@ package io.kneo.qtracker.repository.table;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.core.repository.table.TableNameResolver;
 
-public class OwnerNameResolver extends TableNameResolver {
+public class QTrackerNameResolver extends TableNameResolver {
     public static final String OWNERS = "owners";
     public static final String VEHICLES = "vehicles";
     public static final String CONSUMINGS = "consumings";
 
-    private static final String OWNERS_TABLE_NAME = "__owners";
-    private static final String OWNERS_ACCESS_TABLE_NAME = "owners__readers";
-    private static final String VEHICLES_TABLE_NAME = "__vehicles";
-    private static final String VEHICLES_ACCESS_TABLE_NAME = "vehicles__readers";
-    private static final String CONSUMINGS_TABLE_NAME = "__consumings";
-    private static final String CONSUMINGS_ACCESS_TABLE_NAME = "consumings__readers";
+    private static final String OWNERS_TABLE_NAME = "qtracker__owners";
+    private static final String OWNERS_ACCESS_TABLE_NAME = "qtracker__owners_readers";
+    private static final String VEHICLES_TABLE_NAME = "qtracker__vehicles";
+    private static final String VEHICLES_ACCESS_TABLE_NAME = "qtracker__vehicles_readers";
+    private static final String CONSUMINGS_TABLE_NAME = "qtracker__consumings";
+    private static final String CONSUMINGS_ACCESS_TABLE_NAME = "qtracker__consumings_readers";
 
     public EntityData getEntityNames(String type) {
         return switch (type) {
@@ -24,8 +24,7 @@ public class OwnerNameResolver extends TableNameResolver {
         };
     }
 
-    public static OwnerNameResolver create() {
-        return new OwnerNameResolver();
+    public static QTrackerNameResolver create() {
+        return new QTrackerNameResolver();
     }
-
 }

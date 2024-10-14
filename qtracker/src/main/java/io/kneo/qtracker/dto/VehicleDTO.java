@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -23,23 +22,23 @@ import java.util.UUID;
 @Getter
 @SuperBuilder
 @NoArgsConstructor
-public class OwnerDTO extends AbstractDTO {
-    private String email;
-    private String telegramName;
-    private String whatsappName;
+public class VehicleDTO extends AbstractDTO {
+    @NotNull
+    private UUID ownerId;
+    private String vin;
+    private int vehicleType;
+    private String brand;
+    private String model;
+    private int fuelType;
+    private int status;
+
     private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
-    private String phone;
-    private String country;
-    private String currency;
 
     @JsonView(Views.DetailView.class)
     @NotNull
-    private LocalDate birthDate;
-
-    @JsonView(Views.DetailView.class)
     private List<RLSDTO> rls = new ArrayList<>();
 
-    public OwnerDTO(String id) {
+    public VehicleDTO(String id) {
         this.id = UUID.fromString(id);
     }
 }

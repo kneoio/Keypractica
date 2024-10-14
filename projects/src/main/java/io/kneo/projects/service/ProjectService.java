@@ -89,7 +89,7 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
             return repository.insert(buildEntity(dto), user.getId())
                     .onItem().transformToUni(this::map);
         } else {
-            return repository.update(id, buildEntity(dto), user)
+            return repository.update(UUID.fromString(id), buildEntity(dto), user)
                     .onItem().transformToUni(this::map);
         }
     }
