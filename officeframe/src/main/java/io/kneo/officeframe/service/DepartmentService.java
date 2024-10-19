@@ -70,7 +70,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     public Uni<DepartmentDTO> upsert(String id, DepartmentDTO dto, IUser user, LanguageCode code) {
-        Department doc = mapToEntity(dto);
+        Department doc = buildEntity(dto);
         if (id == null) {
             return map(repository.insert(doc, AnonymousUser.build()));
         } else {
@@ -101,12 +101,12 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
                 .build();
     }
 
-    private Department mapToEntity(DepartmentDTO dto) {
+    private Department buildEntity(DepartmentDTO dto) {
         Department department = new Department();
         department.setIdentifier(dto.getIdentifier());
         department.setRank(dto.getRank());
         department.setLocalizedName(dto.getLocalizedName());
-        // Set other fields as needed
+
         return department;
     }
 

@@ -24,13 +24,13 @@ import java.util.UUID;
 @NoArgsConstructor
 public class VehicleDTO extends AbstractDTO {
     @NotNull
-    private UUID ownerId;
     private String vin;
     private int vehicleType;
     private String brand;
     private String model;
     private int fuelType;
     private int status;
+    private OwnerDTO owner;
 
     private EnumMap<LanguageCode, String> localizedName = new EnumMap<>(LanguageCode.class);
 
