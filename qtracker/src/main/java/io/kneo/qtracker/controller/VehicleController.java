@@ -93,6 +93,21 @@ public class VehicleController extends AbstractSecuredController<Vehicle, Vehicl
         );
     }
 
+    @Route(path = "/:messenger_type/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void upsertFromMessenger(RoutingContext rc) throws UserNotFoundException {
+        String id = rc.pathParam("id");
+        JsonObject jsonObject = rc.body().asJsonObject();
+        VehicleDTO dto = jsonObject.mapTo(VehicleDTO.class);
+        service.upsert(id, dto, getUser(rc), LanguageCode.ENG)
+                .subscribe().with(
+                        doc -> {
+                            int statusCode = id == null ? 201 : 200;
+                            rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(doc).encode());
+                        },
+                        rc::fail
+                );
+    }
+
     @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsert(RoutingContext rc) throws UserNotFoundException {
         String id = rc.pathParam("id");

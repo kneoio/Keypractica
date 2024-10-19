@@ -51,6 +51,16 @@ public class VehicleRepository extends AsyncRepository {
         return getAllCount(user.getId(), entityData.getTableName(), entityData.getRlsName());
     }
 
+    public Uni<List<Vehicle>> getOwnedBy(final UUID ownerId,  final IUser user) {
+        String sql = "SELECT * FROM " + entityData.getTableName() + " v, " + entityData.getRlsName() +
+                " vr WHERE v.id = vr.entity_id AND v.owner_id = $1 AND vr.reader = $2";
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(ownerId, user.getId()))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
     public Uni<Vehicle> findById(UUID uuid, Long userID) {
         String sql = "SELECT theTable.*, rls.* FROM " + entityData.getTableName() + " theTable " +
                 "JOIN " + entityData.getRlsName() + " rls ON theTable.id = rls.entity_id " +

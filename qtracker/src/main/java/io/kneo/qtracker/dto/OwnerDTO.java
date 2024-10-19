@@ -31,6 +31,7 @@ public class OwnerDTO extends AbstractDTO {
     private String phone;
     private String country;
     private String currency;
+    private List<VehicleDTO> vehicles;
 
     @JsonView(Views.DetailView.class)
     @NotNull

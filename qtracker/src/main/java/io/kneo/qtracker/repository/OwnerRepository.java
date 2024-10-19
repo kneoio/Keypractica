@@ -173,4 +173,19 @@ public class OwnerRepository extends AsyncRepository {
 
         return doc;
     }
+
+    public Uni<Owner> findByTelegramId(String id, Long userId) {
+        return client.preparedQuery(String.format("SELECT theTable.*, rls.* FROM %s theTable JOIN %s rls ON theTable.id = rls.entity_id " +
+                        "WHERE rls.reader = $1 AND theTable.telegram_name = $2", entityData.getTableName(), entityData.getRlsName()))
+                .execute(Tuple.of(userId, id))
+                .onItem().transform(RowSet::iterator)
+                .onItem().transform(iterator -> {
+                    if (iterator.hasNext()) {
+                        return from(iterator.next());
+                    } else {
+                        LOGGER.warn(String.format("No %s found with telegram id: " + id, entityData.getTableName()));
+                        throw new DocumentHasNotFoundException(id);
+                    }
+                });
+    }
 }

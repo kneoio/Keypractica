@@ -7,6 +7,7 @@ import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.qtracker.dto.OwnerDTO;
+import io.kneo.qtracker.dto.VehicleDTO;
 import io.kneo.qtracker.model.Owner;
 import io.kneo.qtracker.repository.OwnerRepository;
 import io.smallrye.mutiny.Uni;
@@ -21,19 +22,26 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class OwnerService extends AbstractService<Owner, OwnerDTO> {
     private final OwnerRepository repository;
+    private final VehicleService vehicleService;
 
     Validator validator;
 
     protected OwnerService() {
         super(null, null);
         this.repository = null;
+        this.vehicleService = null;
     }
 
     @Inject
-    public OwnerService(UserRepository userRepository, UserService userService, Validator validator, OwnerRepository repository) {
+    public OwnerService(UserRepository userRepository,
+                        UserService userService,
+                        Validator validator,
+                        OwnerRepository repository,
+                        VehicleService vehicleService) {
         super(userRepository, userService);
         this.validator = validator;
         this.repository = repository;
+        this.vehicleService = vehicleService;
     }
 
     public Uni<List<OwnerDTO>> getAll(final int limit, final int offset, final IUser user) {
@@ -75,14 +83,23 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
     @Override
     public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code) throws DocumentModificationAccessException {
         assert repository != null;
+        assert vehicleService != null;
+
         if (id == null) {
-            return repository.insert(buildEntity(dto), user)
+            Uni<OwnerDTO> ownerDTOUni = repository.insert(buildEntity(dto), user)
                     .onItem().transformToUni(this::map);
+
+            return ownerDTOUni
+                    .onItem().transformToUni(ownerDTO -> {
+                        return vehicleService.upsert(null, VehicleService.getTemporaryVehicle(ownerDTO), user, code)
+                                .replaceWith(ownerDTO);
+                    });
         } else {
             return repository.update(UUID.fromString(id), buildEntity(dto), user)
                     .onItem().transformToUni(this::map);
         }
     }
+
 
     private Uni<OwnerDTO> map(Owner doc) {
         return Uni.createFrom().item(() -> OwnerDTO.builder()
@@ -120,4 +137,33 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
         assert repository != null;
         return repository.delete(UUID.fromString(id), user);
     }
+
+    public Uni<Owner> getByTelegramId(String id, IUser user, LanguageCode languageCode) {
+        assert repository != null;
+        return  repository.findByTelegramId(id, user.getId());
+    }
+
+    public Uni<OwnerDTO> getDTOByTelegramId(String id, IUser user, LanguageCode languageCode) {
+        assert repository != null;
+        assert vehicleService != null;
+        Uni<Owner> ownerUni = repository.findByTelegramId(id, user.getId());
+        return ownerUni.onItem().transformToUni(owner -> {
+            Uni<OwnerDTO> ownerDTOUni = map(owner);
+            Uni<List<VehicleDTO>> vehiclesUni = vehicleService.getOwnedBy(owner.getId(), user)
+                    .onItem().transformToUni(vehicles -> {
+                        List<Uni<VehicleDTO>> vehicleDTOUnis = vehicles.stream()
+                                .map(vehicleService::map)
+                                .toList();
+                        return Uni.combine().all().unis(vehicleDTOUnis).with(results -> (List<VehicleDTO>) results);
+                    });
+
+            return ownerDTOUni.onItem().transformToUni(ownerDTO ->
+                    vehiclesUni.onItem().transform(vehicles -> {
+                        ownerDTO.setVehicles(vehicles);
+                        return ownerDTO;
+                    })
+            );
+        });
+    }
+
 }
