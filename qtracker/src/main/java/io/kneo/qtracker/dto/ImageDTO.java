@@ -10,9 +10,9 @@ import java.util.Map;
 @AllArgsConstructor
 @Builder
 public class ImageDTO {
-    private String imageData;  // For the image_data BYTEA column
-    private String type;       // For the type TEXT column
-    private double confidence; // For the confidence DOUBLE column
-    private Map<String, Object> addInfo;  // For the add_info JSONB column
-    private String description; // For the description TEXT column
+    private String imageData;
+    private String type;
+    private double confidence;
+    private Map<String, Object> addInfo;
+    private String description;
 }
