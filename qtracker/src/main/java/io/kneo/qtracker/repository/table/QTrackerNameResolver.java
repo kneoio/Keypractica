@@ -14,12 +14,13 @@ public class QTrackerNameResolver extends TableNameResolver {
     private static final String VEHICLES_ACCESS_TABLE_NAME = "qtracker__vehicles_readers";
     private static final String CONSUMINGS_TABLE_NAME = "qtracker__consumings";
     private static final String CONSUMINGS_ACCESS_TABLE_NAME = "qtracker__consumings_readers";
+    private static final String CONSUMINGS_IMAGES_TABLE_NAME = "qtracker__consumings_images";
 
     public EntityData getEntityNames(String type) {
         return switch (type) {
             case OWNERS -> new EntityData(OWNERS_TABLE_NAME, OWNERS_ACCESS_TABLE_NAME);
             case VEHICLES -> new EntityData(VEHICLES_TABLE_NAME, VEHICLES_ACCESS_TABLE_NAME);
-            case CONSUMINGS -> new EntityData(CONSUMINGS_TABLE_NAME, CONSUMINGS_ACCESS_TABLE_NAME);
+            case CONSUMINGS -> new EntityData(CONSUMINGS_TABLE_NAME, CONSUMINGS_ACCESS_TABLE_NAME, null, CONSUMINGS_IMAGES_TABLE_NAME);
             default -> super.getEntityNames(type);
         };
     }

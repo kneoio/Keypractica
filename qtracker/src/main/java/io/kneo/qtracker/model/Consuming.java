@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -13,7 +14,9 @@ import java.util.UUID;
 public class Consuming extends SecureDataEntity<UUID> {
     private UUID vehicleId;
     private int status;
-    private int totalKm;
-    private int lastLiters;
-    private int lastCost;
+    private double totalKm;
+    private double lastLiters;
+    private double lastCost;
+    private Map<String, Object> addInfo;
+
 }

@@ -6,9 +6,11 @@ import io.kneo.core.repository.AsyncRepository;
 import io.kneo.core.repository.rls.RLSRepository;
 import io.kneo.core.repository.table.EntityData;
 import io.kneo.qtracker.model.Consuming;
+import io.kneo.qtracker.model.Image;
 import io.kneo.qtracker.repository.table.QTrackerNameResolver;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.Tuple;
@@ -45,11 +47,22 @@ public class ConsumingRepository extends AsyncRepository {
         return getAllCount(user.getId(), entityData.getTableName(), entityData.getRlsName());
     }
 
-    public Uni<Consuming> insert(Consuming consuming, IUser user) {
+    public Uni<Consuming> findById(UUID id) {
+        String sql = "SELECT * FROM " + entityData.getTableName() + " WHERE id = $1";
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(id))
+                .onItem().transform(rows -> rows.iterator().hasNext() ? from(rows.iterator().next()) : null);
+    }
+
+    public Uni<Consuming> insert(Consuming consuming, IUser user, List<Image> images) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
         String sql = String.format("INSERT INTO %s " +
-                "(reg_date, author, last_mod_date, last_mod_user, vehicle_id, status, total_km, last_liters, last_cost) " +
-                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id;", entityData.getTableName());
+                "(reg_date, author, last_mod_date, last_mod_user, vehicle_id, status, total_km, last_liters, last_cost, event_date, add_info) " +
+                "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;", entityData.getTableName());
+
+        // Convert add_info Map to JsonObject for insertion
+        JsonObject addInfoJson = new JsonObject(consuming.getAddInfo());
+
         Tuple params = Tuple.tuple();
         params.addValue(nowTime)
                 .addValue(user.getId())
@@ -57,26 +70,50 @@ public class ConsumingRepository extends AsyncRepository {
                 .addValue(user.getId())
                 .addUUID(consuming.getVehicleId())
                 .addInteger(consuming.getStatus())
-                .addInteger(consuming.getTotalKm())
-                .addInteger(consuming.getLastLiters())
-                .addInteger(consuming.getLastCost());
+                .addDouble(consuming.getTotalKm())
+                .addDouble(consuming.getLastLiters())
+                .addDouble(consuming.getLastCost())
+                .addValue(nowTime)
+                .addJsonObject(addInfoJson);
 
         String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", entityData.getRlsName());
 
         return client.withTransaction(tx -> {
+            // Insert Consuming record first and get the id
             return tx.preparedQuery(sql)
                     .execute(params)
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t))
                     .onItem().transformToUni(id -> {
+                        // Insert the row-level security entry
                         return tx.preparedQuery(readersSql)
                                 .execute(Tuple.of(user.getId(), id, true, true))
                                 .onItem().ignore().andContinueWithNull()
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t))
-                                .onItem().transform(unused -> id);
+                                .onItem().transformToUni(unused -> {
+                                    // Insert multiple images if provided
+                                    if (images != null && !images.isEmpty()) {
+                                        // Prepare image SQL
+                                        String imageSql = String.format("INSERT INTO %s (consuming_id, image_data, type, confidence, add_info, description) " +
+                                                "VALUES ($1, $2, $3, $4, $5, $6)", entityData.getImagesTableName());
+
+                                        // Insert each image
+                                        Uni<Void> imagesInsertion = Uni.combine().all().unis(
+                                                images.stream().map(image -> {
+                                                    JsonObject imageAddInfoJson = new JsonObject(image.getAddInfo());
+                                                    Tuple imageParams = Tuple.of(id, image.getImageData(), image.getType(), image.getConfidence(), imageAddInfoJson, image.getDescription());
+                                                    return tx.preparedQuery(imageSql).execute(imageParams).onItem().ignore().andContinueWithNull();
+                                                }).toList()
+                                        ).combinedWith(unusedImages -> null);
+
+                                        return imagesInsertion.onItem().transform(unusedImages -> id);  // Return the UUID after inserting the images
+                                    }
+                                    return Uni.createFrom().item(id);  // No images to insert, return id directly
+                                });
                     });
-        }).onItem().transformToUni(this::findById);
+        }).onItem().transformToUni(this::findById);  // Call findById(UUID)
     }
+
 
     public Uni<Consuming> update(UUID id, Consuming consuming, IUser user) {
         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
@@ -84,21 +121,14 @@ public class ConsumingRepository extends AsyncRepository {
         Tuple params = Tuple.tuple();
         params.addValue(user.getId())
                 .addValue(nowTime)
-                .addInteger(consuming.getTotalKm())
-                .addInteger(consuming.getLastLiters())
-                .addInteger(consuming.getLastCost())
+                .addDouble(consuming.getTotalKm())
+                .addDouble(consuming.getLastLiters())
+                .addDouble(consuming.getLastCost())
                 .addUUID(id);
 
         return client.preparedQuery(sql)
                 .execute(params)
                 .onItem().transformToUni(updated -> findById(id));
-    }
-
-    public Uni<Consuming> findById(UUID id) {
-        String sql = "SELECT * FROM " + entityData.getTableName() + " WHERE id = $1";
-        return client.preparedQuery(sql)
-                .execute(Tuple.of(id))
-                .onItem().transform(rows -> rows.iterator().hasNext() ? from(rows.iterator().next()) : null);
     }
 
     public Uni<Integer> delete(UUID uuid, IUser user) {
@@ -110,9 +140,9 @@ public class ConsumingRepository extends AsyncRepository {
         setDefaultFields(doc, row);
         doc.setId(row.getUUID("id"));
         doc.setVehicleId(row.getUUID("vehicle_id"));
-        doc.setTotalKm(row.getInteger("total_km"));
-        doc.setLastLiters(row.getInteger("last_liters"));
-        doc.setLastCost(row.getInteger("last_cost"));
+        doc.setTotalKm(row.getDouble("total_km"));
+        doc.setLastLiters(row.getDouble("last_liters"));
+        doc.setLastCost(row.getDouble("last_cost"));
         return doc;
     }
 }
