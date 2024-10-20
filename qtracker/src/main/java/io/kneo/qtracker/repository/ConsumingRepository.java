@@ -60,9 +60,7 @@ public class ConsumingRepository extends AsyncRepository {
                 "(reg_date, author, last_mod_date, last_mod_user, vehicle_id, status, total_km, last_liters, last_cost, event_date, add_info) " +
                 "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id;", entityData.getTableName());
 
-        // Convert add_info Map to JsonObject for insertion
         JsonObject addInfoJson = new JsonObject(consuming.getAddInfo());
-
         Tuple params = Tuple.tuple();
         params.addValue(nowTime)
                 .addValue(user.getId())
@@ -79,39 +77,33 @@ public class ConsumingRepository extends AsyncRepository {
         String readersSql = String.format("INSERT INTO %s(reader, entity_id, can_edit, can_delete) VALUES($1, $2, $3, $4)", entityData.getRlsName());
 
         return client.withTransaction(tx -> {
-            // Insert Consuming record first and get the id
             return tx.preparedQuery(sql)
                     .execute(params)
                     .onItem().transform(result -> result.iterator().next().getUUID("id"))
                     .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t))
                     .onItem().transformToUni(id -> {
-                        // Insert the row-level security entry
                         return tx.preparedQuery(readersSql)
                                 .execute(Tuple.of(user.getId(), id, true, true))
                                 .onItem().ignore().andContinueWithNull()
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t))
                                 .onItem().transformToUni(unused -> {
-                                    // Insert multiple images if provided
                                     if (images != null && !images.isEmpty()) {
-                                        // Prepare image SQL
                                         String imageSql = String.format("INSERT INTO %s (consuming_id, image_data, type, confidence, add_info, description) " +
                                                 "VALUES ($1, $2, $3, $4, $5, $6)", entityData.getImagesTableName());
-
-                                        // Insert each image
                                         Uni<Void> imagesInsertion = Uni.combine().all().unis(
                                                 images.stream().map(image -> {
                                                     JsonObject imageAddInfoJson = new JsonObject(image.getAddInfo());
                                                     Tuple imageParams = Tuple.of(id, image.getImageData(), image.getType(), image.getConfidence(), imageAddInfoJson, image.getDescription());
                                                     return tx.preparedQuery(imageSql).execute(imageParams).onItem().ignore().andContinueWithNull();
                                                 }).toList()
-                                        ).combinedWith(unusedImages -> null);
+                                        ).with(unusedImages -> null);
 
-                                        return imagesInsertion.onItem().transform(unusedImages -> id);  // Return the UUID after inserting the images
+                                        return imagesInsertion.onItem().transform(unusedImages -> id);
                                     }
-                                    return Uni.createFrom().item(id);  // No images to insert, return id directly
+                                    return Uni.createFrom().item(id);
                                 });
                     });
-        }).onItem().transformToUni(this::findById);  // Call findById(UUID)
+        }).onItem().transformToUni(this::findById);
     }
 
 

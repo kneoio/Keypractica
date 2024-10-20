@@ -113,8 +113,6 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
                 return image;
             }).collect(Collectors.toList());
         }
-
-        // Return Consuming and the list of Images as Tuple2
         return Tuple2.of(consuming, images);
     }
 
