@@ -7,12 +7,15 @@ import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.qtracker.dto.ConsumingDTO;
 import io.kneo.qtracker.model.Consuming;
+import io.kneo.qtracker.model.Image;
 import io.kneo.qtracker.repository.ConsumingRepository;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.tuples.Tuple2;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Validator;
 
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -65,11 +68,15 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
     @Override
     public Uni<ConsumingDTO> upsert(String id, ConsumingDTO dto, IUser user, LanguageCode code) {
         assert repository != null;
+        Tuple2<Consuming, List<Image>> entityTuple = buildEntity(dto);
+        Consuming consuming = entityTuple.getItem1();
+        List<Image> images = entityTuple.getItem2();
+
         if (id == null) {
-            return repository.insert(buildEntity(dto), user)
+            return repository.insert(consuming, user, images)
                     .onItem().transformToUni(this::map);
         } else {
-            return repository.update(UUID.fromString(id), buildEntity(dto), user)
+            return repository.update(UUID.fromString(id), consuming, user)
                     .onItem().transformToUni(this::map);
         }
     }
@@ -84,14 +91,33 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
                 .build());
     }
 
-    private Consuming buildEntity(ConsumingDTO dto) {
-        Consuming doc = new Consuming();
-        doc.setVehicleId(dto.getVehicleId());
-        doc.setTotalKm(dto.getTotalKm());
-        doc.setLastLiters(dto.getLastLiters());
-        doc.setLastCost(dto.getLastCost());
-        return doc;
+    private Tuple2<Consuming, List<Image>> buildEntity(ConsumingDTO dto) {
+        Consuming consuming = new Consuming();
+        consuming.setVehicleId(dto.getVehicleId());
+        consuming.setTotalKm(dto.getTotalKm());
+        consuming.setLastLiters(dto.getLastLiters());
+        consuming.setLastCost(dto.getLastCost());
+        consuming.setAddInfo(dto.getAddInfo());
+
+        List<Image> images = null;
+        if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+            images = dto.getImages().stream().map(imageDTO -> {
+                Image image = new Image();
+                byte[] imageData = Base64.getDecoder().decode(imageDTO.getImageData());
+                image.setImageData(imageData);
+                image.setType(imageDTO.getType());
+                image.setConfidence(imageDTO.getConfidence());
+                image.setAddInfo(imageDTO.getAddInfo());
+                image.setDescription(imageDTO.getDescription());
+
+                return image;
+            }).collect(Collectors.toList());
+        }
+
+        // Return Consuming and the list of Images as Tuple2
+        return Tuple2.of(consuming, images);
     }
+
 
     public Uni<Integer> delete(String id, IUser user) {
         assert repository != null;

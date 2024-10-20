@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -15,10 +17,12 @@ import java.util.UUID;
 @SuperBuilder
 @NoArgsConstructor
 public class ConsumingDTO extends AbstractDTO {
-    private UUID vehicleId; // Reference to Vehicle
-    private int totalKm;
-    private int lastLiters;
-    private int lastCost;
+    private UUID vehicleId;
+    private double totalKm;
+    private double lastLiters;
+    private double lastCost;
+    private List<ImageDTO> images;
+    private Map<String, Object> addInfo;
 
     public ConsumingDTO(String id) {
         this.id = UUID.fromString(id);
