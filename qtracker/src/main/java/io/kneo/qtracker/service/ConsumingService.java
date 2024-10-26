@@ -107,8 +107,9 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
                     double totalTrip = lastRecord.getTotalKm() - secondLastRecord.getTotalKm();
                     double litersPerHundred = (lastRecord.getLastLiters() / totalTrip) * 100;
 
-                    result.setTotalTrip(totalTrip);
-                    result.setLitersPerHundred(litersPerHundred);
+                    result.setTotalTrip(Math.round(totalTrip * 100.0) / 100.0);
+                    result.setLitersPerHundred(Math.round(litersPerHundred * 100.0) / 100.0);
+
 
                     return result;
                 });
