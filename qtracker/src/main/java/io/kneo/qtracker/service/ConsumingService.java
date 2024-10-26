@@ -5,6 +5,7 @@ import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
+import io.kneo.qtracker.dto.ConsumingCalcDTO;
 import io.kneo.qtracker.dto.ConsumingDTO;
 import io.kneo.qtracker.model.Consuming;
 import io.kneo.qtracker.model.Image;
@@ -80,6 +81,40 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
                     .onItem().transformToUni(this::map);
         }
     }
+
+    public Uni<ConsumingCalcDTO> insertAndProcess(String id, ConsumingDTO dto, IUser user, LanguageCode code) {
+        assert repository != null;
+        Tuple2<Consuming, List<Image>> entityTuple = buildEntity(dto);
+        Consuming consuming = entityTuple.getItem1();
+        List<Image> images = entityTuple.getItem2();
+
+        return repository.insert(consuming, user, images)
+                .onItem().transformToUni(v -> calcConsuming(v, user));
+    }
+
+    private Uni<ConsumingCalcDTO> calcConsuming(Consuming doc, IUser user) {
+        return repository.getLastTwo(doc.getVehicleId(), user)
+                .map(records -> {
+                    ConsumingCalcDTO result = new ConsumingCalcDTO();
+                    if (records.size() < 2) {
+                        result.setTotalTrip(0);
+                        result.setLitersPerHundred(-1);
+                        return result;
+                    }
+                    Consuming lastRecord = records.get(0);
+                    Consuming secondLastRecord = records.get(1);
+
+                    double totalTrip = lastRecord.getTotalKm() - secondLastRecord.getTotalKm();
+                    double litersPerHundred = (lastRecord.getLastLiters() / totalTrip) * 100;
+
+                    result.setTotalTrip(totalTrip);
+                    result.setLitersPerHundred(litersPerHundred);
+
+                    return result;
+                });
+    }
+
+
 
     private Uni<ConsumingDTO> map(Consuming doc) {
         return Uni.createFrom().item(() -> ConsumingDTO.builder()

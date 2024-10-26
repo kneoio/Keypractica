@@ -97,6 +97,22 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
                 );
     }
 
+    @Route(path = "/add/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    public void insertAndCalc(RoutingContext rc) throws UserNotFoundException {
+        String id = rc.pathParam("id");
+        IUser user = getUser(rc);
+
+        JsonObject jsonObject = rc.body().asJsonObject();
+        ConsumingDTO dto = jsonObject.mapTo(ConsumingDTO.class);
+        service.insertAndProcess(id, dto, user, resolveLanguage(rc))
+                .subscribe().with(
+                        doc -> {
+                            int statusCode = id == null ? 201 : 200;
+                            rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(doc).encode());
+                        },
+                        rc::fail
+                );
+    }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
     public void delete(RoutingContext rc) throws UserNotFoundException {

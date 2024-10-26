@@ -47,6 +47,19 @@ public class ConsumingRepository extends AsyncRepository {
         return getAllCount(user.getId(), entityData.getTableName(), entityData.getRlsName());
     }
 
+    public Uni<List<Consuming>> getLastTwo(UUID vehicleId,  final IUser user) {
+        String sql = "SELECT * FROM " + entityData.getTableName() + " v, " + entityData.getRlsName() + " vr " +
+                "WHERE v.id = vr.entity_id AND vr.reader = $1 AND v.vehicle_id=$2 ORDER BY v.reg_date DESC";
+        sql += String.format(" LIMIT %s", 2);
+
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(user.getId(), vehicleId))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
+
     public Uni<Consuming> findById(UUID id) {
         String sql = "SELECT * FROM " + entityData.getTableName() + " WHERE id = $1";
         return client.preparedQuery(sql)
