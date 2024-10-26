@@ -116,7 +116,6 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
         return Tuple2.of(consuming, images);
     }
 
-
     public Uni<Integer> delete(String id, IUser user) {
         assert repository != null;
         return repository.delete(UUID.fromString(id), user);

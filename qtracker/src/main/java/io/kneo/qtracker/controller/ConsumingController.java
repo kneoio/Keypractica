@@ -22,7 +22,6 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -88,16 +87,6 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
 
         JsonObject jsonObject = rc.body().asJsonObject();
         ConsumingDTO dto = jsonObject.mapTo(ConsumingDTO.class);
-
-        // Get the base64 encoded image
-        String imageBase64 = jsonObject.getString("imageBase64");
-        byte[] imageData = null;
-
-        if (imageBase64 != null && !imageBase64.isEmpty()) {
-           imageData = Base64.getDecoder().decode(imageBase64);
-        }
-
-        // Call the service to save the data and image
         service.upsert(id, dto, user, resolveLanguage(rc))
                 .subscribe().with(
                         doc -> {
