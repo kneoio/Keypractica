@@ -99,10 +99,10 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
     }
 
 
-    @Route(path = "/:messenger_type/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
+    @Route(path = "/:messengerType/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsertMessengerUser(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
         String id = rc.pathParam("id");
-        String messengerType = rc.pathParam("messenger_type");
+        String messengerType = rc.pathParam("messengerType");
         JsonObject jsonObject = rc.body().asJsonObject();
         OwnerDTO dto = jsonObject.mapTo(OwnerDTO.class);
         service.upsert(id, dto, getUser(rc), LanguageCode.ENG)

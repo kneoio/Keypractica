@@ -47,6 +47,29 @@ public class ConsumingRepository extends AsyncRepository {
         return getAllCount(user.getId(), entityData.getTableName(), entityData.getRlsName());
     }
 
+    public Uni<List<Consuming>> getAllMine(final int limit, final int offset, final String telegramName, final IUser user) {
+        String sql = """
+        SELECT c.* 
+        FROM %s c
+        JOIN qtracker__vehicles v ON c.vehicle_id = v.id
+        JOIN qtracker__owners o ON v.owner_id = o.id
+        JOIN %s vr ON c.id = vr.entity_id
+        WHERE o.telegram_name = $1 AND vr.reader = $2
+    """.formatted(entityData.getTableName(), entityData.getRlsName());
+
+        if (limit > 0) {
+            sql += String.format(" LIMIT %s OFFSET %s", limit, offset);
+        }
+
+        return client.preparedQuery(sql)
+                .execute(Tuple.of(telegramName, user.getId()))
+                .onItem().transformToMulti(rows -> Multi.createFrom().iterable(rows))
+                .onItem().transform(this::from)
+                .collect().asList();
+    }
+
+
+
     public Uni<List<Consuming>> getLastTwo(UUID vehicleId,  final IUser user) {
         String sql = "SELECT * FROM " + entityData.getTableName() + " v, " + entityData.getRlsName() + " vr " +
                 "WHERE v.id = vr.entity_id AND vr.reader = $1 AND v.vehicle_id=$2 ORDER BY v.reg_date DESC";
@@ -101,12 +124,20 @@ public class ConsumingRepository extends AsyncRepository {
                                 .onFailure().recoverWithUni(t -> Uni.createFrom().failure(t))
                                 .onItem().transformToUni(unused -> {
                                     if (images != null && !images.isEmpty()) {
-                                        String imageSql = String.format("INSERT INTO %s (consuming_id, image_data, type, confidence, add_info, description) " +
-                                                "VALUES ($1, $2, $3, $4, $5, $6)", entityData.getImagesTableName());
+                                        String imageSql = String.format("INSERT INTO %s (consuming_id, image_data, type, confidence, add_info, description, num_of_seq) " +
+                                                "VALUES ($1, $2, $3, $4, $5, $6, $7)", entityData.getImagesTableName());
                                         Uni<Void> imagesInsertion = Uni.combine().all().unis(
                                                 images.stream().map(image -> {
                                                     JsonObject imageAddInfoJson = new JsonObject(image.getAddInfo());
-                                                    Tuple imageParams = Tuple.of(id, image.getImageData(), image.getType(), image.getConfidence(), imageAddInfoJson, image.getDescription());
+                                                    Tuple imageParams = Tuple.of(
+                                                            id,
+                                                            image.getImageData(),
+                                                            image.getType(),
+                                                            image.getConfidence(),
+                                                            imageAddInfoJson,
+                                                            image.getDescription()
+                                                    );
+                                                    imageParams.addInteger(image.getNumOfSeq());
                                                     return tx.preparedQuery(imageSql).execute(imageParams).onItem().ignore().andContinueWithNull();
                                                 }).toList()
                                         ).with(unusedImages -> null);

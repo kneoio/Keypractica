@@ -65,6 +65,24 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
         );
     }
 
+    @Route(path = "/:messengerType/:userName", methods = Route.HttpMethod.GET, produces = "application/json")
+    public void getMine(RoutingContext rc) throws UserNotFoundException {
+        IUser user = getUser(rc);
+        String userName = rc.pathParam("userName");
+        service.getAllMine(userName, user)
+                .subscribe().with(
+                        consumings -> {
+                            int count = consumings.size();
+                            ViewPage viewPage = new ViewPage();
+                            View<ConsumingDTO> dtoEntries = new View<>(consumings, count, 1, 1, count);
+                            viewPage.addPayload(PayloadType.VIEW_DATA, dtoEntries);
+                            rc.response().setStatusCode(200).end(JsonObject.mapFrom(viewPage).encode());
+                        },
+                        rc::fail
+                );
+
+    }
+
     @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
     public void getById(RoutingContext rc) throws UserNotFoundException {
         FormPage page = new FormPage();

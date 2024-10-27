@@ -54,6 +54,23 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
         return repository.getAllCount(user);
     }
 
+    public Uni<List<ConsumingDTO>> getAllMine(String telegramName, IUser user) {
+        assert repository != null;
+        Uni<List<Consuming>> uni = repository.getAllMine(100, 0, telegramName, user);
+        return uni
+                .onItem().transform(consumingList -> consumingList.stream()
+                        .map(consuming -> ConsumingDTO.builder()
+                                .id(consuming.getId())
+                                .regDate(consuming.getRegDate())
+                                .vehicleId(consuming.getVehicleId())
+                                .totalKm(consuming.getTotalKm())
+                                .lastLiters(consuming.getLastLiters())
+                                .lastCost(consuming.getLastCost())
+                                .build())
+                        .collect(Collectors.toList()));
+    }
+
+
     @Override
     public Uni<ConsumingDTO> getDTO(UUID uuid, IUser user, LanguageCode code) {
         assert repository != null;
