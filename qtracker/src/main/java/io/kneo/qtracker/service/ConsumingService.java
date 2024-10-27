@@ -160,6 +160,7 @@ public class ConsumingService extends AbstractService<Consuming, ConsumingDTO> {
                 image.setImageData(imageData);
                 image.setType(imageDTO.getType());
                 image.setConfidence(imageDTO.getConfidence());
+                image.setNumOfSeq(imageDTO.getNumOfSeq());
                 image.setAddInfo(imageDTO.getAddInfo());
                 image.setDescription(imageDTO.getDescription());
 
