@@ -12,6 +12,7 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
+import io.kneo.core.model.user.UndefinedUser;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.AbstractService;
@@ -77,7 +78,7 @@ public abstract class AbstractController<T, V> {
 
     }
 
-    protected void getById(IRESTService<V> service, RoutingContext rc) throws UserNotFoundException {
+    protected void getById(IRESTService<V> service, RoutingContext rc) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
@@ -91,7 +92,7 @@ public abstract class AbstractController<T, V> {
                 );
     }
 
-    protected void upsert(IRESTService<V> service, String id, RoutingContext rc) throws UserNotFoundException {
+    protected void upsert(IRESTService<V> service, String id, RoutingContext rc) {
         JsonObject jsonObject = rc.body().asJsonObject();
 
         ObjectMapper mapper = new ObjectMapper();
@@ -198,7 +199,36 @@ public abstract class AbstractController<T, V> {
         }
     }
 
-    protected IUser getUser(RoutingContext rc) throws UserNotFoundException {
+    protected Uni<IUser> getContextUser(RoutingContext rc) {
+        return Uni.createFrom().emitter(em -> {
+            try {
+                User vertxUser = rc.user();
+                if (vertxUser == null) {
+                    em.fail(new UserNotFoundException("No user found"));
+                    return;
+                }
+
+                JsonObject principal = vertxUser.principal();
+                String username = principal.getString(USER_NAME);
+                if (username == null) {
+                    em.fail(new UserNotFoundException("Username not found"));
+                    return;
+                }
+
+                IUser user = userService.findByLogin(username);
+                if (user == null) {
+                    em.fail(new UserNotFoundException(username));
+                    return;
+                }
+                em.complete(user);
+            } catch (Exception e) {
+                em.fail(e);
+            }
+        });
+    }
+
+    @Deprecated
+    protected IUser getUser(RoutingContext rc) {
         try {
             User vertxUser = rc.user();
             if (vertxUser == null) {
@@ -219,11 +249,12 @@ public abstract class AbstractController<T, V> {
             return user;
         } catch (NullPointerException e) {
             LOGGER.warn("Failed to get user ID: {}", e.getMessage());
-            throw new UserNotFoundException("Failed to authenticate user");
+
         } catch (Exception e) {
             LOGGER.error("Error while getting user ID: ", e);
-            throw new UserNotFoundException("An error occurred during authentication");
+
         }
+        return UndefinedUser.Build();
     }
 
     @Deprecated

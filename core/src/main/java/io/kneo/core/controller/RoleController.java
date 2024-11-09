@@ -10,33 +10,42 @@ import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.AnonymousUser;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.model.user.Role;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.RoleService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.UUID;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/roles")
+@ApplicationScoped
 public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
 
+    @Inject
     RoleService service;
 
-    @Inject
+    public RoleController() {
+        super(null);
+    }
+
     public RoleController(UserService userService, RoleService roleService) {
         super(userService);
         this.service = roleService;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) throws UserNotFoundException {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/roles").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/roles/:id").handler(this::getById);
+        router.route(HttpMethod.POST, "/api/:org/roles").handler(this::create);
+        router.route(HttpMethod.PUT, "/api/:org/roles/:id").handler(this::update);
+        router.route(HttpMethod.DELETE, "/api/:org/roles/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc)  {
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         LanguageCode languageCode = resolveLanguage(rc);
@@ -63,8 +72,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) {
+    private void getById(RoutingContext rc) {
         String id = rc.pathParam("id");
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
@@ -80,8 +88,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
                 );
     }
 
-    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) {
+    private void create(RoutingContext rc) {
         RoleDTO dto = rc.body().asJsonObject().mapTo(RoleDTO.class);
 
         service.add(dto)
@@ -91,8 +98,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) {
+    private void update(RoutingContext rc) {
         String id = rc.pathParam("id");
         RoleDTO dto = rc.body().asJsonObject().mapTo(RoleDTO.class);
 
@@ -103,8 +109,7 @@ public class RoleController extends AbstractSecuredController<Role, RoleDTO> {
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
+    private void delete(RoutingContext rc) {
         String id = rc.pathParam("id");
 
         service.delete(id)

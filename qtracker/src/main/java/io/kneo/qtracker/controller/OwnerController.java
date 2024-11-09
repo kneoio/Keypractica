@@ -8,38 +8,46 @@ import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.qtracker.dto.OwnerDTO;
 import io.kneo.qtracker.dto.actions.OwnerActionsFactory;
 import io.kneo.qtracker.model.Owner;
 import io.kneo.qtracker.service.OwnerService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.UUID;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/owners")
+@ApplicationScoped
 public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> {
 
     @Inject
     OwnerService service;
 
+    public OwnerController() {
+        super(null);
+    }
+
     public OwnerController(UserService userService) {
         super(userService);
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) throws UserNotFoundException {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/owners").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/owners/telegram/:telegram_id").handler(this::getByTelegramId);
+        router.route(HttpMethod.GET, "/api/:org/owners/:id").handler(this::getById);
+        router.route(HttpMethod.POST, "/api/:org/owners/:messengerType/:id?").handler(this::upsertMessengerUser);
+        router.route(HttpMethod.DELETE, "/api/:org/owners/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         IUser user = getUser(rc);
@@ -67,8 +75,7 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
         );
     }
 
-    @Route(path = "/telegram/:telegram_id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getByTelegramId(RoutingContext rc) throws UserNotFoundException {        ;
+    private void getByTelegramId(RoutingContext rc) {
         String id = rc.pathParam("telegram_id");
         LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
 
@@ -82,8 +89,7 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
         );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
+    private void getById(RoutingContext rc) {
         String id = rc.pathParam("id");
         LanguageCode languageCode = LanguageCode.valueOf(rc.request().getParam("lang", LanguageCode.ENG.name()));
 
@@ -98,9 +104,7 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
         );
     }
 
-
-    @Route(path = "/:messengerType/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsertMessengerUser(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
+    private void upsertMessengerUser(RoutingContext rc) {
         String id = rc.pathParam("id");
         String messengerType = rc.pathParam("messengerType");
         JsonObject jsonObject = rc.body().asJsonObject();
@@ -115,27 +119,7 @@ public class OwnerController extends AbstractSecuredController<Owner, OwnerDTO> 
                 );
     }
 
-/*
-
-    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
-        String id = rc.pathParam("id");
-        JsonObject jsonObject = rc.body().asJsonObject();
-        OwnerDTO dto = jsonObject.mapTo(OwnerDTO.class);
-        service.upsert(id, dto, getUser(rc), LanguageCode.ENG)
-                .subscribe().with(
-                        doc -> {
-                            int statusCode = id == null ? 201 : 200;
-                            rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(doc).encode());
-                        },
-                        rc::fail
-                );
-    }
-*/
-
-
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws UserNotFoundException {
+    private void delete(RoutingContext rc)  {
         String id = rc.pathParam("id");
         service.delete(id, getUser(rc)).subscribe().with(
                 count -> rc.response().setStatusCode(count > 0 ? 204 : 404).end(),

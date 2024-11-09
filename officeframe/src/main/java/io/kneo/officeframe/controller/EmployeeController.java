@@ -8,37 +8,45 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.EmployeeDTO;
 import io.kneo.officeframe.model.Employee;
 import io.kneo.officeframe.service.EmployeeService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.UUID;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/employees")
+@ApplicationScoped
 public class EmployeeController extends AbstractSecuredController<Employee, EmployeeDTO> {
 
     @Inject
     EmployeeService service;
 
+    public EmployeeController() {
+        super(null);
+    }
+
     public EmployeeController(UserService userService) {
         super(userService);
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/employees").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/employees/search/:keyword").handler(this::search);
+        router.route(HttpMethod.GET, "/api/:org/employees/:id").handler(this::getById);
+        router.route(HttpMethod.POST, "/api/:org/employees/:id?").handler(this::upsert);
+        router.route(HttpMethod.DELETE, "/api/:org/employees/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "0"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         service.getAllCount()
@@ -62,8 +70,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
                 );
     }
 
-    @Route(path = "/search/:keyword", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void search(RoutingContext rc) {
+    private void search(RoutingContext rc) {
         String keyword = rc.pathParam("keyword");
         service.search(keyword, resolveLanguage(rc))
                 .onItem().transform(userList -> {
@@ -81,8 +88,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
+    private void getById(RoutingContext rc) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
@@ -96,8 +102,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
                 );
     }
 
-    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException {
+    private void upsert(RoutingContext rc) {
         JsonObject jsonObject = rc.body().asJsonObject();
         EmployeeDTO dto = jsonObject.mapTo(EmployeeDTO.class);
         String id = rc.pathParam("id");
@@ -113,8 +118,7 @@ public class EmployeeController extends AbstractSecuredController<Employee, Empl
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws DocumentModificationAccessException, UserNotFoundException {
+    private void delete(RoutingContext rc)  {
         String id = rc.pathParam("id");
         service.delete(id, getUser(rc))
                 .subscribe().with(

@@ -13,31 +13,38 @@ import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.TaskTypeDTO;
 import io.kneo.officeframe.model.TaskType;
 import io.kneo.officeframe.service.TaskTypeService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.ext.web.Router;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-
 import java.util.UUID;
-
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/tasktypes")
+@ApplicationScoped
 public class TaskTypeController extends AbstractSecuredController<TaskType, TaskTypeDTO> {
 
+    @Inject
     TaskTypeService service;
 
-    @Inject
+    public TaskTypeController() {
+        super(null);
+    }
+
     public TaskTypeController(UserService userService, TaskTypeService service) {
         super(userService);
         this.service = service;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getAll(RoutingContext rc) {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/tasktypes").handler(this::getAll);
+        router.route(HttpMethod.GET, "/api/:org/tasktypes/:id").handler(this::get);
+        router.route(HttpMethod.POST, "/api/:org/tasktypes").handler(this::upsert);
+        router.route(HttpMethod.DELETE, "/api/:org/tasktypes/:id").handler(this::delete);
+    }
+
+    private void getAll(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "0"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         service.getAllCount()
@@ -61,28 +68,33 @@ public class TaskTypeController extends AbstractSecuredController<TaskType, Task
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) throws UserNotFoundException {
+    private void get(RoutingContext rc) {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-        service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
+
+        getContextUser(rc)
+                .chain(user -> service.getDTO(UUID.fromString(rc.pathParam("id")), user, resolveLanguage(rc)))
                 .onItem().transform(dto -> {
                     page.addPayload(PayloadType.DOC_DATA, dto);
                     return page;
                 })
                 .subscribe().with(
                         formPage -> rc.response().setStatusCode(200).end(JsonObject.mapFrom(formPage).encode()),
-                        rc::fail
+                        error -> {
+                            if (error instanceof UserNotFoundException) {
+                                rc.response().setStatusCode(404).end("User not found");
+                            } else {
+                                rc.fail(error);
+                            }
+                        }
                 );
     }
 
-    @Route(path = "", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) {
-
+    private void upsert(RoutingContext rc) {
+        // Implementation for upsert
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
+    private void delete(RoutingContext rc) {
         rc.response().setStatusCode(200).end();
     }
 }

@@ -111,7 +111,7 @@ public class OwnerRepository extends AsyncRepository {
         }).onItem().transformToUni(id -> findById(id, user.getId()));
     }
 
-    public Uni<Owner> update(UUID id, Owner doc, IUser user) throws DocumentModificationAccessException {
+    public Uni<Owner> update(UUID id, Owner doc, IUser user) {
         return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
                     if (permissions[0]) {

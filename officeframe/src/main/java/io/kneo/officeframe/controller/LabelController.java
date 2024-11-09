@@ -7,38 +7,47 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.LabelDTO;
 import io.kneo.officeframe.model.Label;
 import io.kneo.officeframe.service.LabelService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.UUID;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/labels")
+@ApplicationScoped
 public class LabelController extends AbstractSecuredController<Label, LabelDTO> {
 
+    @Inject
     LabelService service;
 
-    @Inject
+    public LabelController() {
+        super(null);
+    }
+
     public LabelController(UserService userService, LabelService service) {
         super(userService);
         this.service = service;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getAll(RoutingContext rc) {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/labels").handler(this::getAll);
+        router.route(HttpMethod.GET, "/api/:org/labels/only/category/:category_name").handler(this::getLabelsOfCategory);
+        router.route(HttpMethod.GET, "/api/:org/labels/:id").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/labels/identifier/:id").handler(this::getByIdentifier);
+        router.route(HttpMethod.POST, "/api/:org/labels/:id").handler(this::upsert);
+        router.route(HttpMethod.DELETE, "/api/:org/labels/:id").handler(this::delete);
+    }
+
+    private void getAll(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "0"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         service.getAllCount()
@@ -62,8 +71,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/only/category/:category_name", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getLabelsOfCategory(RoutingContext rc) {
+    private void getLabelsOfCategory(RoutingContext rc) {
         LanguageCode languageCode = resolveLanguage(rc);
         service.getOfCategory(rc.pathParam("category_name"), languageCode)
                 .onItem().transform(dtoList -> {
@@ -81,8 +89,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) throws UserNotFoundException {
+    private void get(RoutingContext rc)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
@@ -96,8 +103,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/identifier/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getByIdentifier(RoutingContext rc) throws UserNotFoundException {
+    private void getByIdentifier(RoutingContext rc)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTOByIdentifier(rc.pathParam("id"))
@@ -111,8 +117,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
+    private void upsert(RoutingContext rc) {
         JsonObject jsonObject = rc.body().asJsonObject();
         LabelDTO dto = jsonObject.mapTo(LabelDTO.class);
         String id = rc.pathParam("id");
@@ -123,8 +128,7 @@ public class LabelController extends AbstractSecuredController<Label, LabelDTO> 
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
+    private void delete(RoutingContext rc) {
         rc.response().setStatusCode(200).end();
     }
 }

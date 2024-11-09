@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.*;
 import io.kneo.core.server.EnvConst;
-import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -13,7 +12,6 @@ import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,8 +21,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class UserRepository extends AsyncRepository {
@@ -41,6 +37,7 @@ public class UserRepository extends AsyncRepository {
         super(client, mapper, null);
     }
 
+/*
     void onStart(@Observes StartupEvent ev) {
         userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
                         .collect(Collectors.toMap(IUser::getId, user -> user)))
@@ -50,6 +47,7 @@ public class UserRepository extends AsyncRepository {
         userAltCache.putAll(userCache.values().stream()
                 .collect(Collectors.toMap(IUser::getEmail, Function.identity())));
     }
+*/
 
     public Uni<List<IUser>> getAll() {
         return client.query(String.format("SELECT * FROM _users LIMIT %d OFFSET 0", 100))
@@ -164,7 +162,7 @@ public class UserRepository extends AsyncRepository {
                     if (userModulesList.isEmpty()) {
                         return Uni.createFrom().item(id);
                     } else {
-                        return Uni.combine().all().unis(userModulesList).combinedWith(results -> id);
+                        return Uni.combine().all().unis(userModulesList).with(results -> id);
                     }
                 })
                 .onItem().transformToUni(id -> {
@@ -179,7 +177,7 @@ public class UserRepository extends AsyncRepository {
                     } else {
                         userCache.clear();
                         userAltCache.clear();
-                        return Uni.combine().all().unis(userRolesList).combinedWith(results -> id);
+                        return Uni.combine().all().unis(userRolesList).with(results -> id);
                     }
                 }).onFailure().recoverWithUni(throwable -> {
                     LOGGER.error(throwable.getMessage(), throwable);
@@ -200,10 +198,10 @@ public class UserRepository extends AsyncRepository {
         return longUni;
     }
 
-    public int delete(Long id) {
+    public Uni<Long> delete(Long id) {
         userCache.clear();
         userAltCache.clear();
-        return 1;
+        return Uni.createFrom().item(1L);
     }
 
 

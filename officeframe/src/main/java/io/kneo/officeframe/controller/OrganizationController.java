@@ -8,37 +8,46 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.officeframe.dto.OrganizationDTO;
 import io.kneo.officeframe.model.Organization;
 import io.kneo.officeframe.service.OrganizationService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.UUID;
 
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/orgs")
+@ApplicationScoped
 public class OrganizationController extends AbstractSecuredController<Organization, OrganizationDTO> {
 
+    @Inject
     OrganizationService service;
 
-    @Inject
+    public OrganizationController() {
+        super(null);
+    }
+
     public OrganizationController(UserService userService, OrganizationService service) {
         super(userService);
         this.service = service;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/orgs").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/orgs/only/primary").handler(this::getPrimary);
+        router.route(HttpMethod.GET, "/api/:org/orgs/:id").handler(this::getById);
+        router.route(HttpMethod.POST, "/api/:org/orgs/:id?").handler(this::upsert);
+        router.route(HttpMethod.DELETE, "/api/:org/orgs/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "0"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         service.getAllCount()
@@ -62,8 +71,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-    @Route(path = "/only/primary", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getPrimary(RoutingContext rc) {
+    private void getPrimary(RoutingContext rc) {
         LanguageCode languageCode = resolveLanguage(rc);
 
         service.getPrimary(languageCode)
@@ -83,8 +91,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
+    private void getById(RoutingContext rc)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
@@ -98,8 +105,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException {
+    private void upsert(RoutingContext rc)  {
         JsonObject jsonObject = rc.body().asJsonObject();
         OrganizationDTO dto = jsonObject.mapTo(OrganizationDTO.class);
         String id = rc.pathParam("id");
@@ -113,8 +119,7 @@ public class OrganizationController extends AbstractSecuredController<Organizati
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws UserNotFoundException {
+    private void delete(RoutingContext rc)  {
         service.delete(rc.pathParam("id"), getUser(rc))
                 .subscribe().with(
                         count -> {

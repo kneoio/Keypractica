@@ -7,37 +7,47 @@ import io.kneo.core.dto.form.FormPage;
 import io.kneo.core.dto.view.View;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
 import io.kneo.qtracker.dto.ConsumingDTO;
 import io.kneo.qtracker.dto.actions.ConsumingActionsFactory;
 import io.kneo.qtracker.model.Consuming;
 import io.kneo.qtracker.service.ConsumingService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
 import java.util.UUID;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/consumings")
+@ApplicationScoped
 public class ConsumingController extends AbstractSecuredController<Consuming, ConsumingDTO> {
 
     @Inject
     ConsumingService service;
 
+    public ConsumingController() {
+        super(null);
+    }
+
     public ConsumingController(UserService userService) {
         super(userService);
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) throws UserNotFoundException {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/consumings").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/consumings/:messengerType/:userName").handler(this::getMine);
+        router.route(HttpMethod.GET, "/api/:org/consumings/:id").handler(this::getById);
+        router.route(HttpMethod.POST, "/api/:org/consumings/:id?").handler(this::upsert);
+        router.route(HttpMethod.POST, "/api/:org/consumings/add/:id?").handler(this::insertAndCalc);
+        router.route(HttpMethod.DELETE, "/api/:org/consumings/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         IUser user = getUser(rc);
@@ -65,8 +75,7 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
         );
     }
 
-    @Route(path = "/:messengerType/:userName", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getMine(RoutingContext rc) throws UserNotFoundException {
+    private void getMine(RoutingContext rc) {
         IUser user = getUser(rc);
         String userName = rc.pathParam("userName");
         service.getAllMine(userName, user)
@@ -80,11 +89,9 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
                         },
                         rc::fail
                 );
-
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
+    private void getById(RoutingContext rc)  {
         FormPage page = new FormPage();
         page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
         service.getDTO(UUID.fromString(rc.pathParam("id")), getUser(rc), resolveLanguage(rc))
@@ -98,8 +105,7 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
                 );
     }
 
-    @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException {
+    private void upsert(RoutingContext rc) {
         String id = rc.pathParam("id");
         IUser user = getUser(rc);
 
@@ -115,8 +121,7 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
                 );
     }
 
-    @Route(path = "/add/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void insertAndCalc(RoutingContext rc) throws UserNotFoundException {
+    private void insertAndCalc(RoutingContext rc)  {
         String id = rc.pathParam("id");
         IUser user = getUser(rc);
 
@@ -132,8 +137,7 @@ public class ConsumingController extends AbstractSecuredController<Consuming, Co
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws UserNotFoundException {
+    private void delete(RoutingContext rc)  {
         service.delete(rc.pathParam("id"), getUser(rc))
                 .subscribe().with(
                         count -> {

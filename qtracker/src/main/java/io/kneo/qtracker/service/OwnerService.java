@@ -3,7 +3,6 @@ package io.kneo.qtracker.service;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.user.IUser;
 import io.kneo.core.repository.UserRepository;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.kneo.core.service.AbstractService;
 import io.kneo.core.service.UserService;
 import io.kneo.qtracker.dto.OwnerDTO;
@@ -81,7 +80,7 @@ public class OwnerService extends AbstractService<Owner, OwnerDTO> {
     }
 
     @Override
-    public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code) throws DocumentModificationAccessException {
+    public Uni<OwnerDTO> upsert(String id, OwnerDTO dto, IUser user, LanguageCode code)  {
         assert repository != null;
         assert vehicleService != null;
 

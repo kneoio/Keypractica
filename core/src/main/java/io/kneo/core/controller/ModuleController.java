@@ -7,34 +7,41 @@ import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.localization.LanguageCode;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.IUser;
-import io.kneo.core.repository.exception.DocumentModificationAccessException;
-import io.kneo.core.repository.exception.UserNotFoundException;
 import io.kneo.core.service.ModuleService;
 import io.kneo.core.service.UserService;
 import io.kneo.core.util.RuntimeUtil;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.UUID;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/modules")
+@ApplicationScoped
 public class ModuleController extends AbstractSecuredController<Module, ModuleDTO> {
 
+    @Inject
     ModuleService service;
 
-    @Inject
+    public ModuleController() {
+        super(null);
+    }
+
     public ModuleController(UserService userService, ModuleService moduleService) {
         super(userService);
         this.service = moduleService;
     }
 
-    @Route(path = "", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void get(RoutingContext rc) {
+    public void setupRoutes(Router router) {
+        router.route(HttpMethod.GET, "/api/:org/modules").handler(this::get);
+        router.route(HttpMethod.GET, "/api/:org/modules/:id").handler(this::getById);
+        router.route(HttpMethod.PUT, "/api/:org/modules/:id").handler(this::upsert);
+        router.route(HttpMethod.DELETE, "/api/:org/modules/:id").handler(this::delete);
+    }
+
+    private void get(RoutingContext rc) {
         int page = Integer.parseInt(rc.request().getParam("page", "1"));
         int size = Integer.parseInt(rc.request().getParam("size", "10"));
         LanguageCode languageCode = resolveLanguage(rc);
@@ -66,8 +73,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public void getById(RoutingContext rc) throws UserNotFoundException {
+    private void getById(RoutingContext rc) {
         String id = rc.pathParam("id");
         LanguageCode languageCode = resolveLanguage(rc);
         service.getDTO(UUID.fromString(id), getUser(rc), languageCode)
@@ -77,8 +83,7 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
                 );
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void upsert(RoutingContext rc) throws UserNotFoundException {
+    private void upsert(RoutingContext rc)  {
         String id = rc.pathParam("id");
         ModuleDTO dto = rc.body().asJsonObject().mapTo(ModuleDTO.class);
         LanguageCode languageCode = resolveLanguage(rc);
@@ -89,8 +94,8 @@ public class ModuleController extends AbstractSecuredController<Module, ModuleDT
                         rc::fail
                 );
     }
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) throws UserNotFoundException, DocumentModificationAccessException {
+
+    private void delete(RoutingContext rc) {
         service.delete(rc.pathParam("id"), getUser(rc))
                 .subscribe().with(
                         count -> {

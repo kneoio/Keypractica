@@ -119,4 +119,8 @@ public class UserService {
         return allValidRoles;
     }
 
+    public Uni<Long> delete(String id) {
+        assert repository != null;
+        return repository.delete(Long.valueOf(id));
+    }
 }

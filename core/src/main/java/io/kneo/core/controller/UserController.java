@@ -5,108 +5,123 @@ import io.kneo.core.dto.document.UserDTO;
 import io.kneo.core.dto.view.ViewPage;
 import io.kneo.core.model.user.User;
 import io.kneo.core.service.UserService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
-import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.core.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-@RolesAllowed("**")
-@RouteBase(path = "/api/:org/users")
+@ApplicationScoped
 public class UserController extends AbstractController<User, UserDTO> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
+    private UserService service;
+
+    // Add default constructor for CDI
+    public UserController() {
+        super(null); // or handle this differently in AbstractController
+    }
 
     @Inject
-    UserService service;
-
-    public UserController(UserService userService) {
-        super(userService);
+    public UserController(UserService service) {
+        super(service);
+        this.service = service;
     }
 
-    @Route(path = "/", methods = Route.HttpMethod.GET, produces = "application/json")
-    public Uni<Response> get(RoutingContext rc) {
-        Object org = rc.get("database");
-        System.out.println(org);
+    public void setupRoutes(Router router) {
+        router.get("/api/:org/users").handler(this::getAll);
+        router.post("/api/:org/users").handler(this::create);
+        router.put("/api/:org/users/:id").handler(this::update);
+        router.delete("/api/:org/users/:id").handler(this::delete);
+    }
+
+    private void getAll(RoutingContext rc) {
+        Object org = rc.pathParam("org");
         ViewPage viewPage = new ViewPage();
-          return service.getAll().onItem().transform(userList -> {
-            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-                return Response.ok(viewPage).build();
-        });
+
+        service.getAll()
+                .subscribe().with(
+                        userList -> {
+                            viewPage.addPayload(PayloadType.VIEW_DATA, userList);
+                            rc.response()
+                                    .setStatusCode(200)
+                                    .putHeader("Content-Type", "application/json")
+                                    .end(JsonObject.mapFrom(viewPage).encode());
+                        },
+                        failure -> {
+                            LOGGER.error(failure.getMessage(), failure);
+                            rc.response()
+                                    .setStatusCode(500)
+                                    .end(failure.getMessage());
+                        }
+                );
     }
 
- /*   @Route(path = "/api/:org/users/search/:keyword", methods = Route.HttpMethod.GET, produces = "application/json")
-    public Uni<Response> search(@PathParam("keyword") String keyword) {
-        return service.search(keyword)
-                .onItem().transform(userList -> {
-                    ViewPage viewPage = new ViewPage();
-                    viewPage.addPayload(PayloadType.VIEW_DATA, userList);
-                    return Response.ok(viewPage).build();
-                });
-    }*/
+    private void create(RoutingContext rc) {
+        try {
+            JsonObject jsonObject = rc.getBodyAsJson();
+            UserDTO userDTO = jsonObject.mapTo(UserDTO.class);
 
-
-    /*@Route(path = "/api/:org/users/:id", methods = Route.HttpMethod.GET, produces = "application/json")
-    public Uni<Response> getById(@PathParam("id") String id) {
-        return service.get(id)
-                .onItem().transform(userOptional -> {
-                    FormPage page = new FormPage();
-                    page.addPayload(PayloadType.CONTEXT_ACTIONS, new ActionBox());
-                    userOptional.ifPresentOrElse(
-                            user -> page.addPayload(PayloadType.DOC_DATA, user),
-                            () -> page.addPayload(PayloadType.DOC_DATA, "no_data")
+            service.add(userDTO)
+                    .subscribe().with(
+                            id -> rc.response()
+                                    .setStatusCode(201)
+                                    .end(),
+                            failure -> {
+                                LOGGER.error(failure.getMessage(), failure);
+                                rc.response()
+                                        .setStatusCode(500)
+                                        .end(failure.getMessage());
+                            }
                     );
-                    return Response.ok(page).build();
-                });
-    }
-*/
-    @Route(path = "/", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
-    public void create(RoutingContext rc) {
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            UserDTO userDTO = jsonObject.mapTo(UserDTO.class);
-
-            service.add(userDTO).subscribe().with(
-                    id -> rc.response().setStatusCode(201).end(),
-                    failure -> {
-                        LOGGER.error(failure.getMessage(), failure);
-                        rc.response().setStatusCode(500).end(failure.getMessage());
-                    }
-            );
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
+        } catch (Exception e) {
+            LOGGER.error("Error processing request: {}", e.getMessage());
+            rc.response()
+                    .setStatusCode(400)
+                    .end("Invalid request body");
         }
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.PUT, consumes = "application/json", produces = "application/json")
-    public void update(RoutingContext rc) {
+    private void update(RoutingContext rc) {
         String id = rc.pathParam("id");
-
         try {
-            JsonObject jsonObject = rc.body().asJsonObject();
+            JsonObject jsonObject = rc.getBodyAsJson();
             UserDTO userDTO = jsonObject.mapTo(UserDTO.class);
 
-            service.update(id, userDTO).subscribe().with(
-                    updatedId -> {
-                        rc.response().setStatusCode(200).end();
-                    },
-                    failure -> {
-                        LOGGER.error(failure.getMessage(), failure);
-                        rc.response().setStatusCode(500).end(failure.getMessage());
-                    }
-            );
-        } catch (DecodeException e) {
-            LOGGER.error("Error decoding request body: {}", e.getMessage());
-            rc.response().setStatusCode(400).end("Invalid request body");
+            service.update(id, userDTO)
+                    .subscribe().with(
+                            updatedId -> rc.response()
+                                    .setStatusCode(200)
+                                    .end(),
+                            failure -> {
+                                LOGGER.error(failure.getMessage(), failure);
+                                rc.response()
+                                        .setStatusCode(500)
+                                        .end(failure.getMessage());
+                            }
+                    );
+        } catch (Exception e) {
+            LOGGER.error("Error processing request: {}", e.getMessage());
+            rc.response()
+                    .setStatusCode(400)
+                    .end("Invalid request body");
         }
     }
 
-    @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")
-    public void delete(RoutingContext rc) {
+    private void delete(RoutingContext rc) {
         String id = rc.pathParam("id");
-        rc.response().setStatusCode(204).end();
+        service.delete(id)
+                .subscribe().with(
+                        success -> rc.response()
+                                .setStatusCode(204)
+                                .end(),
+                        failure -> {
+                            LOGGER.error(failure.getMessage(), failure);
+                            rc.response()
+                                    .setStatusCode(500)
+                                    .end(failure.getMessage());
+                        }
+                );
     }
 }
