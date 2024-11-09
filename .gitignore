@@ -19,6 +19,6 @@
 
 /ci_cd/application-prod.properties
 /ci_cd/copy_script.sh
-/ci_cd/copy_script.ps1
+/ci_cd/*.ps1
 /ci_cd/deployment-config.properties
 /run_tunnel.sh

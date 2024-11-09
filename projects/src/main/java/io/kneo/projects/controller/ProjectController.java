@@ -16,8 +16,7 @@ import io.kneo.projects.dto.ProjectDTO;
 import io.kneo.projects.dto.actions.ProjectActionsFactory;
 import io.kneo.projects.model.Project;
 import io.kneo.projects.service.ProjectService;
-import io.quarkus.vertx.web.Route;
-import io.quarkus.vertx.web.RouteBase;
+
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -124,7 +123,7 @@ public class ProjectController extends AbstractSecuredController<Project, Projec
             String id = rc.pathParam("id");
             JsonObject jsonObject = rc.body().asJsonObject();
             ProjectDTO dto = jsonObject.mapTo(ProjectDTO.class);
-            service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
+            service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
                     .subscribe().with(
                             createdProjectId -> rc.response().setStatusCode(200).end(createdProjectId.toString()),
                             failure -> {
