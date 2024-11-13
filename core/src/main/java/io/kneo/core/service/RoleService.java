@@ -42,9 +42,9 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
                 .onItem().transform(roleStream -> roleStream.stream()
                         .map(role ->
                                 RoleDTO.builder()
-                                        .author(userService.getName(role.getAuthor()))
+                                        .author(userService.getName(role.getAuthor()).await().atMost(TIMEOUT))
                                         .regDate(role.getRegDate())
-                                        .lastModifier(userService.getName(role.getLastModifier()))
+                                        .lastModifier(userService.getName(role.getLastModifier()).await().atMost(TIMEOUT))
                                         .lastModifiedDate(role.getLastModifiedDate())
                                         .identifier(role.getIdentifier())
                                         .build())

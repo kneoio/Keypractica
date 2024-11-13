@@ -36,9 +36,9 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
                         .map(e ->
                                 OrgCategoryDTO.builder()
                                         .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()))
+                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
                                         .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()))
+                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
                                         .lastModifiedDate(e.getLastModifiedDate())
                                         .identifier(e.getIdentifier())
                                         .localizedNames(e.getLocalizedName())
@@ -77,9 +77,9 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
 
     private OrgCategoryDTO map(OrgCategory category) {
         return OrgCategoryDTO.builder()
-                .author(userRepository.getUserName(category.getAuthor()))
+                .author(userRepository.getUserName(category.getAuthor()).await().atMost(TIMEOUT))
                 .regDate(category.getRegDate())
-                .lastModifier(userRepository.getUserName(category.getLastModifier()))
+                .lastModifier(userRepository.getUserName(category.getLastModifier()).await().atMost(TIMEOUT))
                 .lastModifiedDate(category.getLastModifiedDate())
                 .identifier(category.getIdentifier())
                 .localizedNames(category.getLocalizedName())

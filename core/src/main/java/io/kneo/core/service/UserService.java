@@ -56,24 +56,24 @@ public class UserService {
         return repository.get(id);
     }
 
-    public long resolveIdentifier(String identifier) {
+    public Uni<Long> resolveIdentifier(String identifier) {
         return repository.findByIdentifier(identifier);
     }
 
-    public IUser findByLogin(String login) {
+    public Uni<IUser> findByLogin(String login) {
         return repository.findByLogin(login);
     }
 
-    public Optional<IUser> findById(long id) {
+    public Uni<Optional<IUser>> findById(long id) {
         return repository.findById(id);
     }
 
-    public String getName(long id) {
+    public Uni<String> getName(long id) {
         return repository.getUserName(id);
     }
 
     public Uni<String> getUserName(long id) {
-        return Uni.createFrom().item(repository.getUserName(id));
+        return repository.getUserName(id);
     }
 
     public Uni<Long> add(UserDTO dto) {

@@ -32,6 +32,7 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -39,7 +40,7 @@ import java.util.UUID;
 import static io.kneo.core.util.RuntimeUtil.countMaxPage;
 
 public abstract class AbstractController<T, V> {
-
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
     protected final Logger LOGGER = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
     @Deprecated
@@ -189,7 +190,7 @@ public abstract class AbstractController<T, V> {
     protected IUser getUserId(ContainerRequestContext requestContext) throws UserNotFoundException {
         try {
             DefaultJWTCallerPrincipal securityIdentity = (DefaultJWTCallerPrincipal) requestContext.getSecurityContext().getUserPrincipal();
-            return userService.findByLogin(securityIdentity.getClaim(USER_NAME_CLAIM));
+            return userService.findByLogin(securityIdentity.getClaim(USER_NAME_CLAIM)).await().atMost(TIMEOUT);
         } catch (NullPointerException e) {
             LOGGER.warn(String.format("msg: %s ", e.getMessage()));
             throw new UserNotFoundException("User not authorized");
@@ -200,32 +201,18 @@ public abstract class AbstractController<T, V> {
     }
 
     protected Uni<IUser> getContextUser(RoutingContext rc) {
-        return Uni.createFrom().emitter(em -> {
-            try {
-                User vertxUser = rc.user();
-                if (vertxUser == null) {
-                    em.fail(new UserNotFoundException("No user found"));
-                    return;
-                }
-
-                JsonObject principal = vertxUser.principal();
-                String username = principal.getString(USER_NAME);
-                if (username == null) {
-                    em.fail(new UserNotFoundException("Username not found"));
-                    return;
-                }
-
-                IUser user = userService.findByLogin(username);
-                if (user == null) {
-                    em.fail(new UserNotFoundException(username));
-                    return;
-                }
-                em.complete(user);
-            } catch (Exception e) {
-                em.fail(e);
-            }
-        });
+        User vertxUser = rc.user();
+        if (vertxUser == null) {
+            return Uni.createFrom().item(UndefinedUser.Build());
+        }
+        JsonObject principal = vertxUser.principal();
+        String username = principal.getString(USER_NAME);
+        if (username == null || username.isEmpty()) {
+            return Uni.createFrom().item(UndefinedUser.Build());
+        }
+        return userService.findByLogin(username);
     }
+
 
     @Deprecated
     protected IUser getUser(RoutingContext rc) {
@@ -241,7 +228,8 @@ public abstract class AbstractController<T, V> {
                 throw new UserNotFoundException("Username not found in user principal");
             }
 
-            IUser user = userService.findByLogin(username);
+            IUser user = userService.findByLogin(username).await().atMost(TIMEOUT);
+            ;
             if (user == null) {
                 throw new UserNotFoundException(username);
             }
@@ -265,7 +253,7 @@ public abstract class AbstractController<T, V> {
                 JsonObject principal = vertxUser.principal();
                 String username = principal.getString(USER_NAME);
                 if (username != null) {
-                    return userService.findByLogin(username);
+                    return userService.findByLogin(username).await().atMost(TIMEOUT);
                 }
             }
             return null;

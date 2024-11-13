@@ -37,9 +37,9 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
                 .map(doc ->
                         ModuleDTO.builder()
                                 .id(doc.getId())
-                                .author(userService.getName(doc.getAuthor()))
+                                .author(userService.getName(doc.getAuthor()).await().atMost(TIMEOUT))
                                 .regDate(doc.getRegDate())
-                                .lastModifier(userService.getName(doc.getLastModifier()))
+                                .lastModifier(userService.getName(doc.getLastModifier()).await().atMost(TIMEOUT))
                                 .lastModifiedDate(doc.getLastModifiedDate())
                                 .identifier(doc.getIdentifier())
                                 .localizedName(doc.getLocalizedName())
@@ -90,9 +90,9 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
             Module doc = optional.orElseThrow();
             ModuleDTO dto = new ModuleDTO();
             dto.setId(doc.getId());
-            dto.setAuthor(userService.getName(doc.getAuthor()));
+            dto.setAuthor(userService.getName(doc.getAuthor()).await().atMost(TIMEOUT));
             dto.setRegDate(doc.getRegDate());
-            dto.setLastModifier(userService.getName(doc.getLastModifier()));
+            dto.setLastModifier(userService.getName(doc.getLastModifier()).await().atMost(TIMEOUT));
             dto.setLastModifiedDate(doc.getLastModifiedDate());
             dto.setIdentifier(doc.getIdentifier());
             dto.setOn(doc.isOn());

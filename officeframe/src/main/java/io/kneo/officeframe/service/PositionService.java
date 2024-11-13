@@ -34,9 +34,9 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
                         .map(doc ->
                                 PositionDTO.builder()
                                         .id(doc.getId())
-                                        .author(userRepository.getUserName(doc.getAuthor()))
+                                        .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
                                         .regDate(doc.getRegDate())
-                                        .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                                        .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
                                         .lastModifiedDate(doc.getLastModifiedDate())
                                         .identifier(doc.getIdentifier())
                                         .localizedName(doc.getLocalizedName())
@@ -79,9 +79,9 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         Uni<Position> uni = repository.findById(uuid);
         return uni.onItem().transform(doc -> {
                 return PositionDTO.builder()
-                        .author(userRepository.getUserName(doc.getAuthor()))
+                        .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
                         .regDate(doc.getRegDate())
-                        .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                        .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
                         .lastModifiedDate(doc.getLastModifiedDate())
                         .identifier(doc.getIdentifier())
                         .localizedName(doc.getLocalizedName())

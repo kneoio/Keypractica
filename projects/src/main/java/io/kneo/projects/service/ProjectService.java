@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+
 @ApplicationScoped
 public class ProjectService extends AbstractService<Project, ProjectDTO> {
     private final ProjectRepository repository;
@@ -49,9 +50,9 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                         .map(project -> {
                             return ProjectDTO.builder()
                                     .id(project.getId())
-                                    .author(userRepository.getUserName(project.getAuthor()))
+                                    .author(userRepository.getUserName(project.getAuthor()).await().atMost(TIMEOUT))
                                     .regDate(project.getRegDate())
-                                    .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                                    .lastModifier(userRepository.getUserName(project.getLastModifier()).await().atMost(TIMEOUT))
                                     .lastModifiedDate(project.getLastModifiedDate())
                                     .name(project.getName())
                                     .finishDate(project.getFinishDate())
@@ -108,9 +109,9 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
                 .asTuple()
                 .onItem().transform(tuple -> ProjectDTO.builder()
                         .id(project.getId())
-                        .author(userRepository.getUserName(project.getAuthor()))
+                        .author(userRepository.getUserName(project.getAuthor()).await().atMost(TIMEOUT))
                         .regDate(project.getRegDate())
-                        .lastModifier(userRepository.getUserName(project.getLastModifier()))
+                        .lastModifier(userRepository.getUserName(project.getLastModifier()).await().atMost(TIMEOUT))
                         .lastModifiedDate(project.getLastModifiedDate())
                         .name(project.getName())
                         .description(project.getDescription())
@@ -130,9 +131,9 @@ public class ProjectService extends AbstractService<Project, ProjectDTO> {
         doc.setStartDate(dto.getStartDate());
         doc.setFinishDate(dto.getFinishDate());
         doc.setPrimaryLang(dto.getPrimaryLang());
-        doc.setManager(userService.resolveIdentifier(dto.getManager().getIdentifier()));
-        doc.setCoder(userService.resolveIdentifier(dto.getCoder().getIdentifier()));
-        doc.setTester(userService.resolveIdentifier(dto.getTester().getIdentifier()));
+        doc.setManager(userService.resolveIdentifier(dto.getManager().getIdentifier()).await().atMost(TIMEOUT));
+        doc.setCoder(userService.resolveIdentifier(dto.getCoder().getIdentifier()).await().atMost(TIMEOUT));
+        doc.setTester(userService.resolveIdentifier(dto.getTester().getIdentifier()).await().atMost(TIMEOUT));
         doc.setDescription(dto.getDescription());
         return doc;
     }

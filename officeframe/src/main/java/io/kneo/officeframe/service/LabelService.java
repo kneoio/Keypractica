@@ -89,9 +89,9 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
     private LabelDTO mapToDTO(Label label) {
         return LabelDTO.builder()
                 .id(label.getId())
-                .author(userRepository.getUserName(label.getAuthor()))
+                .author(userRepository.getUserName(label.getAuthor()).await().atMost(TIMEOUT))
                 .regDate(label.getRegDate())
-                .lastModifier(userRepository.getUserName(label.getLastModifier()))
+                .lastModifier(userRepository.getUserName(label.getLastModifier()).await().atMost(TIMEOUT))
                 .lastModifiedDate(label.getLastModifiedDate())
                 .identifier(label.getIdentifier())
                 .localizedName(label.getLocalizedName())

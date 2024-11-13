@@ -10,9 +10,11 @@ import io.kneo.core.repository.UserRepository;
 import io.kneo.core.repository.exception.DocumentModificationAccessException;
 import io.smallrye.mutiny.Uni;
 
+import java.time.Duration;
 import java.util.UUID;
 
 public abstract class AbstractService<T, V> {
+    protected static final Duration TIMEOUT = Duration.ofSeconds(5);
     protected UserRepository userRepository;
     protected UserService userService;
 
@@ -35,14 +37,14 @@ public abstract class AbstractService<T, V> {
 
 
     protected RLSDTO convertRlSEntries(RLS rls) {
-        return new RLSDTO(userRepository.getUserName(rls.getReader()), rls.getAccessLevel().getAlias(), rls.getReadingTime());
+        return new RLSDTO(userRepository.getUserName(rls.getReader()).await().atMost(TIMEOUT), rls.getAccessLevel().getAlias(), rls.getReadingTime());
     }
 
     protected void setDefaultFields(AbstractDTO dto, DataEntity<UUID> doc) {
         dto.setId(doc.getId());
-        dto.setAuthor(userService.getName(doc.getAuthor()));
+        dto.setAuthor(userService.getName(doc.getAuthor()).await().atMost(TIMEOUT));
         dto.setRegDate(doc.getRegDate());
-        dto.setLastModifier(userService.getName(doc.getLastModifier()));
+        dto.setLastModifier(userService.getName(doc.getLastModifier()).await().atMost(TIMEOUT));
         dto.setLastModifiedDate(doc.getLastModifiedDate());
     }
 }

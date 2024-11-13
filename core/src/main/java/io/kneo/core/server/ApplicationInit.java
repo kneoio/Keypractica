@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 @ApplicationScoped
 public class ApplicationInit {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("ListenerBean");
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationInit.class);
 
     @Inject
     @ConfigProperty(name = "quarkus.datasource.reactive.url")

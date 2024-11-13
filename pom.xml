@@ -10,7 +10,8 @@
     <module>core</module>
     <module>officeframe</module>
     <!--<module>projects</module>-->
-    <module>qtracker</module>
+    <!--<module>qtracker</module>-->
+    <module>kneobroadcaster</module>
   </modules>
   <properties>
     <maven.compiler.source>21</maven.compiler.source>

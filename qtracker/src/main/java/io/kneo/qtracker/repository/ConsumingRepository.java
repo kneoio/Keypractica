@@ -125,7 +125,7 @@ public class ConsumingRepository extends AsyncRepository {
                                 .onItem().transformToUni(unused -> {
                                     if (images != null && !images.isEmpty()) {
                                         String imageSql = String.format("INSERT INTO %s (consuming_id, image_data, type, confidence, add_info, description, num_of_seq) " +
-                                                "VALUES ($1, $2, $3, $4, $5, $6, $7)", entityData.getImagesTableName());
+                                                "VALUES ($1, $2, $3, $4, $5, $6, $7)", entityData.getFilesTableName());
                                         Uni<Void> imagesInsertion = Uni.combine().all().unis(
                                                 images.stream().map(image -> {
                                                     JsonObject imageAddInfoJson = new JsonObject(image.getAddInfo());

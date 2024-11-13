@@ -4,11 +4,10 @@ services:
     container_name: postgres-db
     environment:
       POSTGRES_DB: oidc_kneox_db
-      POSTGRES_USER: k_user
-      POSTGRES_PASSWORD: k_passw
+      POSTGRES_USER: justa_kneo
+      POSTGRES_PASSWORD: city421
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-scripts:/docker-entrypoint-initdb.d/
     ports:
       - "8572:5432"
 
@@ -19,8 +18,8 @@ services:
       DB_VENDOR: postgres
       DB_ADDR: postgres
       DB_DATABASE: oidc_kneox_db
-      DB_USER: k_user
-      DB_PASSWORD: k_passw
+      DB_USER: justa_kneo
+      DB_PASSWORD: city421
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin_password
     ports:

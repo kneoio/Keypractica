@@ -36,9 +36,9 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
                         .map(e ->
                                 TaskTypeDTO.builder()
                                         .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()))
+                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
                                         .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()))
+                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
                                         .lastModifiedDate(e.getLastModifiedDate())
                                         .identifier(e.getIdentifier())
                                         .localizedName(e.getLocalizedName())
@@ -51,9 +51,9 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         Uni<TaskType> uni = repository.findByIdentifier(identifier);
         return uni.onItem().transform(doc -> {
             return TaskTypeDTO.builder()
-                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
                     .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
                     .lastModifiedDate(doc.getLastModifiedDate())
                     .identifier(doc.getIdentifier())
                     .localizedName(doc.getLocalizedName())
@@ -79,9 +79,9 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
         Uni<TaskType> uni = repository.findById(uuid);
         return uni.onItem().transform(doc -> {
             return TaskTypeDTO.builder()
-                    .author(userRepository.getUserName(doc.getAuthor()))
+                    .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
                     .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()))
+                    .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
                     .lastModifiedDate(doc.getLastModifiedDate())
                     .identifier(doc.getIdentifier())
                     .localizedName(doc.getLocalizedName())

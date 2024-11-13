@@ -91,9 +91,9 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     private DepartmentDTO mapToDTO(Department department) {
         return DepartmentDTO.builder()
                 .id(department.getId())
-                .author(userRepository.getUserName(department.getAuthor()))
+                .author(userRepository.getUserName(department.getAuthor()).await().atMost(TIMEOUT))
                 .regDate(department.getRegDate())
-                .lastModifier(userRepository.getUserName(department.getLastModifier()))
+                .lastModifier(userRepository.getUserName(department.getLastModifier()).await().atMost(TIMEOUT))
                 .lastModifiedDate(department.getLastModifiedDate())
                 .identifier(department.getIdentifier())
                 .rank(department.getRank())

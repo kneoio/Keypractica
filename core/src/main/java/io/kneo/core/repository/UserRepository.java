@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kneo.core.model.Module;
 import io.kneo.core.model.user.*;
 import io.kneo.core.server.EnvConst;
+import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -12,6 +13,7 @@ import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +23,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.CompletionStage;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class UserRepository extends AsyncRepository {
@@ -37,17 +42,22 @@ public class UserRepository extends AsyncRepository {
         super(client, mapper, null);
     }
 
-/*
-    void onStart(@Observes StartupEvent ev) {
-        userCache = getAll().onItem().transform(users -> users.stream().filter(u -> u.getId() != null)
+
+    CompletionStage<Void> onStart(@Observes StartupEvent ev) {
+        return getAll()
+                .onItem().transform(users -> users.stream()
+                        .filter(u -> u.getId() != null)
                         .collect(Collectors.toMap(IUser::getId, user -> user)))
-                .await().indefinitely();
-        userAltCache.putAll(userCache.values().stream()
-                .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
-        userAltCache.putAll(userCache.values().stream()
-                .collect(Collectors.toMap(IUser::getEmail, Function.identity())));
+                .subscribeAsCompletionStage()
+                .thenAccept(cache -> {
+                    userCache = cache;
+                    userAltCache.putAll(cache.values().stream()
+                            .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
+                    userAltCache.putAll(cache.values().stream()
+                            .collect(Collectors.toMap(IUser::getEmail, Function.identity())));
+                });
     }
-*/
+
 
     public Uni<List<IUser>> getAll() {
         return client.query(String.format("SELECT * FROM _users LIMIT %d OFFSET 0", 100))
@@ -96,28 +106,39 @@ public class UserRepository extends AsyncRepository {
                     .onItem().transform(Optional::ofNullable);
         }
     }
-
-    public Optional<IUser> findById(long id) {
-        return Optional.ofNullable(userCache.get(id));
-        //TODO it needs to initialize the cache
-    }
-
-    public long findByIdentifier(String userName) {
-        if (userName == null) {
-            return AnonymousUser.ID;
-        } else {
-            return userAltCache.get(userName).getId();
+    public Uni<Optional<IUser>> findById(long id) {
+        if (userCache.isEmpty()) {
+            return initializeCache()
+                    .onItem().transform(v -> Optional.ofNullable(userCache.get(id)));
         }
-        //TODO it needs to initialize the cache
+        return Uni.createFrom().item(Optional.ofNullable(userCache.get(id)));
     }
 
-    public IUser findByLogin(String userName) {
-        return userAltCache.get(userName);
-        //TODO it needs to initialize the cache
+    public Uni<IUser> findByLogin(String userName) {
+        if (userAltCache.isEmpty()) {
+            return initializeCache()
+                    .onItem().transform(v -> userAltCache.getOrDefault(userName, UndefinedUser.Build()));
+        }
+        return Uni.createFrom().item(userAltCache.getOrDefault(userName, UndefinedUser.Build()));
     }
 
-    public String getUserName(long id) {
-        return userCache.getOrDefault(id, UndefinedUser.Build()).getUserName();
+    public Uni<Long> findByIdentifier(String userName) {
+        if (userName == null) {
+            return Uni.createFrom().item(AnonymousUser.ID);
+        }
+        if (userAltCache.isEmpty()) {
+            return initializeCache()
+                    .onItem().transform(v -> userAltCache.get(userName).getId());
+        }
+        return Uni.createFrom().item(userAltCache.get(userName).getId());
+    }
+
+    public Uni<String> getUserName(long id) {
+        if (userCache.isEmpty()) {
+            return initializeCache()
+                    .onItem().transform(v -> userCache.getOrDefault(id, UndefinedUser.Build()).getUserName());
+        }
+        return Uni.createFrom().item(userCache.getOrDefault(id, UndefinedUser.Build()).getUserName());
     }
 
     public Uni<Optional<IUser>> getName(Long id) {
@@ -204,5 +225,18 @@ public class UserRepository extends AsyncRepository {
         return Uni.createFrom().item(1L);
     }
 
+    private Uni<Void> initializeCache() {
+        return getAll()
+                .onItem().transform(users -> {
+                    userCache = users.stream()
+                            .filter(u -> u.getId() != null)
+                            .collect(Collectors.toMap(IUser::getId, Function.identity()));
 
+                    userAltCache.putAll(users.stream()
+                            .collect(Collectors.toMap(IUser::getUserName, Function.identity())));
+                    userAltCache.putAll(users.stream()
+                            .collect(Collectors.toMap(IUser::getEmail, Function.identity())));
+                    return null;
+                });
+    }
 }
