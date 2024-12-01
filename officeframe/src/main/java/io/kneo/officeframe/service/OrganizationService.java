@@ -20,7 +20,6 @@ import jakarta.inject.Inject;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 @ApplicationScoped
 public class OrganizationService extends AbstractService<Organization, OrganizationDTO> implements IRESTService<OrganizationDTO> {
     private final OrganizationRepository repository;
@@ -37,21 +36,12 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     public Uni<List<OrganizationDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<Organization>> listUni = repository.getAll(limit, offset);
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(e ->
-                                OrganizationDTO.builder()
-                                        .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(e.getLastModifiedDate())
-                                        .isPrimary(e.isPrimary())
-                                        .localizedName(e.getLocalizedName())
-                                        .identifier(e.getIdentifier())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> Uni.join().all(
+                        list.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     @Override
@@ -60,28 +50,18 @@ public class OrganizationService extends AbstractService<Organization, Organizat
     }
 
     public Uni<List<OrganizationDTO>> getPrimary(LanguageCode languageCode) {
-        Uni<List<Organization>> listUni = repository.getAllPrimary();
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(e ->
-                                OrganizationDTO.builder()
-                                        .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(e.getLastModifiedDate())
-                                        .isPrimary(e.isPrimary())
-                                        .localizedName(e.getLocalizedName())
-                                        .identifier(e.getIdentifier())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAllPrimary()
+                .chain(list -> Uni.join().all(
+                        list.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     @Override
     public Uni<OrganizationDTO> getDTOByIdentifier(String identifier) {
         return null;
     }
-
 
     public Uni<Organization> get(String id) {
         return repository.findById(UUID.fromString(id));
@@ -93,7 +73,7 @@ public class OrganizationService extends AbstractService<Organization, Organizat
 
     @Override
     public Uni<OrganizationDTO> getDTO(UUID id, IUser user, LanguageCode language) {
-        return map(repository.findById(id));
+        return repository.findById(id).chain(this::mapToDTO);
     }
 
     @Override
@@ -105,30 +85,30 @@ public class OrganizationService extends AbstractService<Organization, Organizat
         doc.setRank(dto.getRank());
         doc.setPrimary(dto.isPrimary());
         doc.setLocalizedName(dto.getLocalizedName());
+
         if (id == null) {
-            return map(repository.insert(doc, AnonymousUser.build()));
+            return repository.insert(doc, AnonymousUser.build()).chain(this::mapToDTO);
         } else {
-            return map(repository.update(UUID.fromString(id), doc, user));
+            return repository.update(UUID.fromString(id), doc, user).chain(this::mapToDTO);
         }
     }
 
     @Override
     public Uni<Integer> delete(String id, IUser user) {
-        return repository.delete(UUID.fromString(id))
-                .onItem().transform(count -> count);
+        return repository.delete(UUID.fromString(id));
     }
 
-    private Uni<OrganizationDTO> map(Uni<Organization> uniOrganization) {
-        Uni<OrgCategory> relatedUni = uniOrganization.onItem().transformToUni(organization ->
-                orgCategoryRepository.findById(organization.getOrgCategory())
-        );
-
-        return Uni.combine().all().unis(uniOrganization, relatedUni).with((org, category) -> {
+    private Uni<OrganizationDTO> mapToDTO(Organization org) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(org.getAuthor()),
+                userRepository.getUserName(org.getLastModifier()),
+                orgCategoryRepository.findById(org.getOrgCategory())
+        ).asTuple().onItem().transform(tuple -> {
             OrganizationDTO dto = OrganizationDTO.builder()
                     .id(org.getId())
-                    .author(userRepository.getUserName(org.getAuthor()).await().atMost(TIMEOUT))
+                    .author(tuple.getItem1())
                     .regDate(org.getRegDate())
-                    .lastModifier(userRepository.getUserName(org.getLastModifier()).await().atMost(TIMEOUT))
+                    .lastModifier(tuple.getItem2())
                     .lastModifiedDate(org.getLastModifiedDate())
                     .isPrimary(org.isPrimary())
                     .identifier(org.getIdentifier())
@@ -136,15 +116,14 @@ public class OrganizationService extends AbstractService<Organization, Organizat
                     .bizID(org.getBizID())
                     .build();
 
+            OrgCategory category = tuple.getItem3();
             dto.setOrgCategory(OrgCategoryDTO.builder()
                     .identifier(category.getIdentifier())
                     .localizedNames(category.getLocalizedName())
                     .id(category.getId())
                     .build());
 
-
             return dto;
         });
     }
-
 }

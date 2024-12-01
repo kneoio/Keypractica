@@ -29,7 +29,6 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
         this.repository = null;
     }
 
-
     @Inject
     public RoleService(UserRepository userRepository, UserService userService, RoleRepository repository) {
         super(userRepository, userService);
@@ -37,36 +36,39 @@ public class RoleService extends AbstractService<Role, RoleDTO> {
     }
 
     public Uni<List<RoleDTO>> getAll(final int limit, final int offset) {
-        Uni<List<Role>> roleListUni = repository.getAll(limit, offset);
-        return roleListUni
-                .onItem().transform(roleStream -> roleStream.stream()
-                        .map(role ->
-                                RoleDTO.builder()
-                                        .author(userService.getName(role.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(role.getRegDate())
-                                        .lastModifier(userService.getName(role.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(role.getLastModifiedDate())
-                                        .identifier(role.getIdentifier())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> {
+                    List<Uni<RoleDTO>> unis = list.stream()
+                            .map(this::mapToDTO)
+                            .collect(Collectors.toList());
+                    return Uni.join().all(unis).andFailFast();
+                });
     }
 
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
     }
 
-
     @Override
     public Uni<RoleDTO> getDTO(UUID id, IUser user, LanguageCode language) {
-        Uni<Role> uni = repository.findById(id);
-        return uni.onItem().transform(optional -> {
-            RoleDTO dto = new RoleDTO();
-            setDefaultFields(dto, optional);
-            dto.setIdentifier(optional.getIdentifier());
-            dto.setLocalizedName(optional.getLocalizedName());
-            dto.setLocalizedDescription(optional.getLocalizedDescription());
-            return dto;
-        });
+        return repository.findById(id).chain(this::mapToDTO);
+    }
+
+    private Uni<RoleDTO> mapToDTO(Role doc) {
+        return Uni.combine().all().unis(
+                userService.getName(doc.getAuthor()),
+                userService.getName(doc.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                RoleDTO.builder()
+                        .author(tuple.getItem1())
+                        .regDate(doc.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(doc.getLastModifiedDate())
+                        .identifier(doc.getIdentifier())
+                        .localizedName(doc.getLocalizedName())
+                        .localizedDescription(doc.getLocalizedDescription())
+                        .build()
+        );
     }
 
     @Override

@@ -30,20 +30,12 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
 
     @SuppressWarnings("ConstantConditions")
     public Uni<List<OrgCategoryDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<OrgCategory>> uni = repository.getAll(limit, offset);
-        return uni
-                .onItem().transform(l -> l.stream()
-                        .map(e ->
-                                OrgCategoryDTO.builder()
-                                        .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(e.getLastModifiedDate())
-                                        .identifier(e.getIdentifier())
-                                        .localizedNames(e.getLocalizedName())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> Uni.join().all(
+                        list.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     @Override
@@ -59,8 +51,7 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
 
     @Override
     public Uni<OrgCategoryDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
-        Uni<OrgCategory> categoryUni = repository.findById(uuid);
-        return categoryUni.onItem().transform(this::map);
+        return repository.findById(uuid).chain(this::mapToDTO);
     }
 
     @Override
@@ -68,24 +59,24 @@ public class OrgCategoryService extends AbstractService<OrgCategory, OrgCategory
         Position doc = new Position();
         doc.setIdentifier(dto.getIdentifier());
         doc.setLocalizedName(dto.getLocalizedName());
-        if (id == null) {
-            return null;
-        } else {
-            return null;
-        }
+        return null;
     }
 
-    private OrgCategoryDTO map(OrgCategory category) {
-        return OrgCategoryDTO.builder()
-                .author(userRepository.getUserName(category.getAuthor()).await().atMost(TIMEOUT))
-                .regDate(category.getRegDate())
-                .lastModifier(userRepository.getUserName(category.getLastModifier()).await().atMost(TIMEOUT))
-                .lastModifiedDate(category.getLastModifiedDate())
-                .identifier(category.getIdentifier())
-                .localizedNames(category.getLocalizedName())
-                .build();
+    private Uni<OrgCategoryDTO> mapToDTO(OrgCategory category) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(category.getAuthor()),
+                userRepository.getUserName(category.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                OrgCategoryDTO.builder()
+                        .author(tuple.getItem1())
+                        .regDate(category.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(category.getLastModifiedDate())
+                        .identifier(category.getIdentifier())
+                        .localizedNames(category.getLocalizedName())
+                        .build()
+        );
     }
-
 
     @Override
     public Uni<Integer> delete(String id, IUser user) {

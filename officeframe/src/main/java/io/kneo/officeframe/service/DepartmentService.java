@@ -30,24 +30,28 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
     }
 
     public Uni<List<DepartmentDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<Department>> listUni = repository.getAll(limit, offset);
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(this::mapToDTO)
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> {
+                    List<Uni<DepartmentDTO>> unis = list.stream()
+                            .map(this::mapToDTO)
+                            .collect(Collectors.toList());
+                    return Uni.join().all(unis).andFailFast();
+                });
+    }
+
+    public Uni<List<DepartmentDTO>> getOfOrg(String orgId, LanguageCode languageCode) {
+        return repository.getOfOrg(UUID.fromString(orgId))
+                .chain(list -> {
+                    List<Uni<DepartmentDTO>> unis = list.stream()
+                            .map(this::mapToDTO)
+                            .collect(Collectors.toList());
+                    return Uni.join().all(unis).andFailFast();
+                });
     }
 
     @Override
     public Uni<Integer> getAllCount() {
         return repository.getAllCount();
-    }
-
-    public Uni<List<DepartmentDTO>> getOfOrg(String orgId, LanguageCode languageCode) {
-        Uni<List<Department>> listUni = repository.getOfOrg(UUID.fromString(orgId));
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(this::mapToDTO)
-                        .collect(Collectors.toList()));
     }
 
     public Uni<Department> get(UUID uuid) {
@@ -65,8 +69,7 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
 
     @Override
     public Uni<DepartmentDTO> getDTO(UUID id, IUser user, LanguageCode language) {
-        return repository.findById(id)
-                .onItem().transform(this::mapToDTO);
+        return repository.findById(id).chain(this::mapToDTO);
     }
 
     public Uni<DepartmentDTO> upsert(String id, DepartmentDTO dto, IUser user, LanguageCode code) {
@@ -80,25 +83,29 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
 
     @Override
     public Uni<Integer> delete(String id, IUser user) throws DocumentModificationAccessException {
-        return repository.delete(UUID.fromString(id))
-                .onItem().transform(count -> count);
+        return repository.delete(UUID.fromString(id));
     }
 
     private Uni<DepartmentDTO> map(Uni<Department> uniDepartment) {
-        return uniDepartment.onItem().transform(this::mapToDTO);
+        return uniDepartment.chain(this::mapToDTO);
     }
 
-    private DepartmentDTO mapToDTO(Department department) {
-        return DepartmentDTO.builder()
-                .id(department.getId())
-                .author(userRepository.getUserName(department.getAuthor()).await().atMost(TIMEOUT))
-                .regDate(department.getRegDate())
-                .lastModifier(userRepository.getUserName(department.getLastModifier()).await().atMost(TIMEOUT))
-                .lastModifiedDate(department.getLastModifiedDate())
-                .identifier(department.getIdentifier())
-                .rank(department.getRank())
-                .localizedName(department.getLocalizedName())
-                .build();
+    private Uni<DepartmentDTO> mapToDTO(Department department) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(department.getAuthor()),
+                userRepository.getUserName(department.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                DepartmentDTO.builder()
+                        .id(department.getId())
+                        .author(tuple.getItem1())
+                        .regDate(department.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(department.getLastModifiedDate())
+                        .identifier(department.getIdentifier())
+                        .rank(department.getRank())
+                        .localizedName(department.getLocalizedName())
+                        .build()
+        );
     }
 
     private Department buildEntity(DepartmentDTO dto) {
@@ -106,9 +113,6 @@ public class DepartmentService extends AbstractService<Department, DepartmentDTO
         department.setIdentifier(dto.getIdentifier());
         department.setRank(dto.getRank());
         department.setLocalizedName(dto.getLocalizedName());
-
         return department;
     }
-
-
 }

@@ -12,12 +12,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
 @ApplicationScoped
-public class ModuleService extends AbstractService<Module, ModuleDTO>  implements IRESTService<ModuleDTO> {
+public class ModuleService extends AbstractService<Module, ModuleDTO> implements IRESTService<ModuleDTO> {
     private final ModuleRepository repository;
 
     protected ModuleService() {
@@ -32,20 +30,13 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
     }
 
     public Uni<List<ModuleDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<Module>> listUni = repository.getAll(limit, offset);
-        return listUni.onItem().transform(list -> list.stream()
-                .map(doc ->
-                        ModuleDTO.builder()
-                                .id(doc.getId())
-                                .author(userService.getName(doc.getAuthor()).await().atMost(TIMEOUT))
-                                .regDate(doc.getRegDate())
-                                .lastModifier(userService.getName(doc.getLastModifier()).await().atMost(TIMEOUT))
-                                .lastModifiedDate(doc.getLastModifiedDate())
-                                .identifier(doc.getIdentifier())
-                                .localizedName(doc.getLocalizedName())
-                                .localizedDescription(doc.getLocalizedDescription())
-                                .build())
-                .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> {
+                    List<Uni<ModuleDTO>> unis = list.stream()
+                            .map(this::mapToDTO)
+                            .collect(Collectors.toList());
+                    return Uni.join().all(unis).andFailFast();
+                });
     }
 
     @Override
@@ -63,12 +54,10 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
 
     public Uni<List<ModuleDTO>> findAll(String[] defaultModules) {
         return repository.getModules(defaultModules)
-                .onItem().transformToUni(modules ->
+                .chain(modules ->
                         Multi.createFrom().iterable(modules)
                                 .onItem().transformToUniAndMerge(moduleOpt ->
-                                        moduleOpt.map(module ->
-                                                mapToDTO(Uni.createFrom().item(Optional.of(module)))
-                                        ).orElse(Uni.createFrom().nullItem())
+                                        moduleOpt.map(this::mapToDTO).orElse(Uni.createFrom().nullItem())
                                 )
                                 .collect().asList()
                 );
@@ -76,32 +65,35 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
 
     @Override
     public Uni<ModuleDTO> getDTO(UUID id, IUser user, LanguageCode language) {
-        Uni<Optional<Module>> uni = repository.findById(id);
-        return mapToDTO( uni);
+        return repository.findById(id)
+                .chain(optional -> mapToDTO(optional.orElseThrow()));
+    }
+
+    private Uni<ModuleDTO> mapToDTO(Module doc) {
+        return Uni.combine().all().unis(
+                userService.getName(doc.getAuthor()),
+                userService.getName(doc.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                ModuleDTO.builder()
+                        .id(doc.getId())
+                        .author(tuple.getItem1())
+                        .regDate(doc.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(doc.getLastModifiedDate())
+                        .identifier(doc.getIdentifier())
+                        .isOn(doc.isOn())
+                        .localizedName(doc.getLocalizedName())
+                        .localizedDescription(doc.getLocalizedDescription())
+                        .build()
+        );
     }
 
     @Override
-    public Uni<Integer> delete(String id, IUser user)  {
+    public Uni<Integer> delete(String id, IUser user) {
         return null;
     }
 
-    private Uni<ModuleDTO> mapToDTO(Uni<Optional<Module>> uni) {
-        return uni.onItem().transform(optional -> {
-            Module doc = optional.orElseThrow();
-            ModuleDTO dto = new ModuleDTO();
-            dto.setId(doc.getId());
-            dto.setAuthor(userService.getName(doc.getAuthor()).await().atMost(TIMEOUT));
-            dto.setRegDate(doc.getRegDate());
-            dto.setLastModifier(userService.getName(doc.getLastModifier()).await().atMost(TIMEOUT));
-            dto.setLastModifiedDate(doc.getLastModifiedDate());
-            dto.setIdentifier(doc.getIdentifier());
-            dto.setOn(doc.isOn());
-            dto.setLocalizedName(doc.getLocalizedName());
-            dto.setLocalizedDescription(doc.getLocalizedDescription());
-            return dto;
-        });
-    }
-
+    @Override
     public Uni<ModuleDTO> upsert(String id, ModuleDTO dto, IUser user, LanguageCode code) {
         return null;
     }
@@ -114,11 +106,8 @@ public class ModuleService extends AbstractService<Module, ModuleDTO>  implement
         return repository.update(doc);
     }
 
-    public Uni<Integer> delete (String id) {
+    public Uni<Integer> delete(String id) {
         assert repository != null;
         return repository.delete(UUID.fromString(id));
     }
-
-
-
 }

@@ -26,6 +26,7 @@ public class LanguageController extends AbstractSecuredController<Language, Lang
     }
 
     public void setupRoutes(Router router) {
+        router.route( "/*").handler(this::addHeaders);
         router.route(HttpMethod.GET, "/api/:org/languages").handler(this::get);
         router.route(HttpMethod.GET, "/api/:org/languages/:id").handler(this::getOne);
         router.route(HttpMethod.POST, "/api/:org/languages/:id?").handler(this::upsert);

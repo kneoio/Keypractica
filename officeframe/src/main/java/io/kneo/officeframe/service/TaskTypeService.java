@@ -30,36 +30,17 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
     }
 
     public Uni<List<TaskTypeDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<TaskType>> taskUni = repository.getAll(limit, offset);
-        return taskUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(e ->
-                                TaskTypeDTO.builder()
-                                        .id(e.getId())
-                                        .author(userRepository.getUserName(e.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(e.getRegDate())
-                                        .lastModifier(userRepository.getUserName(e.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(e.getLastModifiedDate())
-                                        .identifier(e.getIdentifier())
-                                        .localizedName(e.getLocalizedName())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> Uni.join().all(
+                        list.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     @Override
     public Uni<TaskTypeDTO> getDTOByIdentifier(String identifier) {
-        Uni<TaskType> uni = repository.findByIdentifier(identifier);
-        return uni.onItem().transform(doc -> {
-            return TaskTypeDTO.builder()
-                    .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
-                    .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
-                    .lastModifiedDate(doc.getLastModifiedDate())
-                    .identifier(doc.getIdentifier())
-                    .localizedName(doc.getLocalizedName())
-                    .build();
-
-        });
+        return repository.findByIdentifier(identifier).chain(this::mapToDTO);
     }
 
     public Uni<Integer> getAllCount() {
@@ -76,18 +57,24 @@ public class TaskTypeService extends AbstractService<TaskType, TaskTypeDTO> impl
 
     @Override
     public Uni<TaskTypeDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
-        Uni<TaskType> uni = repository.findById(uuid);
-        return uni.onItem().transform(doc -> {
-            return TaskTypeDTO.builder()
-                    .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
-                    .regDate(doc.getRegDate())
-                    .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
-                    .lastModifiedDate(doc.getLastModifiedDate())
-                    .identifier(doc.getIdentifier())
-                    .localizedName(doc.getLocalizedName())
-                    .build();
+        return repository.findById(uuid).chain(this::mapToDTO);
+    }
 
-        });
+    private Uni<TaskTypeDTO> mapToDTO(TaskType doc) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(doc.getAuthor()),
+                userRepository.getUserName(doc.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                TaskTypeDTO.builder()
+                        .id(doc.getId())
+                        .author(tuple.getItem1())
+                        .regDate(doc.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(doc.getLastModifiedDate())
+                        .identifier(doc.getIdentifier())
+                        .localizedName(doc.getLocalizedName())
+                        .build()
+        );
     }
 
     @Override

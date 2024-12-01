@@ -30,9 +30,11 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
 
     public Uni<List<LabelDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
         return repository.getAll(limit, offset)
-                .onItem().transform(labels -> labels.stream()
-                        .map(this::mapToDTO)
-                        .collect(Collectors.toList()));
+                .chain(labels -> Uni.join().all(
+                        labels.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     public Uni<Integer> getAllCount() {
@@ -41,21 +43,24 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
 
     public Uni<List<LabelDTO>> getOfCategory(String categoryName, LanguageCode languageCode) {
         return repository.getOfCategory(categoryName)
-                .onItem().transform(labels -> labels.stream()
-                        .map(this::mapToDTO)
-                        .collect(Collectors.toList()));
+                .chain(labels -> Uni.join().all(
+                        labels.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     public Uni<List<LabelDTO>> getLabels(UUID id, String type) {
         return repository.findForDocument(id, type)
-                .onItem().transform(labels -> labels.stream()
-                        .map(this::mapToDTO)
-                        .collect(Collectors.toList()));
+                .chain(labels -> Uni.join().all(
+                        labels.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     public Uni<LabelDTO> getDTO(UUID uuid, IUser user, LanguageCode language) {
-        return repository.findById(uuid)
-                .onItem().transform(this::mapToDTO);
+        return repository.findById(uuid).chain(this::mapToDTO);
     }
 
     public Uni<Label> getById(UUID uuid) {
@@ -78,28 +83,31 @@ public class LabelService extends AbstractService<Label, LabelDTO> implements IR
         doc.setColor(dto.getColor());
 
         if (id == null) {
-            return repository.insert(doc, user)
-                    .onItem().transform(this::mapToDTO);
+            return repository.insert(doc, user).chain(this::mapToDTO);
         } else {
-            return repository.update(UUID.fromString(id), doc, user)
-                    .onItem().transform(this::mapToDTO);
+            return repository.update(UUID.fromString(id), doc, user).chain(this::mapToDTO);
         }
     }
 
-    private LabelDTO mapToDTO(Label label) {
-        return LabelDTO.builder()
-                .id(label.getId())
-                .author(userRepository.getUserName(label.getAuthor()).await().atMost(TIMEOUT))
-                .regDate(label.getRegDate())
-                .lastModifier(userRepository.getUserName(label.getLastModifier()).await().atMost(TIMEOUT))
-                .lastModifiedDate(label.getLastModifiedDate())
-                .identifier(label.getIdentifier())
-                .localizedName(label.getLocalizedName())
-                .category(label.getCategory())
-                .parent(label.getParent())
-                .color(label.getColor())
-                .hidden(label.isHidden())
-                .build();
+    private Uni<LabelDTO> mapToDTO(Label label) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(label.getAuthor()),
+                userRepository.getUserName(label.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                LabelDTO.builder()
+                        .id(label.getId())
+                        .author(tuple.getItem1())
+                        .regDate(label.getRegDate())
+                        .lastModifier(tuple.getItem2())
+                        .lastModifiedDate(label.getLastModifiedDate())
+                        .identifier(label.getIdentifier())
+                        .localizedName(label.getLocalizedName())
+                        .category(label.getCategory())
+                        .parent(label.getParent())
+                        .color(label.getColor())
+                        .hidden(label.isHidden())
+                        .build()
+        );
     }
 
     @Override

@@ -7,7 +7,8 @@
 *.pem
 /*.jks
 
-/**/application-dev.properties
+application.properties
+application-dev.properties
 /qodana.yaml
 /*.ps1
 
@@ -23,3 +24,4 @@
 /ci_cd/deployment-config.properties
 /run_tunnel.sh
 /kneobroadcaster/uploads/
+

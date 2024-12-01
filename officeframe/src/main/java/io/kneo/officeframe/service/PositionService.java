@@ -21,27 +21,18 @@ import java.util.stream.Collectors;
 public class PositionService extends AbstractService<Position, PositionDTO> implements IRESTService<PositionDTO> {
     private final PositionRepository repository;
 
-
     public PositionService(UserRepository userRepository, UserService userService, PositionRepository repository) {
         super(userRepository, userService);
         this.repository = repository;
     }
 
     public Uni<List<PositionDTO>> getAll(final int limit, final int offset, LanguageCode languageCode) {
-        Uni<List<Position>> listUni = repository.getAll(limit, offset);
-        return listUni
-                .onItem().transform(taskList -> taskList.stream()
-                        .map(doc ->
-                                PositionDTO.builder()
-                                        .id(doc.getId())
-                                        .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
-                                        .regDate(doc.getRegDate())
-                                        .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
-                                        .lastModifiedDate(doc.getLastModifiedDate())
-                                        .identifier(doc.getIdentifier())
-                                        .localizedName(doc.getLocalizedName())
-                                        .build())
-                        .collect(Collectors.toList()));
+        return repository.getAll(limit, offset)
+                .chain(list -> Uni.join().all(
+                        list.stream()
+                                .map(this::mapToDTO)
+                                .collect(Collectors.toList())
+                ).andFailFast());
     }
 
     @Override
@@ -63,11 +54,7 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
         Position doc = new Position();
         doc.setIdentifier(dto.getIdentifier());
         doc.setLocalizedName(dto.getLocalizedName());
-        if (id == null) {
-            return null;
-        } else {
-            return null;
-        }
+        return null;
     }
 
     @Override
@@ -76,22 +63,26 @@ public class PositionService extends AbstractService<Position, PositionDTO> impl
     }
 
     public Uni<PositionDTO> getDTO(UUID uuid) {
-        Uni<Position> uni = repository.findById(uuid);
-        return uni.onItem().transform(doc -> {
-                return PositionDTO.builder()
-                        .author(userRepository.getUserName(doc.getAuthor()).await().atMost(TIMEOUT))
+        return repository.findById(uuid).chain(this::mapToDTO);
+    }
+
+    private Uni<PositionDTO> mapToDTO(Position doc) {
+        return Uni.combine().all().unis(
+                userRepository.getUserName(doc.getAuthor()),
+                userRepository.getUserName(doc.getLastModifier())
+        ).asTuple().onItem().transform(tuple ->
+                PositionDTO.builder()
+                        .author(tuple.getItem1())
                         .regDate(doc.getRegDate())
-                        .lastModifier(userRepository.getUserName(doc.getLastModifier()).await().atMost(TIMEOUT))
+                        .lastModifier(tuple.getItem2())
                         .lastModifiedDate(doc.getLastModifiedDate())
                         .identifier(doc.getIdentifier())
                         .localizedName(doc.getLocalizedName())
-                        .build();
-
-        });
+                        .build()
+        );
     }
 
     public Uni<Position> get(UUID uuid) {
         return repository.findById(uuid);
     }
-
 }

@@ -18,9 +18,8 @@ public class UserController extends AbstractController<User, UserDTO> {
     private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
     private UserService service;
 
-    // Add default constructor for CDI
     public UserController() {
-        super(null); // or handle this differently in AbstractController
+        super(null);
     }
 
     @Inject
