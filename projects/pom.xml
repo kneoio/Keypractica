@@ -10,13 +10,13 @@
   <dependencies>
     <dependency>
       <groupId>io.kneo</groupId>
-      <artifactId>core</artifactId>
-      <version>${project.version}</version>
+      <artifactId>keypractica-core</artifactId>
+      <version>0.0.3</version>
     </dependency>
     <dependency>
       <groupId>io.kneo</groupId>
       <artifactId>officeframe</artifactId>
-      <version>${project.version}</version>
+      <version>0.0.3</version>
     </dependency>
   </dependencies>
   <build>

@@ -24,6 +24,9 @@ public class EntityData {
         this(tableName, null, null, null);
     }
 
+    public EntityData(String tableName, String rlsName, String labels) {
+        this(tableName, rlsName, labels, null);
+    }
 }
 
 

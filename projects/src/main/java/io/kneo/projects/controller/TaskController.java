@@ -88,21 +88,17 @@ public final class TaskController extends AbstractSecuredController<Task, TaskDT
 
     @Route(path = "/:id?", methods = Route.HttpMethod.POST, consumes = "application/json", produces = "application/json")
     public void upsert(RoutingContext rc) {
-        try {
-            JsonObject jsonObject = rc.body().asJsonObject();
-            TaskDTO dto = jsonObject.mapTo(TaskDTO.class);
-            String id = rc.pathParam("id");
-            service.upsert(UUID.fromString(id), dto, getUser(rc), resolveLanguage(rc))
-                    .subscribe()
-                    .with(task -> {
-                                int statusCode = id.isEmpty() ? 201 : 200;
-                                rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(task).encode());
-                            },
-                            rc::fail
-                    );
-        } catch (UserNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        JsonObject jsonObject = rc.body().asJsonObject();
+        TaskDTO dto = jsonObject.mapTo(TaskDTO.class);
+        String id = rc.pathParam("id");
+        service.upsert(id, dto, getUser(rc), resolveLanguage(rc))
+                .subscribe()
+                .with(task -> {
+                            int statusCode = id.isEmpty() ? 201 : 200;
+                            rc.response().setStatusCode(statusCode).end(JsonObject.mapFrom(task).encode());
+                        },
+                        rc::fail
+                );
     }
 
     @Route(path = "/:id", methods = Route.HttpMethod.DELETE, produces = "application/json")

@@ -170,7 +170,7 @@ public class TaskRepository extends AsyncRepository {
     public Uni<Task> update(UUID id, Task doc, IUser user) {
         return rlsRepository.findById(entityData.getRlsName(), user.getId(), id)
                 .onItem().transformToUni(permissions -> {
-                    if (permissions[0] == 1) {
+                    if (permissions[0]) {
                         LocalDateTime nowTime = ZonedDateTime.now().toLocalDateTime();
                         String sql = String.format("UPDATE %s SET assignee=$1, body=$2, target_date=$3, priority=$4, " +
                                 "start_date=$5, status=$6, title=$7, parent_id=$8, project_id=$9, task_type_id=$10, " +

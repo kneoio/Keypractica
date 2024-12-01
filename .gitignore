@@ -22,3 +22,4 @@
 /ci_cd/*.ps1
 /ci_cd/deployment-config.properties
 /run_tunnel.sh
+/kneobroadcaster/uploads/
